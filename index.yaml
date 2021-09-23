@@ -8,6 +8,6 @@ entries:
     digest: 296dcb53802b6dafc40ba6dd9840eb62fa98dc0ba6345ad89002a3ec955d8a16
     name: helm-chart-test
     urls:
-    - https://dasmeta.github.io/helm-chart/helm-chart-test-0.1.0.tgz
+    - https://dasmeta.github.io/helm-charts/helm-chart-test-0.1.0.tgz
     version: 0.1.0
 generated: "2021-09-22T19:26:22.6996+04:00"
