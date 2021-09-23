@@ -1,0 +1,17 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mongodb-backup-aws.fullname" . }}
+  labels:
+    {{- include "mongodb-backup-aws.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "mongodb-backup-aws.selectorLabels" . | nindent 4 }}
+{{- end }}

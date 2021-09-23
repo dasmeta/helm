@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  mongo_backup:
+    build:
+      context: .
+    container_name: mongodb_backup_migrate
+    volumes:
+      - ./backup:/backup
+    environment:
+      MONGODB_HOST: host
+      MONGODB_PORT: port
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: example
+      AWS_ACCESS_KEY_ID: account_key_id
+      AWS_SECRET_ACCESS_KEY: secret_access_key
+      AWS_DEFAULT_REGION: region
+      S3_BUCKET: s3_bucket_name
+      MAX_BACKUPS: 30
+      CRON_SCHEDULE: "* */3 * * *"
+      INIT_BACKUP: 'false'
+      INIT_RESTORE: 'false'
