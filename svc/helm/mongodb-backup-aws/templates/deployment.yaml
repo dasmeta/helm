@@ -1,0 +1,74 @@
+{{- if eq .Values.config.RUN_AS_DAEMON "true" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mongodb-backup-aws.fullname" . }}
+  labels:
+    {{- include "mongodb-backup-aws.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mongodb-backup-aws.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 7 }}
+        {{- end }}
+        checksum/config: {{ tpl (toYaml .Values.config) . | sha256sum }}
+      labels:
+        {{- include "mongodb-backup-aws.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mongodb-backup-aws.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # ports:
+          #   - name: http
+          #     containerPort: 80
+          #     protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          envFrom:
+          - configMapRef:
+              name: {{ include "mongodb-backup-aws.fullname" . }}
+          volumeMounts:
+          - mountPath: "/backup"
+            name: {{ include "mongodb-backup-aws.fullname" . }}
+      volumes:
+      - name: {{ include "mongodb-backup-aws.fullname" . }}
+        persistentVolumeClaim:
+          claimName: {{ include "mongodb-backup-aws.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

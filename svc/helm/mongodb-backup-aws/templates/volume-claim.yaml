@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "mongodb-backup-aws.fullname" . }}
+  annotations:
+    # volume.beta.kubernetes.io/storage-class: standard
+    # volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/aws-ebs
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ default "1Gi" .Values.volume.size }}
+  storageClassName: {{ default "gp2" .Values.volume.storageClass }}
