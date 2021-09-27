@@ -1,6 +1,0 @@
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: {{ include "mongodb-backup-aws.fullname" . }}
-data:
-  {{- toYaml .Values.config | nindent 2 }}
