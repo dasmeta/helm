@@ -29,4 +29,4 @@ jobs:
           git push
       - name: Helm Update
         run: |          
-          helm repo index
+          helm repo index /
