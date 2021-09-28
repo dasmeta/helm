@@ -23,13 +23,15 @@ jobs:
           CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: Create gZip
         run: |
-          helm package charts/helm-chart-test
+          helm package charts/base
+      - name: Add, Commit and Push zip file
+        run: |
           git add *.tgz
-          git commit -m "zip file commit"
+          git commit -m "Zip file commit"
           git push
-      - name: Helm Update
+      - name: Helm index.yaml Update
         run: |          
           helm repo index .
           git add index.yaml
-          git commit -m "index file commit"
+          git commit -m "Index file commit"
           git push
