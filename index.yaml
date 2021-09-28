@@ -2,19 +2,29 @@ apiVersion: v1
 entries:
   base:
   - apiVersion: v2
-    appVersion: 0.1.0
-    created: "2021-09-27T16:06:03.746612828Z"
+    appVersion: 0.1.1
+    created: "2021-09-28T14:54:23.077958+04:00"
     description: A Base Helm chart for Kubernetes
-    digest: 119109aefd4746144ce68ace748ef94914de3b39e65adf3500b7ec5d56729afb
+    digest: 00b4761c9df9939b368968887bf048ce32bdf46e0e099328513f8c2604b1b822
     name: base
     type: application
     urls:
-    - https://github.com/dasmeta/helm/releases/download/base-0.1.0/base-0.1.0.tgz
+    - base-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2021-09-28T14:54:23.077451+04:00"
+    description: A Base Helm chart for Kubernetes
+    digest: ce82165756a59d38bf7c03f4e428b60051a211f81f93be0b7f09634ee5c3ad4f
+    name: base
+    type: application
+    urls:
+    - base-0.1.0.tgz
     version: 0.1.0
   helm-chart-test:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2021-09-23T19:44:48.636646+04:00"
+    created: "2021-09-28T14:54:23.078416+04:00"
     description: A Helm chart for Kubernetes
     digest: 296dcb53802b6dafc40ba6dd9840eb62fa98dc0ba6345ad89002a3ec955d8a16
     name: helm-chart-test
@@ -24,7 +34,7 @@ entries:
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-09-23T19:44:48.637328+04:00"
+    created: "2021-09-28T14:54:23.079155+04:00"
     description: A Helm chart for Kubernetes
     digest: 5bb399d7819381bfa402ee0b62e87cc9a76f0d607e5f01398ef6a795a12ef319
     name: mongodb-backup-aws
@@ -32,4 +42,4 @@ entries:
     urls:
     - mongodb-backup-aws-0.1.0.tgz
     version: 0.1.0
-generated: "2021-09-23T19:44:48.636048+04:00"
+generated: "2021-09-28T14:54:23.076516+04:00"
