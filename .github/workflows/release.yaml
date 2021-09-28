@@ -23,6 +23,5 @@ jobs:
           CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: Create gZip
         run: |
+          tar czf helm-chart-test-1.2.tgz charts/helm-chart-test
           ls -l
-          #tar czf mongodb-backup-aws-1.0.1.tgz helm/mongodb-backup-aws
-          #git config user.email "$GITHUB_ACTOR@users.noreply.github.com"    
