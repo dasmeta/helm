@@ -53,13 +53,21 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ include "base.fullname" . }}
+          {{- if .Values.deployment.volumes }}
           volumeMounts:
-          - mountPath: /home/superset/bq_keyfile
-            name: efs-pvc
+            {{- range $index, $element := .Values.deployment.volumes }}
+            - mountPath: {{ $element.mountPath }}
+              name: {{ $index }}
+            {{- end }}
+          {{- end }}
+      {{- if .Values.deployment.volumes }}
       volumes:
-      - name: efs-pvc
+      {{- range $index, $element := .Values.deployment.volumes }}
+      - name: {{ $index }}
         persistentVolumeClaim:
-          claimName: efs
+          claimName: {{ $element.persistentVolumeClaim.className }}
+      {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

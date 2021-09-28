@@ -8,10 +8,10 @@ type: application
 version: 0.1.0
 appVersion: "0.1.0"
 
-dependencies: # A list of the chart requirements (optional)
+dependencies:
   - name: base
-    version: 1.2.3
-    repository: (https://dasmeta.github.io/charts
+    version: 0.1.0
+    repository: https://dasmeta.github.io/helm
     alias: app
 ```
 

@@ -105,3 +105,14 @@ readinessProbe: {}
   #   port: http
   # initialDelaySeconds: 60
   # periodSeconds: 5
+
+deployment:
+  volumes:
+    efs-pvc:
+      mountPath: /home/superset/bq_keyfile
+      persistentVolumeClaim:
+          claimName: efs
+    efs-pvc2:
+      mountPath: /home/superset/bq_keyfile2
+      persistentVolumeClaim:
+          claimName: efs
