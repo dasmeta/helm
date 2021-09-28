@@ -29,4 +29,4 @@ jobs:
           git push
       - name: Helm Update
         run: |          
-          helm dependency update index
+          helm dependency update index charts/helm-chart-test
