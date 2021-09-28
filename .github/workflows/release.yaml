@@ -21,3 +21,8 @@ jobs:
         uses: helm/chart-releaser-action@v1.0.0
         env:
           CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+      - name: Create gZip
+        run: |
+          ls -l
+          #tar czf mongodb-backup-aws-1.0.1.tgz helm/mongodb-backup-aws
+          #git config user.email "$GITHUB_ACTOR@users.noreply.github.com"    
