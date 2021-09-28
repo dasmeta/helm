@@ -24,4 +24,7 @@ jobs:
       - name: Create gZip
         run: |
           tar czf helm-chart-test-1.2.tgz charts/helm-chart-test
+          git add helm-chart-test-1.2.tgz
+          git commit -m "zip file commit"
+          git push
           ls -l
