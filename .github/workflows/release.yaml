@@ -27,5 +27,6 @@ jobs:
           git add helm-chart-test-1.2.tgz
           git commit -m "zip file commit"
           git push
-          helm index update
-          ls -l
+      - name: Helm Update
+        run: |          
+          helm dependency update index
