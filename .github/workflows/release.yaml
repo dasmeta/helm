@@ -30,3 +30,6 @@ jobs:
       - name: Helm Update
         run: |          
           helm repo index charts/helm-chart-test
+          git add index.yaml
+          git commit -m "index file commit"
+          git push
