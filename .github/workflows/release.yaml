@@ -23,7 +23,7 @@ jobs:
           CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: Create gZip
         run: |
-          tar czf helm-chart-test-1.2.tgz charts/helm-chart-test
+          tar czf helm-chart-test-1.2.tgz charts/
           git add helm-chart-test-1.2.tgz
           git commit -m "zip file commit"
           git push
