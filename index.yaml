@@ -3,7 +3,7 @@ entries:
   base:
   - apiVersion: v2
     appVersion: 0.1.1
-    created: "2021-09-28T13:35:49.989725235Z"
+    created: "2021-09-28T13:43:53.943710382Z"
     description: A Base Helm chart for Kubernetes
     digest: 00b4761c9df9939b368968887bf048ce32bdf46e0e099328513f8c2604b1b822
     name: base
@@ -13,7 +13,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2021-09-28T13:35:49.988760429Z"
+    created: "2021-09-28T13:43:53.942881283Z"
     description: A Base Helm chart for Kubernetes
     digest: ce82165756a59d38bf7c03f4e428b60051a211f81f93be0b7f09634ee5c3ad4f
     name: base
@@ -24,9 +24,9 @@ entries:
   helm-chart-test:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2021-09-28T13:35:49.990209138Z"
+    created: "2021-09-28T13:43:53.944117082Z"
     description: A Helm chart for Kubernetes
-    digest: 296dcb53802b6dafc40ba6dd9840eb62fa98dc0ba6345ad89002a3ec955d8a16
+    digest: 6bf00879031fab9ca9653c42fdc5c3ad142e55f67582fccded272760fcd41330
     name: helm-chart-test
     urls:
     - helm-chart-test-0.1.0.tgz
@@ -34,7 +34,7 @@ entries:
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-09-28T13:35:49.992802654Z"
+    created: "2021-09-28T13:43:53.945174682Z"
     description: A Helm chart for Kubernetes
     digest: 5bb399d7819381bfa402ee0b62e87cc9a76f0d607e5f01398ef6a795a12ef319
     name: mongodb-backup-aws
@@ -42,4 +42,4 @@ entries:
     urls:
     - mongodb-backup-aws-0.1.0.tgz
     version: 0.1.0
-generated: "2021-09-28T13:35:49.986839018Z"
+generated: "2021-09-28T13:43:53.941911383Z"
