@@ -3,27 +3,17 @@ entries:
   base:
   - apiVersion: v2
     appVersion: 0.1.2
-    created: "2021-09-28T14:38:45.660569278Z"
+    created: "2021-09-30T12:08:54.594103949Z"
     description: A Base Helm chart for Kubernetes
-    digest: 72ea3293a22f7a073ae793c3962f36b4adb617363699a570a8bf4d361ee6b92b
+    digest: 3d5efd2ff84441f54e864cce07a5a0823c61640a455841ebe90058558aeedc21
     name: base
     type: application
     urls:
     - base-0.1.2.tgz
     version: 0.1.2
   - apiVersion: v2
-    appVersion: 0.1.2
-    created: "2021-09-28T14:38:45.663501414Z"
-    description: A Base Helm chart for Kubernetes
-    digest: 901fc983b4c8c87d34b8b98f26693847477a86e072bb1f06619e4dd6d6a65ac0
-    name: base
-    type: application
-    urls:
-    - .cr-release-packages/base-0.1.2.tgz
-    version: 0.1.2
-  - apiVersion: v2
     appVersion: 0.1.1
-    created: "2021-09-28T14:38:45.659632367Z"
+    created: "2021-09-30T12:08:54.592353638Z"
     description: A Base Helm chart for Kubernetes
     digest: 881048f6d181f74337df3543dc9bc5414f67dacf8d9f7a2f43835b21b6b325d4
     name: base
@@ -33,7 +23,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2021-09-28T14:38:45.658797856Z"
+    created: "2021-09-30T12:08:54.590241504Z"
     description: A Base Helm chart for Kubernetes
     digest: ce82165756a59d38bf7c03f4e428b60051a211f81f93be0b7f09634ee5c3ad4f
     name: base
@@ -44,7 +34,7 @@ entries:
   helm-chart-test:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2021-09-28T14:38:45.661640391Z"
+    created: "2021-09-30T12:08:54.595596944Z"
     description: A Helm chart for Kubernetes
     digest: e72ca4963da982f5a29659b95feb6b0198d4ff3b52353bd8eaf2437a4d811840
     name: helm-chart-test
@@ -53,7 +43,7 @@ entries:
     version: 0.1.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2021-09-28T14:38:45.661269987Z"
+    created: "2021-09-30T12:08:54.595000206Z"
     description: A Helm chart for Kubernetes
     digest: 7d690ed887c41370e5aed657a38563ee126e6ec6f2e0d4ce54cf2230c50efdfa
     name: helm-chart-test
@@ -62,7 +52,7 @@ entries:
     version: 0.1.1
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2021-09-28T14:38:45.660924182Z"
+    created: "2021-09-30T12:08:54.59458008Z"
     description: A Helm chart for Kubernetes
     digest: 6bf00879031fab9ca9653c42fdc5c3ad142e55f67582fccded272760fcd41330
     name: helm-chart-test
@@ -72,7 +62,7 @@ entries:
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-09-28T14:38:45.662637504Z"
+    created: "2021-09-30T12:08:54.596995633Z"
     description: A Helm chart for Kubernetes
     digest: 5bb399d7819381bfa402ee0b62e87cc9a76f0d607e5f01398ef6a795a12ef319
     name: mongodb-backup-aws
@@ -80,4 +70,4 @@ entries:
     urls:
     - mongodb-backup-aws-0.1.0.tgz
     version: 0.1.0
-generated: "2021-09-28T14:38:45.657587341Z"
+generated: "2021-09-30T12:08:54.589105131Z"
