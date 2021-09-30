@@ -54,6 +54,15 @@ entries:
   helm-chart-test:
   - apiVersion: v1
     appVersion: "1.0"
+    created: "2021-09-30T13:02:41.980382276Z"
+    description: A Helm chart for Kubernetes
+    digest: e73c72bd8822491a95ebc2f89895a7985ababaa50e595e84f86452a8feb56603
+    name: helm-chart-test
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/helm-chart-test-0.1.3/helm-chart-test-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v1
+    appVersion: "1.0"
     created: "2021-09-30T12:37:56.533877912Z"
     description: A Helm chart for Kubernetes
     digest: e72ca4963da982f5a29659b95feb6b0198d4ff3b52353bd8eaf2437a4d811840
