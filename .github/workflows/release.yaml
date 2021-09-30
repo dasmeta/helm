@@ -21,17 +21,3 @@ jobs:
         uses: helm/chart-releaser-action@v1.0.0
         env:
           CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-      # - name: Create gZip
-      #   run: |
-      #     helm package charts/base
-      # - name: Add, Commit and Push zip file
-      #   run: |
-      #     git add *.tgz
-      #     git commit -m "Zip file commit"
-      #     git push
-      - name: Helm index.yaml Update
-        run: |          
-          helm repo index .
-          git add index.yaml
-          git commit -m "Index file commit"
-          git push
