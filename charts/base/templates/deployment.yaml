@@ -56,16 +56,16 @@ spec:
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}
-            - mountPath: {{ $element.mountPath }}
-              name: {{ $index }}
+            - name: {{ $index }}
+              mountPath: {{ $element.mountPath }}
             {{- end }}
           {{- end }}
       {{- if .Values.deployment.volumes }}
       volumes:
-      {{- range $index, $element := .Values.deployment.volumes }}
-      - name: {{ $index }}
-        persistentVolumeClaim:
-          claimName: {{ $element.persistentVolumeClaim.className }}
+        {{- range $index, $element := .Values.deployment.volumes }}
+        - name: {{ $index }}
+          persistentVolumeClaim:
+            claimName: {{ $element.persistentVolumeClaim.claimName }}
       {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

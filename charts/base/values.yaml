@@ -5,10 +5,10 @@
 replicaCount: 2
 
 image:
-  repository: nginx:1.21
+  repository: nginx
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is  the chart appVersion.
-  tag: ""
+  tag: 1.21
 
 imagePullSecrets: []
 nameOverride: ""
@@ -116,3 +116,4 @@ deployment:
       mountPath: /home/superset/bq_keyfile2
       persistentVolumeClaim:
           claimName: efs
+  
