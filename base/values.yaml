@@ -105,3 +105,14 @@ readinessProbe: {}
   #   port: http
   # initialDelaySeconds: 60
   # periodSeconds: 5
+
+env: dev
+product: application
+
+secrets: {}
+
+# secrets:
+#   - name: secret1 # key from secret
+#     propery: SECRET1
+#   - secret2
+#   - secret3

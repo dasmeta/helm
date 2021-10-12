@@ -53,6 +53,8 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ include "base.fullname" . }}
+          - secretRef:
+              name: {{ include "base.fullname" . }}
           volumeMounts:
           - mountPath: /home/superset/bq_keyfile
             name: efs-pvc
