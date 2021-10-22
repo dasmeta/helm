@@ -4,4 +4,3 @@ metadata:
   name: {{ include "base.fullname" . }}
 data:
   {{- toYaml .Values.config | nindent 2 }}
-  
