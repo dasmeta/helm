@@ -88,16 +88,16 @@ config: {}
 
 containerPort: 80
 
-livenessProbe:
-  failureThreshold: 3
-  httpGet:
-    path: /
-    port: 80
-    scheme: HTTP
-  initialDelaySeconds: 60
-  periodSeconds: 5
-  successThreshold: 1
-  timeoutSeconds: 1
+livenessProbe: {}
+  # failureThreshold: 3
+  # httpGet:
+  #   path: /
+  #   port: 80
+  #   scheme: HTTP
+  # initialDelaySeconds: 60
+  # periodSeconds: 5
+  # successThreshold: 1
+  # timeoutSeconds: 1
 
 readinessProbe: {}
   # httpGet:
