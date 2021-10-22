@@ -91,7 +91,7 @@ containerPort: 80
 livenessProbe:
   failureThreshold: 3
   httpGet:
-    path: /healthcheck
+    path: /
     port: 80
     scheme: HTTP
   initialDelaySeconds: 60
@@ -106,14 +106,9 @@ readinessProbe: {}
   # initialDelaySeconds: 60
   # periodSeconds: 5
 
-deployment:
-  volumes:
-    efs-pvc:
-      mountPath: /home/superset/bq_keyfile
-      persistentVolumeClaim:
-          claimName: efs
-    efs-pvc2:
-      mountPath: /home/superset/bq_keyfile2
-      persistentVolumeClaim:
-          claimName: efs
-  
+deployment: {}
+
+env: dev
+product: application
+
+secrets: {}
