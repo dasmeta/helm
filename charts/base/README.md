@@ -10,14 +10,14 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.0
+    version: 0.1.7
     repository: https://dasmeta.github.io/helm
-    alias: app
+    alias: my-app-base
 ```
 
 values.yaml
 ```
-app:
+my-app-base:
   image: 
     repository: docker-image
     tag: 1.2.3
