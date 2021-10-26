@@ -38,10 +38,6 @@ spec:
             - name: http
               containerPort: {{ .Values.containerPort | default 80 }}
               protocol: TCP
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           {{- if .Values.readinessProbe }}
@@ -51,8 +47,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           envFrom:
-          - configMapRef:
-              name: {{ include "base.fullname" . }}
+            - configMapRef:
+                name: {{ include "base.fullname" . }}
+            - secretRef:
+                name: {{ include "base.fullname" . }}
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}

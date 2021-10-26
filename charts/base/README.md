@@ -18,8 +18,9 @@ dependencies:
 values.yaml
 ```
 app:
-  image: my-app-docker-image
-  tag: 1.2.3
+  image: 
+    repository: docker-image
+    tag: 1.2.3
 ```
 
 Run
