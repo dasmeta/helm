@@ -10,7 +10,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.8
+    version: 0.1.9
     repository: https://dasmeta.github.io/helm
     alias: my-app-base
 ```
