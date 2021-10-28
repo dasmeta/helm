@@ -51,6 +51,7 @@ spec:
                 name: {{ include "base.fullname" . }}
             - secretRef:
                 name: {{ include "base.fullname" . }}
+                optional: true
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}
