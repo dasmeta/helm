@@ -45,10 +45,10 @@ spec:
                 port:
                   number:
                     {{- toYaml $svcPort | nindent 20 }}
-            {{- else -}}
+            {{ else }}
             backend:
               serviceName:
-                {{- toYaml $fullName | nindent 16 }}
+                {{- toYaml $fullName | quote | nindent 16 }}
               servicePort:
                 {{- toYaml $svcPort | nindent 16 }}
             {{- end }}
