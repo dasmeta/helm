@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   base:
   - apiVersion: v2
+    appVersion: 0.1.12
+    created: "2021-11-10T06:36:31.171763722Z"
+    description: A Base Helm chart for Kubernetes
+    digest: 44d3427d69afe872f39d2b68fbc3349f1d3b5f59640c57660d41dcc54f74572a
+    name: base
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/base-0.1.12/base-0.1.12.tgz
+    version: 0.1.12
+  - apiVersion: v2
     appVersion: 0.1.11
     created: "2021-10-29T06:38:38.987134232Z"
     description: A Base Helm chart for Kubernetes
