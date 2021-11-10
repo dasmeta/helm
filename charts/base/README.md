@@ -23,6 +23,20 @@ my-app-base:
     tag: 1.2.3
 ```
 
+External secrets
+```
+my-app-base:
+  ...
+  product: my-product
+  env: production
+  secrets:
+    - secret1
+    - secret2
+    - secret3
+```
+This will produce externals ecrets which will ask secrets from store my-app-production.
+Values in Secret Manager should be put in my-product/production/my-app matching secret1, secret2, secret2.
+
 Run
 ```
 helm upgrade --install my-app .
