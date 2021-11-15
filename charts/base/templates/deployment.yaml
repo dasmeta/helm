@@ -57,14 +57,14 @@ spec:
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}
-            - name: {{ $index }}
+            - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
             {{- end }}
           {{- end }}
       {{- if .Values.deployment.volumes }}
       volumes:
         {{- range $index, $element := .Values.deployment.volumes }}
-        - name: {{ $index }}
+        - name: {{ coalesce $element.name (add $index 1) }}
           persistentVolumeClaim:
             claimName: {{ $element.persistentVolumeClaim.claimName }}
       {{- end }}
