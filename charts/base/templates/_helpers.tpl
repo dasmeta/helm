@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "base.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -23,11 +23,19 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
+{{- define "base.version" -}}
+{{- default .Chart.Version .Values.version | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "base.appVersion" -}}
+{{- default .Chart.AppVersion .Values.appVersion | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
 {{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "base.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" (include "base.name" .) (include "base.version" .) | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -36,9 +44,7 @@ Common labels
 {{- define "base.labels" -}}
 helm.sh/chart: {{ include "base.chart" . }}
 {{ include "base.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
+app.kubernetes.io/version: {{ include "base.appVersion" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
