@@ -24,9 +24,8 @@ dependencies:
     repository: https://dasmeta.github.io/helm
 ```
 
-values.yaml
-
 These are mandatory values you should provide.
+values.yaml
 ```
 base:
   image:
@@ -69,8 +68,7 @@ my-app-base:
     tag: 1.2.3
 ```
 
-This is by overridding the `name`.
-
+This is done by overridding the `name`.
 Chart.yaml
 ```
 apiVersion: v2
@@ -114,6 +112,7 @@ my-app-base:
 # Secret Store
 This will create a Secret Store. In our templates AWS provider is used for this component. If you want to create Secret Store with other providers, you have to add a new file in your chart. Maybe we'll find a better solution later. 
 For this case, you just need to create a k8s secret with 2 properties, and their keys have to be `access-key` and `secret-access-key`, first of these will be your access key for AWS, and second one will be the secret access key. Then add this part in your values.yaml file.
+
 values.yaml
 ```
 my-app-base:
@@ -121,6 +120,7 @@ my-app-base:
   secretStore:
     role: arn:aws:iam::1234567890:role/your-role
     secretName: your-secret
+```
 
 # Volumes
 ```
