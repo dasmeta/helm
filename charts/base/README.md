@@ -1,13 +1,35 @@
-# Problems
+```
+dependencies:
+  - name: base
+    version: 0.1.15
+    repository: https://dasmeta.github.io/helm
+```
+
+```bash
+$ helm dependency update
+$ helm install my-app .
+```
+
+## Introduction
+
+This chart provides a base template helpers which can be used to develop new charts using [Helm](https://helm.sh) package manager.
+
+## Prerequisites
+
+- Kubernetes 1.12+
+- Helm 3.7.1
+
+## Problems
 If you want your chart to have the name `my-app-base` you have to specify it in Chart.yaml file by passing it to `alias`. After everything has to be defined under the alias name(in this case under `my-app-base`) in your values.yaml file. Otherwise, it will get the name `base`. It's a problem that has no dynamic solution in helm. The same problem is with the version and appVersion. Your parent chart will receive `base`'s version if you do not change them by these 2 variables: `version`, `appVersion`. None of these is a mandatory value, so without them, you will have no problem in the process of running the chart.
 Here are 2 examples about this:
-# How to
 
-## Example 1(alias is not specified, name, version and appVersion are not overridden by parent chart)
-In this case, labels will be like this:
- `helm.sh/chart: base-0.1.15`
- `app.kubernetes.io/name: base`
- `app.kubernetes.io/version: 0.1.15`
+### Example 1
+**Alias is not specified, name, version and appVersion are not overridden by parent chart
+In this case, labels will be like this:**
+
+- `helm.sh/chart: base-0.1.15`
+- `app.kubernetes.io/name: base`
+- `app.kubernetes.io/version: 0.1.15`
 
 Chart.yaml
 ```
@@ -25,6 +47,7 @@ dependencies:
 ```
 
 values.yaml
+
 These are mandatory values you should provide.
 ```
 base:
@@ -33,14 +56,16 @@ base:
     tag: 1.2.3
 ```
 
-## Example 2(alias is specified/or name is overriden, also version and appVersion are overridden by parent chart)
+### Example 2
+**Alias is specified/or name is overriden, also version and appVersion are overridden by parent chart**
 Now if you prefer to change your chart's name and version, you can do it by the alias variable(passing a name to it in Chart.yaml) or you can override the `name` in values.yaml file. The result will be the same. About `version` and `appVersion`, they have to be changed in values.yaml.
 The same labels, given above, now will be:
- `helm.sh/chart: my-app-base-0.1.0`
- `app.kubernetes.io/name: my-app-base`
- `app.kubernetes.io/version: 0.1.0`
 
-This is with the alias name.
+- `helm.sh/chart: my-app-base-0.1.0`
+- `app.kubernetes.io/name: my-app-base`
+- `app.kubernetes.io/version: 0.1.0`
+
+**This is with the alias name.**
 
 Chart.yaml
 ```
@@ -68,7 +93,7 @@ my-app-base:
     tag: 1.2.3
 ```
 
-This is by overridding the `name`.
+**This is by overridding the `name`.**
 
 Chart.yaml
 ```
@@ -96,9 +121,9 @@ base:
     tag: 1.2.3
 ```
 
-# External secrets
-This will produce external secrets which will ask secrets from store my-app-production.
-Values in Secret Manager should be put in my-product/production/my-app matching secret1, secret2, secret2.
+### External secrets
+This will produce external secrets which will ask secrets from store `my-app-production`.
+Values in Secrets Manager should be put in `my-product/production/my-app` matching secret1, secret2, secret2.
 ```
 my-app-base:
   ...
@@ -110,7 +135,7 @@ my-app-base:
     - secret3
 ```
 
-# Volumes
+### Volumes
 ```
 my-app-base:
   ...
@@ -121,7 +146,7 @@ my-app-base:
         claimName:
 ```
 
-# Health Checks
+### Health Checks
 ```
 livenessProbe: {}
   failureThreshold: 3
@@ -140,11 +165,4 @@ readinessProbe: {}
     port: http
   initialDelaySeconds: 60
   periodSeconds: 5
-```
-
-
-Run
-```
-helm dependency update
-helm upgrade --install my-app .
 ```
