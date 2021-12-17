@@ -16,15 +16,82 @@ This chart provides a base template helpers which can be used to develop new cha
 
 ## Prerequisites
 
-- Kubernetes 1.12+
+- Kubernetes 1.18+
 - Helm 3.7.1
+
+## _helpers.tpl
+
+| Helper identifier                              | Description                                                                                    | Expected Input    | Default Value    |
+|------------------------------------------------|------------------------------------------------------------------------------------------------|-------------------|-------------------|
+| `base.name`              | The name of the chart. | .Values.name | .Chart.Name    |
+| `base.fullname`       | Fully qualified app name. If release name contains chart name it will be used as a full name.                                                 | .Values.fullnameOverride | .Release.Name    |
+| `base.version`    | The version of the chart.                                              | .Values.version | .Chart.Version    |
+| `base.appVersion`   | The appVersion of the chart.                                             | .Values.appVersion | .Chart.AppVersion    |
+| `base.chart`       | It's made of base.name and base.version.                                                 | --- |  ---  |
+| `base.labels`          | Common labels.                                          | --- | ---    |
+| `base.selectorLabels`           | Selector labels.                                                    | --- | ---    |
+| `base.serviceAccountName`        | The name of the service account to use.                                       | .Values.serviceAccount.name | base.fullname / "default"    |
+
+## Default Values
+```
+replicaCount: 1
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: 1.21
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+service:
+  type: NodePort
+  port: 80
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: host.name.com
+      paths:
+      - path: /*
+        backend:
+          serviceName: ssl-redirect
+          servicePort: use-annotation
+      - backend:
+          serviceName: base
+          servicePort: 80
+        path: /*
+  tls: []
+resources: {}
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+nodeSelector: {}
+tolerations: []
+affinity: {}
+config: {}
+containerPort: 80
+livenessProbe: {}
+readinessProbe: {}
+deployment: {}
+env: dev
+product: application
+secrets: {}
+```
 
 ## Problems
 If you want your chart to have the name `my-app-base` you have to specify it in Chart.yaml file by passing it to `alias`. After everything has to be defined under the alias name(in this case under `my-app-base`) in your values.yaml file. Otherwise, it will get the name `base`. It's a problem that has no dynamic solution in helm. The same problem is with the version and appVersion. Your parent chart will receive `base`'s version if you do not change them by these 2 variables: `version`, `appVersion`. None of these is a mandatory value, so without them, you will have no problem in the process of running the chart.
 Here are 2 examples about this:
 
 ### Example 1
-**Alias is not specified, name, version and appVersion are not overridden by parent chart
+**Alias is not specified, name, version and appVersion are not overridden by parent chart**
 In this case, labels will be like this:**
 
 - `helm.sh/chart: base-0.1.15`
@@ -124,6 +191,7 @@ base:
 ### External secrets
 This will produce external secrets which will ask secrets from store `my-app-production`.
 Values in Secrets Manager should be put in `my-product/production/my-app` matching secret1, secret2, secret2.
+You have to previously create a Secret Store. Check our `external-secret-store` module in Terraform Registry.
 ```
 my-app-base:
   ...
