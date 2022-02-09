@@ -38,19 +38,57 @@ spec:
           - path: {{ .path }}
             {{- if semverCompare ">=1.19" $kubeVersion }}
             pathType: Prefix # TODO: maybe needed to have this set dynamically
+            {{- if .backend }}
+            backend:
+              service:
+                {{- if .backend.service.name }}
+                name:
+                  {{- toYaml .backend.service.name | quote | nindent 16 }}
+                {{ else }}
+                name:
+                  {{- toYaml $fullName | nindent 18 }}
+                {{- end }}
+                {{- if .backend.service.port.number }}
+                port:
+                  number:
+                    {{- toYaml .backend.service.port.number | nindent 16 }}
+                {{ else }}
+                  number:
+                    {{- toYaml $svcPort | nindent 20 }}
+                {{- end }}
+            {{ else }}
             backend:
               service:
                 name:
-                  {{- toYaml $fullName | nindent 18 }}
+                  {{- toYaml $fullName | quote | nindent 16 }}
                 port:
                   number:
-                    {{- toYaml $svcPort | nindent 20 }}
+                    {{- toYaml $svcPort | nindent 16 }}
+            {{- end }}
             {{ else }}
+            {{- if .backend }}
+            backend:
+            {{- if .backend.serviceName }}
+              serviceName:
+                {{- toYaml .backend.serviceName | quote | nindent 16 }}
+            {{- else }}
+              serviceName:
+                {{- toYaml $fullName | quote | nindent 16 }}
+            {{- end }}
+            {{- if .backend.servicePort }}
+              servicePort:
+                {{- toYaml .backend.servicePort | nindent 16 }}
+            {{- else }}
+              servicePort:
+                {{- toYaml $svcPort | nindent 20 }}
+            {{- end }}
+            {{- else }}
             backend:
               serviceName:
                 {{- toYaml $fullName | quote | nindent 16 }}
               servicePort:
                 {{- toYaml $svcPort | nindent 16 }}
+            {{- end }}
             {{- end }}
           {{- end }}
     {{- end }}
