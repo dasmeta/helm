@@ -5,11 +5,11 @@ metadata:
   labels:
     {{- include "base.labels" . | nindent 4 }}
 spec:
-  {{- if .Values.deployment.minReadySeconds}}
-  minReadySeconds: {{ .Values.deployment.minReadySeconds }}
+  {{- if .Values.minReadySeconds}}
+  minReadySeconds: {{ .Values.minReadySeconds }}
   {{- end }}
-  {{- if .Values.deployment.revisionHistoryLimit}}
-  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+  {{- if .Values.revisionHistoryLimit}}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- end }}
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
