@@ -66,3 +66,10 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Return the target/server Kubernetes version
+*/}}
+{{- define "base.capabilities.kubeVersion" -}}
+{{- default .Capabilities.KubeVersion.Version .Values.kubeVersion -}}
+{{- end -}}

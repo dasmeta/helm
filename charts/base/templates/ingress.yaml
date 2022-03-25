@@ -1,8 +1,8 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "base.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
-{{- $kubeVersion := .Capabilities.KubeVersion.GitVersion -}}
-{{- if semverCompare ">=1.19" $kubeVersion -}}
+{{- $kubeVersion := (include "base.capabilities.kubeVersion" .) -}}
+{{- if semverCompare ">=1.19-0" $kubeVersion -}}
 apiVersion: networking.k8s.io/v1
 {{- else if semverCompare ">=1.14-0" $kubeVersion -}}
 apiVersion: networking.k8s.io/v1beta1
@@ -36,8 +36,9 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            {{- if semverCompare ">=1.19" $kubeVersion }}
-            pathType: Prefix # TODO: maybe needed to have this set dynamically
+            {{- if semverCompare ">=1.19-0" $kubeVersion }}
+            pathType:
+              {{- toYaml (dig "pathType" "ImplementationSpecific" . ) | nindent 14 }}
             backend:
               service:
                 name:
