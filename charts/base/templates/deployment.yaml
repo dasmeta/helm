@@ -86,6 +86,10 @@ spec:
               mountPath: {{ $element.mountPath }}
             {{- end }}
           {{- end }}
+          {{- if .Values.deployment.lifecycle }}
+          lifecycle:
+            {{- toYaml .Values.deployment.lifecycle | nindent 12 }}
+          {{- end }}
       {{- if .Values.deployment.volumes }}
       volumes:
         {{- range $index, $element := .Values.deployment.volumes }}
