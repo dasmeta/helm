@@ -36,12 +36,12 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "base.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.initContainers }}
       initContainers:
       {{-  toYaml .Values.initContainers | nindent 6 }}
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -59,10 +59,12 @@ spec:
               value: {{ $value | quote }}
             {{- end }}
           {{- end }}
+          {{- if .Values.service.enabled }}
           ports:
             - name: http
               containerPort: {{ .Values.containerPort | default 80 }}
               protocol: TCP
+          {{- end }}
           {{- if .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -84,6 +86,7 @@ spec:
             {{- range $index, $element := .Values.deployment.volumes }}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
+              readOnly: {{ $element.readOnly | default false }}
             {{- end }}
           {{- end }}
           {{- if .Values.deployment.lifecycle }}
@@ -94,8 +97,14 @@ spec:
       volumes:
         {{- range $index, $element := .Values.deployment.volumes }}
         - name: {{ coalesce $element.name (add $index 1) }}
+          {{- if $element.persistentVolumeClaim }}
           persistentVolumeClaim:
             claimName: {{ $element.persistentVolumeClaim.claimName }}
+          {{- end }}
+          {{- if $element.secret }}
+          secret:
+            secretName: {{ $element.secret.secretName }}
+          {{- end }}
       {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
