@@ -103,7 +103,7 @@ spec:
           {{- end }}
           {{- if $element.secret }}
           secret:
-            secretName: {{ $element.secret.configFromSecret }}
+            secretName: {{ $element.secret.secretName }}
           {{- end }}
       {{- end }}
       {{- end }}
