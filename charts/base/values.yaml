@@ -109,6 +109,19 @@ readinessProbe: {}
   # initialDelaySeconds: 60
   # periodSeconds: 5
 
+startupProbe: {}
+  # httpGet:
+  #   path: /
+  #   port: http
+
+storage: {}
+  # persistentVolumeClaimName: pvc-docs
+  # requestedSize: 1G
+  # className: gp2
+  # accessModes:
+  #   - ReadWriteOnce
+  # keepPvc: false
+
 deployment: {}
 
 env: dev

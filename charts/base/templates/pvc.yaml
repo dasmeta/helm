@@ -1,0 +1,24 @@
+{{- if .Values.storage -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "base.fullname" . }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+  {{- if .Values.storage.keepPvc }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
+spec:
+  {{- with .Values.storage }}
+  accessModes:
+    {{- toYaml .accessModes | nindent 4 }}
+  volumeMode: {{ .volumeMode | default "Filesystem" }}
+  resources:
+    requests:
+      storage: {{ .requestedSize }}
+  {{- if .className }}
+  storageClassName: {{ .className }}
+  {{- end }}
+  {{- end }}  
+{{- end }}
