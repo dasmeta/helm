@@ -109,6 +109,11 @@ readinessProbe: {}
   # initialDelaySeconds: 60
   # periodSeconds: 5
 
+startupProbe: {}
+  # httpGet:
+  #   path: /
+  #   port: http
+
 deployment: {}
 
 env: dev
