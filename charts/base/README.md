@@ -2,7 +2,7 @@
 ```
 dependencies:
   - name: base
-    version: 0.1.28
+    version: 0.1.29
     repository: https://dasmeta.github.io/helm
 ```
 
@@ -95,9 +95,9 @@ Here are 2 examples about this:
 **Alias is not specified, name, version and appVersion are not overridden by parent chart**
 In this case, labels will be like this:**
 
-- `helm.sh/chart: base-0.1.28`
+- `helm.sh/chart: base-0.1.29`
 - `app.kubernetes.io/name: base`
-- `app.kubernetes.io/version: 0.1.28`
+- `app.kubernetes.io/version: 0.1.29`
 
 Chart.yaml
 ```
@@ -110,7 +110,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.28
+    version: 0.1.29
     repository: https://dasmeta.github.io/helm
 ```
 
@@ -146,7 +146,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.28
+    version: 0.1.29
     repository: https://dasmeta.github.io/helm
     alias: my-app-base
 ```
@@ -174,7 +174,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.28
+    version: 0.1.29
     repository: https://dasmeta.github.io/helm
 ```
 
