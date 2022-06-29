@@ -205,6 +205,8 @@ my-app-base:
 ```
 
 ### Volumes
+
+**The PVC has a specific name**
 ```
 my-app-base:
   ...
@@ -212,7 +214,30 @@ my-app-base:
     volumes:
     - name: test-volume
       persistentVolumeClaim:
-        claimName:
+        claimName: volume-1
+```
+
+**The PVC has the name of the release**
+```
+my-app-base:
+  ...
+  deployment:
+    volumes:
+    - name: test-volume
+      persistentVolumeClaim:
+        dynamicName: true
+```
+
+### PVC
+By defining `storage` block in values.yaml file you can create a PVC resource.
+```
+my-app-base:
+  ...
+  storage:
+    className: aws-efs
+    accessModes:
+      - ReadWriteOnce
+    requestedSize: 4Gi
 ```
 
 ### Health Checks

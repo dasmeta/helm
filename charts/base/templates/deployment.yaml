@@ -103,7 +103,11 @@ spec:
         - name: {{ coalesce $element.name (add $index 1) }}
           {{- if $element.persistentVolumeClaim }}
           persistentVolumeClaim:
+            {{- if $element.persistentVolumeClaim.claimName }}
             claimName: {{ $element.persistentVolumeClaim.claimName }}
+            {{- else }}
+            claimName: {{ include "base.fullname" $ }}
+            {{- end }}
           {{- end }}
           {{- if $element.secret }}
           secret:
