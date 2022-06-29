@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "base.fullname" . }}
+  name: {{ .Values.storage.persistentVolumeClaimName | default (include "base.fullname" .) }}
   labels:
     {{- include "base.labels" . | nindent 4 }}
   {{- if .Values.storage.keepPvc }}
@@ -20,5 +20,8 @@ spec:
   {{- if .className }}
   storageClassName: {{ .className }}
   {{- end }}
-  {{- end }}  
+  {{- end }}
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: {{ .Values.storage.persistentVolumeClaimName | default (include "base.fullname" .) }} 
 {{- end }}
