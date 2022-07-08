@@ -1,0 +1,28 @@
+image:
+  repository: amazon/cloudwatch-agent
+  tag: 1.247350.0b251780
+  pullPolicy: IfNotPresent
+
+clusterName: dasmeta-test-new2
+region: us-east-1
+resources:
+  limits:
+    cpu: 200m
+    memory: 200Mi
+  requests:
+    cpu: 200m
+    memory: 200Mi
+
+serviceAccount:
+  create: true
+  name:
+
+hostNetwork: false
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+containerdSockPath: /run/containerd/containerd.sock
