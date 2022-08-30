@@ -101,6 +101,10 @@ spec:
       volumes:
         {{- range $index, $element := .Values.deployment.volumes }}
         - name: {{ coalesce $element.name (add $index 1) }}
+          {{- if $element.configMap }}
+          configMap:
+            name: {{ $element.configMap.name }}
+          {{- end }}
           {{- if $element.persistentVolumeClaim }}
           persistentVolumeClaim:
             {{- if $element.persistentVolumeClaim.claimName }}
