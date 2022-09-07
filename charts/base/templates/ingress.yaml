@@ -44,8 +44,12 @@ spec:
                 name:
                   {{- toYaml (coalesce (dig "backend" "serviceName" "" . ) (dig "backend" "service" "name" "" .) $fullName) | nindent 18 }}
                 port:
+                  {{- if eq (kindOf (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort)) "string" }}
+                  name: {{- toYaml (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort) | nindent 20 }}
+                  {{- else }}
                   number:
                     {{- toYaml (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort) | nindent 20 }}
+                  {{- end }}
             {{- else }}
             backend:
               serviceName:
