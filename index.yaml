@@ -321,4 +321,25 @@ entries:
     urls:
     - mongodb-backup-aws-0.1.0.tgz
     version: 0.1.0
+  weave-scope:
+  - apiVersion: v1
+    appVersion: 1.10.1
+    created: "2022-09-15T11:38:44.076495225Z"
+    description: A Helm chart for the Weave Scope cluster visualizer.
+    digest: 2fc2a5018b2ead45bea6d83e23ac0ad7a901b27fa4ed04fd78722819e87c33e1
+    home: https://www.weave.works/oss/scope/
+    icon: https://avatars1.githubusercontent.com/u/9976052?s=64
+    keywords:
+    - containers
+    - dashboard
+    - monitoring
+    maintainers:
+    - email: github@orion-com.com
+      name: omkensey
+    name: weave-scope
+    sources:
+    - https://github.com/weaveworks/scope
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/weave-scope-1.0.0/weave-scope-1.0.0.tgz
+    version: 1.0.0
 generated: "2021-09-30T12:37:56.5022652Z"
