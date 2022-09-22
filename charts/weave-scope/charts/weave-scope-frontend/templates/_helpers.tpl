@@ -33,9 +33,6 @@ app: {{ template "toplevel.name" . }}
 {{- end -}}
 
 
-{{- /*
-
-*/ -}}
 {{- define "chartmuseum.labels.standard" -}}
 app: {{ template "chartmuseum.name" . }}
 chart: {{ template "chartmuseum.chartref" . }}
@@ -43,14 +40,9 @@ heritage: {{ .Release.Service | quote }}
 release: {{ .Release.Name | quote }}
 {{- end -}}
 
-{{- /*
-
-*/ -}}
 {{- define "chartmuseum.chartref" -}}
 {{- replace "+" "_" .Chart.Version | printf "%s-%s" .Chart.Name -}}
 {{- end -}}
-
-{{/*
 
 
 {{/* Weave Scope default annotations */}}
