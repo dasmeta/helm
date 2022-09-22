@@ -1,6 +1,7 @@
 # Where defaults exist, the values are set to them here.
 # Values with no preferred or common defaults are set to empty strings.
 global:
+
   # global.image: the image that will be used for this release
   image:
     repository: weaveworks/scope
@@ -23,6 +24,54 @@ global:
 # weave-scope-frontend.* controls how the Scope frontend is installed
 weave-scope-frontend:
   enabled: true
+
+  ingress:
+    enabled: enabled
+    name: ingress-name
+    host: www.example.com
+    path: "/"
+    className: ""
+    extraPaths: ""
+    annotations:
+
+  service:
+    serviceName: weave-weave-scope
+    servicePort: 80
+    externalPort: 8080
+
+#  chartmuseum:
+#    fullname: ingress-name
+      ## Chartmuseum Ingress labels
+      ##
+      #   labels:
+      #     dns: "route53"
+
+      ## Chartmuseum Ingress annotations
+      ##
+#  annotations:
+#    kubernetes.io/ingress.class: nginx
+#    kubernetes.io/tls-acme: "true"
+
+      ## Chartmuseum Ingress hostnames
+      ## Must be provided if Ingress is enabled
+      ##
+  hosts:
+    - name: chartmuseum.domain1.com
+      path: /
+      tls: false
+    - name: chartmuseum.domain2.com
+      path: /
+      #
+      #      ## Set this to true in order to enable TLS on the ingress record
+      #      tls: true
+      #
+      #      ## If TLS is set to true, you must declare what secret will store the key/certificate for TLS
+      #      ## Secrets must be added manually to the namespace
+      #      tlsSecret: chartmuseum.domain2-tls
+
+      # Adding secrets to tiller is not a great option, so If you want to use an existing
+      # secret that contains the json file, you can use the following entries
+
     # weave-scope-frontend.resources.*: controls requests/limits for the frontend
     # weave-scope-frontend.resources.* values are all optional but should not be set to empty values
     # resources:
@@ -75,3 +124,34 @@ weave-scope-agent:
       # cpu: ""
       # weave-scope-agent.resources.limits.memory: memory limit in MiB (Mi)
       # memory: ""
+
+## Chartmuseum Ingress labels
+##
+#   labels:
+#     dns: "route53"
+
+## Chartmuseum Ingress annotations
+##
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
+#     kubernetes.io/tls-acme: "true"
+
+## Chartmuseum Ingress hostnames
+## Must be provided if Ingress is enabled
+##
+#  hosts:
+#    - name: chartmuseum.domain1.com
+#      path: /
+#      tls: false
+#    - name: chartmuseum.domain2.com
+#      path: /
+#
+#      ## Set this to true in order to enable TLS on the ingress record
+#      tls: true
+#
+#      ## If TLS is set to true, you must declare what secret will store the key/certificate for TLS
+#      ## Secrets must be added manually to the namespace
+#      tlsSecret: chartmuseum.domain2-tls
+
+# Adding secrets to tiller is not a great option, so If you want to use an existing
+# secret that contains the json file, you can use the following entries
