@@ -101,66 +101,7 @@ version: 0.1.0
 appVersion: "0.1.0"
 
 dependencies:
-  - name: base
-    version: 0.1.32
-    repository: https://dasmeta.github.io/helm
-```
-
-values.yaml
-
-These are mandatory values you should provide.
-
-```
-base:
-  image:
-    repository: docker-image
-    tag: 1.2.3
-```
-
-### Example 2
-
-Chart.yaml
-
-```
-apiVersion: v2
-name: my-application
-description: My application service description
-type: application
-version: 0.1.0
-appVersion: "0.1.0"
-
-dependencies:
-  - name: base
-    version: 0.1.32
-    repository: https://dasmeta.github.io/helm
-    alias: my-app-base
-```
-
-values.yaml
-
-```
-my-app-base:
-  version: 0.1.0
-  appVersion: 0.1.0
-  image:
-    repository: docker-image
-    tag: 1.2.3
-```
-
-**This is by overridding the `name`.**
-
-Chart.yaml
-
-```
-apiVersion: v2
-name: my-application
-description: My application service description
-type: application
-version: 0.1.0
-appVersion: "0.1.0"
-
-dependencies:
   - name: base-cronjob
-    version: 0.1.32
+    version: 0.1.0
     repository: https://dasmeta.github.io/helm
 ```
