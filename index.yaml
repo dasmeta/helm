@@ -261,6 +261,17 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/base-0.1.6/base-0.1.6.tgz
     version: 0.1.6
+  base-cronjob:
+  - apiVersion: v2
+    appVersion: 0.1.32
+    created: "2022-11-15T13:51:07.343547031Z"
+    description: A Base Helm chart for Kubernetes
+    digest: 9b36e8db9776a55c4f187dc61a990cc2c562ac3da107c23f00072c31d06d2e08
+    name: base-cronjob
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/base-cronjob-0.1.32/base-cronjob-0.1.32.tgz
+    version: 0.1.32
   cloudwatch-agent-prometheus:
   - apiVersion: v2
     appVersion: 0.0.1
