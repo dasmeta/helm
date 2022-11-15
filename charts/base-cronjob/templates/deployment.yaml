@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "base.fullname" . }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.minReadySeconds}}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  {{- end }}
+  {{- if .Values.revisionHistoryLimit}}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- end }}
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "base.selectorLabels" . | nindent 6 }}
+  {{- if .Values.strategy }}
+  strategy:
+    {{- toYaml .Values.strategy | nindent 12 }}
+  {{- end }}
+  template:
+    metadata:
+      annotations:
+        configmap: {{ .Values.config | toYaml | sha256sum | trunc 8 }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "base.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "base.serviceAccountName" . }}
+      {{- if .Values.initContainers }}
+      initContainers:
+      {{-  toYaml .Values.initContainers | nindent 6 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if $.Values.command }}
+          command:
+            {{  toYaml .Values.command | nindent 12 }}
+          {{- end }}
+          {{- if .Values.extraEnv }}
+          env:
+            {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key | quote}}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.service.enabled }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort | default 80 }}
+              protocol: TCP
+          {{- end }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "base.fullname" . }}
+            - secretRef:
+                name: {{ include "base.fullname" . }}
+                optional: true
+          {{- if .Values.deployment.volumes }}
+          volumeMounts:
+            {{- range $index, $element := .Values.deployment.volumes }}
+            - name: {{ coalesce $element.name (add $index 1) }}
+              mountPath: {{ $element.mountPath }}
+              readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.deployment.lifecycle }}
+          lifecycle:
+            {{- toYaml .Values.deployment.lifecycle | nindent 12 }}
+          {{- end }}
+      {{- if .Values.deployment.volumes }}
+      volumes:
+        {{- range $index, $element := .Values.deployment.volumes }}
+        - name: {{ coalesce $element.name (add $index 1) }}
+          {{- if $element.configMap }}
+          configMap:
+            name: {{ $element.configMap.name }}
+          {{- end }}
+          {{- if $element.persistentVolumeClaim }}
+          persistentVolumeClaim:
+            {{- if $element.persistentVolumeClaim.claimName }}
+            claimName: {{ $element.persistentVolumeClaim.claimName }}
+            {{- else }}
+            claimName: {{ include "base.fullname" $ }}
+            {{- end }}
+          {{- end }}
+          {{- if $element.secret }}
+          secret:
+            secretName: {{ $element.secret.secretName }}
+          {{- end }}
+      {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

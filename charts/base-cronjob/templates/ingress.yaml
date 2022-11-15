@@ -1,0 +1,62 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "base.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- $kubeVersion := (include "base.capabilities.kubeVersion" .) -}}
+{{- if semverCompare ">=1.19-0" $kubeVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" $kubeVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- if semverCompare ">=1.19-0" $kubeVersion }}
+            pathType:
+              {{- toYaml (dig "pathType" "ImplementationSpecific" . ) | nindent 14 }}
+            backend:
+              service:
+                name:
+                  {{- toYaml (coalesce (dig "backend" "serviceName" "" . ) (dig "backend" "service" "name" "" .) $fullName) | nindent 18 }}
+                port:
+                  {{- if eq (kindOf (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort)) "string" }}
+                  name: {{- toYaml (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort) | nindent 20 }}
+                  {{- else }}
+                  number:
+                    {{- toYaml (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort) | nindent 20 }}
+                  {{- end }}
+            {{- else }}
+            backend:
+              serviceName:
+                {{- toYaml (coalesce (dig "backend" "serviceName" "" . ) (dig "backend" "service" "name" "" .) $fullName) | nindent 16 }}
+              servicePort:
+                {{- toYaml (coalesce (dig "backend" "servicePort" "" . ) (dig "backend" "service" "port" "" .) $svcPort) | nindent 16 }}
+            {{- end }}
+          {{- end }}
+    {{- end }}
+{{- end }}
