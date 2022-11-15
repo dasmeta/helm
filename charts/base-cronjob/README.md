@@ -3,7 +3,7 @@
 ```
 dependencies:
   - name: base-cronjob
-    version: 0.1.0
+    version: 0.1.33
     repository: https://dasmeta.github.io/helm
 ```
 
@@ -97,11 +97,11 @@ apiVersion: v2
 name: my-application
 description: My application service description
 type: application
-version: 0.1.0
+version: 0.1.33
 appVersion: "0.1.0"
 
 dependencies:
   - name: base-cronjob
-    version: 0.1.0
+    version: 0.1.33
     repository: https://dasmeta.github.io/helm
 ```
