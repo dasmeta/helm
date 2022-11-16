@@ -26,7 +26,7 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext: {}
   # capabilities:
@@ -34,7 +34,7 @@ securityContext: {}
   #   - ALL
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
-  # runAsUser: 1000
+# runAsUser: 1000
 
 service:
   enabled: true
@@ -49,14 +49,14 @@ ingress:
   hosts:
     - host: host.name.com
       paths:
-      - path: /*
-        backend:
-          serviceName: ssl-redirect
-          servicePort: use-annotation
-      - backend:
-          serviceName: base
-          servicePort: 80
-        path: /*
+        - path: /*
+          backend:
+            serviceName: ssl-redirect
+            servicePort: use-annotation
+        - backend:
+            serviceName: base
+            servicePort: 80
+          path: /*
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -72,7 +72,7 @@ resources: {}
   #   memory: 128Mi
   # requests:
   #   cpu: 100m
-  #   memory: 128Mi
+#   memory: 128Mi
 
 autoscaling:
   enabled: false
@@ -100,19 +100,19 @@ livenessProbe: {}
   # initialDelaySeconds: 60
   # periodSeconds: 5
   # successThreshold: 1
-  # timeoutSeconds: 1
+# timeoutSeconds: 1
 
 readinessProbe: {}
   # httpGet:
   #   path: /
   #   port: http
   # initialDelaySeconds: 60
-  # periodSeconds: 5
+# periodSeconds: 5
 
 startupProbe: {}
   # httpGet:
   #   path: /
-  #   port: http
+#   port: http
 
 storage: {}
   # persistentVolumeClaimName: pvc-docs
@@ -120,42 +120,11 @@ storage: {}
   # className: gp2
   # accessModes:
   #   - ReadWriteOnce
-  # keepPvc: false
+# keepPvc: false
 
 deployment: {}
-enable_deployment: false
 
 env: dev
 product: application
 
 secrets: {}
-
-#Creating cronjobs
-
-jobs: {}
-#jobs:
-#  - name: cronjob1
-#    schedule: "* * * * *"
-#    restartPolicy: OnFailure
-#    image:
-#      registry: busybox
-#      tag: latest
-#    env:
-#      - name: key1
-#        value: value1
-#      - name: key2
-#        value: value2
-#  - name: cronjob2
-#    schedule: "* * * * *"
-#    restartPolicy: OnFailure
-#    image:
-#      registry: busybox
-#      tag: latest
-#    env:
-#      - name: key3
-#        value: value3
-#      - name: key4
-#        value: value4
-
-
-
