@@ -21,7 +21,9 @@ spec:
   storageClassName: {{ .className }}
   {{- end }}
   {{- end }}
+  {{ if .Values.storage.enableDataSource}}
   dataSource:
     kind: PersistentVolumeClaim
-    name: {{ .Values.storage.persistentVolumeClaimName | default (include "base.fullname" .) }} 
+    name: {{ .Values.storage.persistentVolumeClaimName | default (include "base.fullname" .) }}
+{{- end }}
 {{- end }}

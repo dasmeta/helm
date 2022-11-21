@@ -1,5 +1,4 @@
 {{- if .Values.service.enabled -}}
-{{- if .Values.jobs "true" -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -15,5 +14,4 @@ spec:
       name: {{ .Values.service.name }}
   selector:
     {{- include "base.selectorLabels" . | nindent 4 }}
-{{- end }}
 {{- end }}
