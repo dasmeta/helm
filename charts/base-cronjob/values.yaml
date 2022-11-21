@@ -12,6 +12,18 @@ jobs:
         value: value3
       - name: key4
         value: value4
+    volumes: {}
+#      - name: persistent-storage
+#        mountPath: /path
+#        persistentVolumeClaim:
+#          claimName: claim
+    storage: {}
+#      persistentVolumeClaimName: claim
+#      accessModes:
+#        - ReadWriteMany
+#      className: claim
+#      requestedSize: 5Gi
+#      enableDataSource: false
 
   - name: cronjob2
     schedule: "* * * * *"
@@ -26,3 +38,15 @@ jobs:
         value: value3
       - name: key4
         value: value4
+    volumes: {}
+#      - name: persistent-storage
+#        mountPath: /path
+#        persistentVolumeClaim:
+#          claimName: claim
+    storage: {}
+#      persistentVolumeClaimName: claim
+#      accessModes:
+#        - ReadWriteMany
+#      className: efs-sc
+#      requestedSize: 5Gi
+#      enableDataSource: false
