@@ -1,0 +1,27 @@
+{{- range $job := .Values.jobs }}
+{{- $registry := $job.image.registry }}
+{{- $tag := $job.image.tag }}
+{{- $image := print $registry "/" $job.image.repository ":" $tag }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $job.name | quote}}
+spec:
+  schedule: {{ $job.schedule | quote}}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: {{ $job.name | quote }}
+              image: {{ $image | quote}}
+              imagePullPolicy: IfNotPresent
+              env:
+              {{- range $env := $job.env }}
+                - name: {{ $env.name | quote}}
+                  value: {{ $env.value | quote }}
+              {{- end }}
+          restartPolicy: {{ $job.restartPolicy | quote}}
+{{- end }}
+---

@@ -1,0 +1,28 @@
+jobs:
+  - name: cronjob1
+    schedule: "0 * * * *"
+    restartPolicy: OnFailure
+    image:
+      registry: docker.io
+      repository: busybox
+      pullPolicy: IfNotPresent
+      tag: latest
+    env:
+      - name: key3
+        value: value3
+      - name: key4
+        value: value4
+
+  - name: cronjob2
+    schedule: "* * * * *"
+    restartPolicy: OnFailure
+    image:
+      registry: docker.io
+      repository: busybox
+      pullPolicy: IfNotPresent
+      tag: latest
+    env:
+      - name: key3
+        value: value3
+      - name: key4
+        value: value4
