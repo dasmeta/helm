@@ -13,6 +13,7 @@ spec:
     spec:
       template:
         spec:
+          restartPolicy: {{ $job.restartPolicy }}
           containers:
             - name: {{ $job.name | quote }}
               image: {{ $image | quote}}
@@ -23,6 +24,23 @@ spec:
                 - name: {{ $env.name | quote}}
                   value: {{ $env.value | quote }}
               {{- end }}
-          restartPolicy: {{ $job.restartPolicy | quote}}
+              volumeMounts:
+            {{- range $index, $element := $job.volumes }}
+                - name: {{ coalesce $element.name (add $index 1) }}
+                  mountPath: {{ $element.mountPath }}
+                  readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
+      {{- if $job.volumes }}
+          volumes:
+        {{- range $index, $element := $job.volumes }}
+            - name: {{ coalesce $element.name (add $index 1) }}
+          {{- if $element.persistentVolumeClaim }}
+              persistentVolumeClaim:
+            {{- if $element.persistentVolumeClaim.claimName }}
+                claimName: {{ $element.persistentVolumeClaim.claimName }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+{{- end }}
 {{- end }}
 ---

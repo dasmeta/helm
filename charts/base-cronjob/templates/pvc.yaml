@@ -1,0 +1,33 @@
+{{- range $job := .Values.jobs }}
+{{- if $job.storage -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $job.storage.persistentVolumeClaimName }}
+  labels:
+{{/*    {{- include "base.labels" . | nindent 4 }}*/}}
+  {{- if $job.storage.keepPvc }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
+spec:
+  {{- with $job.storage }}
+  accessModes:
+    {{- toYaml .accessModes | nindent 4 }}
+  volumeMode: {{ .volumeMode | default "Filesystem" }}
+  resources:
+    requests:
+      storage: {{ .requestedSize }}
+  {{- if .className }}
+  storageClassName: {{ .className }}
+  {{- end }}
+  {{- end }}
+  {{ if $job.storage.enableDataSource}}
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: {{ $job.storage.persistentVolumeClaimName }}
+{{- end }}
+{{- end }}
+{{- end }}
+---
