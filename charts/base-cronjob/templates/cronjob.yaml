@@ -18,6 +18,7 @@ spec:
             - name: {{ $job.name | quote }}
               image: {{ $image | quote}}
               imagePullPolicy: IfNotPresent
+              command: {{ $job.command }}
               env:
               {{- range $env := $job.env }}
                 - name: {{ $env.name | quote}}
