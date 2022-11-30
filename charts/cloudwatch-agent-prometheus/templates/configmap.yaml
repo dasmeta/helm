@@ -172,6 +172,23 @@ data:
                   "metric_selectors": [
                     "^jvm_memory_pool_bytes_used$"
                   ]
+                },
+                {
+                  "source_labels": ["Service"],
+                  "label_matcher": "^kube-state-metrics$",
+                  "dimensions": [["ClusterName","namespace","deployment"]],
+                  "metric_selectors": [
+                    "^kube_deployment_spec_replicas$",
+                    "^kube_deployment_status_replicas_available$"
+                  ]
+                },
+                {
+                  "source_labels": ["Service"],
+                  "label_matcher": "^kube-state-metrics$",
+                  "dimensions": [["ClusterName","namespace","deployment", "condition"]],
+                  "metric_selectors": [
+                    "^kube_deployment_status_condition$"
+                  ]
                 }
               ]
             }
