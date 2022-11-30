@@ -345,6 +345,17 @@ entries:
   cloudwatch-agent-prometheus:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2022-11-30T06:24:04.051640981Z"
+    description: A Helm chart to deploy CloudWatch agent with Prometheus metrics collection
+      on Amazon EKS
+    digest: 5780153528bfbe9b8e55617ff8362e7b9e85b23c28d87f4c981ec353ab934707
+    name: cloudwatch-agent-prometheus
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/cloudwatch-agent-prometheus-0.1.0/cloudwatch-agent-prometheus-0.1.0.tgz
+    version: 0.1.0
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2022-07-08T13:00:33.797824247Z"
     description: A Helm chart to deploy CloudWatch agent with Prometheus metrics collection
       on Amazon EKS
