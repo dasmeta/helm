@@ -9,7 +9,7 @@ data:
     {
       "agent": {
         "region": "{{ .Values.region }}",
-        "debug": true
+        "debug": {{ .Values.debug }}
       },      
       "logs": {
         "metrics_collected": {

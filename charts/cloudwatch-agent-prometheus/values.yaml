@@ -25,4 +25,6 @@ tolerations: []
 
 affinity: {}
 
+debug: false
+
 containerdSockPath: /run/containerd/containerd.sock
