@@ -18,6 +18,13 @@ spec:
             - name: {{ $job.name | quote }}
               image: {{ $image | quote}}
               imagePullPolicy: IfNotPresent
+              resources:
+                requests:
+                  cpu: {{ $job.resources.request.cpu }}
+                  memory: {{ $job.resources.request.memory }}
+                limits:
+                  cpu: {{ $job.resources.limits.cpu }}
+                  memory: {{ $job.resources.limits.memory }}
               env:
               {{- range $env := $job.env }}
                 - name: {{ $env.name | quote}}
