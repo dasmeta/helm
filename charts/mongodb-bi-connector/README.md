@@ -28,6 +28,29 @@ mongodb-bi-connector:
 ```
 4. To access the BI Connector, you can use a SQL client such as MySQL Workbench and connect to the BI Connector using the hostname and port specified in the net.bindIp and net.port parameters.
 5. If you want to customize other parameters, such as the verbosity of the BI Connector logs or the refresh interval for the schema, you can do so by modifying the corresponding values in the values.yaml file(the same way explained in 3). In general, the `mongosqldConfig` values will be merged with the default `mongosqldConfigDefault` described in default values for the chart. This means that any values you specify in `mongosqldConfig` will overwrite the corresponding values in `mongosqldConfigDefault`.
+6. As it uses `base` chart as a dependency, you can customize `base` configurations as well: For example:
+```
+mongodb-bi-connector:
+  ...
+  base:
+    replicaCount: 2
+    env: stage
+  ...
+```
+Complete usage example will be like:
+```
+mongodb-bi-connector:
+  base:
+    replicaCount: 2
+    env: stage
+
+  mongosqldConfig:
+    net:
+      bindIp: "0.0.0.0"
+      port: 2000
+      ssl:
+        mode: "enabled"
+```
 
 ## Installation
 Install the chart by running the following command:

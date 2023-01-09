@@ -1,28 +1,30 @@
-replicaCount: 1
 
-image:
-  repository: dasmeta/mongodb-bi-connector
-  pullPolicy: IfNotPresent
-  tag: 1.0.0
+base:
+  replicaCount: 1
 
-containerPort: 3307
-service:
-  type: ClusterIP
-  port: 3307
+  image:
+    repository: dasmeta/mongodb-bi-connector
+    pullPolicy: IfNotPresent
+    tag: 1.0.0
 
-command:
-  - "/bin/bash"
-  - "-c"
-  - "mongosqld --config /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld/config.yaml --logPath=/home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/log/sqld.log"
-  - "service rsyslog start"
+  containerPort: 3307
+  service:
+    type: ClusterIP
+    port: 3307
 
-deployment:
-  volumes:
-    - mountPath: /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld
-      name: config
-      configMap:
-        name: mongosqld-config
-      readOnly: true
+  command:
+    - "/bin/bash"
+    - "-c"
+    - "mongosqld --config /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld/config.yaml --logPath=/home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/log/sqld.log"
+    - "service rsyslog start"
+
+  deployment:
+    volumes:
+      - mountPath: /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld
+        name: config
+        configMap:
+          name: mongosqld-config
+        readOnly: true
 
 mongosqldConfig:
 
