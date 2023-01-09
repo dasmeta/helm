@@ -41,6 +41,10 @@ For example, to override the mongosqldConfig values at install time:
 helm install my-release --namespace my-namespace dasmeta/mongodb-bi-connector --set mongosqldConfig.net.port=3308,mongosqldConfig.net.ssl.mode=enabled
 ```
 
+## Dockerfile
+The BI Connector is provided as a Docker image hosted on Docker Hub at [dasmeta/mongodb-bi-connector](https://hub.docker.com/r/dasmeta/mongodb-bi-connector).
+Also, you can find the image content in our [GitHub page](https://github.com/dasmeta/docker-images/tree/master/mongodb-bi-connector).
+
 ## Configuration
 
 The following table lists the configurable parameters of the MongoDB BI Connector chart and their default values.
