@@ -460,6 +460,21 @@ entries:
     urls:
     - mongodb-backup-aws-0.1.0.tgz
     version: 0.1.0
+  mongodb-bi-connector:
+  - apiVersion: v2
+    appVersion: 2.14.5
+    created: "2023-01-09T13:39:16.140105238Z"
+    dependencies:
+    - name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.1.32
+    description: A Helm chart for MongoDB BI connector
+    digest: f6c9b47b257775cb4e4e96066047b34ab68618b00fc6bcb4044db5d8d59340d4
+    name: mongodb-bi-connector
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/mongodb-bi-connector-0.1.0/mongodb-bi-connector-0.1.0.tgz
+    version: 0.1.0
   weave-scope:
   - apiVersion: v1
     appVersion: 1.10.2
