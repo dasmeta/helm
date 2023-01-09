@@ -17,15 +17,14 @@ dependencies:
 3. To specify the URI of your MongoDB instance, find the mongodb.net.uri parameter in the values.yaml file and replace the placeholder URI with the real URI of your MongoDB instance. For example:
 ```
 mongodb-bi-connector:
-  mongodbBiConnector:
-    ...
-    mongosqldConfig:
-      mongodb:
-        net:
-          uri: mongodb://user:password@host:port/database
-          ssl:
-            enabled: false
-    ...
+  ...
+  mongosqldConfig:
+    mongodb:
+      net:
+        uri: mongodb://user:password@host:port/database
+        ssl:
+          enabled: false
+  ...
 ```
 4. To access the BI Connector, you can use a SQL client such as MySQL Workbench and connect to the BI Connector using the hostname and port specified in the net.bindIp and net.port parameters.
 5. If you want to customize other parameters, such as the verbosity of the BI Connector logs or the refresh interval for the schema, you can do so by modifying the corresponding values in the values.yaml file(the same way explained in 3). In general, the `mongosqldConfig` values will be merged with the default `mongosqldConfigDefault` described in default values for the chart. This means that any values you specify in `mongosqldConfig` will overwrite the corresponding values in `mongosqldConfigDefault`.
@@ -39,7 +38,7 @@ You can customize the installation by specifying your own values for the paramet
 
 For example, to override the mongosqldConfig values at install time:
 ```
-helm install my-release --namespace my-namespace dasmeta/mongodb-bi-connector --set mongosqldConfig.net.port=3308,mongosqldConfig.net.ssl.mode=enabled
+helm install my-release --namespace my-namespace dasmeta/mongodb-bi-connector --set mongodb-bi-connector.mongosqldConfig.net.port=3308,mongodb-bi-connector.mongosqldConfig.net.ssl.mode=enabled
 ```
 
 ## Dockerfile

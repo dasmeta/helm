@@ -4,5 +4,5 @@ metadata:
   name: mongosqld-config
 data:
   config.yaml: |
-    {{- $mergedConfig := mergeOverwrite .Values.mongodbBiConnector.mongosqldConfigDefault .Values.mongodbBiConnector.mongosqldConfig }}
+    {{- $mergedConfig := mergeOverwrite .Values.mongosqldConfigDefault .Values.mongosqldConfig }}
 {{ $mergedConfig | toYaml | indent 4 }}

@@ -27,4 +27,3 @@ dependencies:
 - name: base
   version: 0.1.32
   repository: https://dasmeta.github.io/helm
-  alias: mongodbBiConnector
