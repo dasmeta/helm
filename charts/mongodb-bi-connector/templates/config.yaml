@@ -3,4 +3,6 @@ kind: ConfigMap
 metadata:
   name: mongosqld-config
 data:
-  config.yaml: {{- toYaml .Values.mongodb-bi-connector.mongosqldConfig | nindent 2 }}
+  config.yaml: |
+    {{- $mergedConfig := mergeOverwrite .Values.mongodbBiConnector.mongosqldConfigDefault .Values.mongodbBiConnector.mongosqldConfig }}
+{{ $mergedConfig | toYaml | indent 4 }}

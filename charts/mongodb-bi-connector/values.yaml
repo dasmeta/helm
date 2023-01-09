@@ -1,6 +1,4 @@
-mongodb-bi-connector:
-  version: "0.1.0"
-  appVersion: "0.1.0"
+mongodbBiConnector:
   replicaCount: 1
 
   image:
@@ -26,8 +24,10 @@ mongodb-bi-connector:
         configMap:
           name: mongosqld-config
         readOnly: true
+  
+  mongosqldConfig:
 
-  mongosqldConfig: |-
+  mongosqldConfigDefault:
     net:
       bindIp: "0.0.0.0"
       port: 3307

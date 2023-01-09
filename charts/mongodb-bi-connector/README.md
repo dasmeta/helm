@@ -1,13 +1,23 @@
 # MongoDB BI Connector Chart
 
 This chart installs the [MongoDB BI Connector](https://docs.mongodb.com/bi-connector/current/) on your Kubernetes cluster. The BI Connector allows you to access MongoDB data using SQL, and can be used with business intelligence and analytics tools such as Tableau and Qlik.
+The BI Connector includes a ConfigMap that stores the configuration for the BI Connector. It can be customized easily.
 
 ## How to Use
 1. Customize the default values in the values.yaml file.
-2. To specify the URI of your MongoDB instance, find the mongodb.net.uri parameter in the values.yaml file and replace the placeholder URI with the real URI of your MongoDB instance. For example:
+2. Add the dependency for this chart in the Chart.yaml file:
+```
+...
+dependencies:
+- name: mongodb-bi-connector
+  version: 0.1.0
+  repository: https://dasmeta.github.io/helm
+...
+```
+3. To specify the URI of your MongoDB instance, find the mongodb.net.uri parameter in the values.yaml file and replace the placeholder URI with the real URI of your MongoDB instance. For example:
 ```
 mongodb-bi-connector:
-  mongosqldConfig: |-
+  mongosqldConfig:
     ...
     mongodb:
       net:
@@ -16,14 +26,19 @@ mongodb-bi-connector:
           enabled: false
     ...
 ```
-3. If you want to enable SSL when connecting to MongoDB, set the mongodb.net.ssl.enabled parameter to true.
 4. To access the BI Connector, you can use a SQL client such as MySQL Workbench and connect to the BI Connector using the hostname and port specified in the net.bindIp and net.port parameters.
-5. If you want to customize other parameters, such as the verbosity of the BI Connector logs or the refresh interval for the schema, you can do so by modifying the corresponding values in the values.yaml file.
+5. If you want to customize other parameters, such as the verbosity of the BI Connector logs or the refresh interval for the schema, you can do so by modifying the corresponding values in the values.yaml file(the same way explained in 3). In general, the `mongosqldConfig` values will be merged with the default `mongosqldConfigDefault` described in default values for the chart. This means that any values you specify in `mongosqldConfig` will overwrite the corresponding values in `mongosqldConfigDefault`.
 
 ## Installation
 Install the chart by running the following command:
 ```
 helm install my-release --namespace my-namespace dasmeta/mongodb-bi-connector -f values.yaml
+```
+You can customize the installation by specifying your own values for the parameters in the values.yaml file, or by using the --set flag to override individual values at install time.
+
+For example, to override the mongosqldConfig values at install time:
+```
+helm install my-release --namespace my-namespace dasmeta/mongodb-bi-connector --set mongosqldConfig.net.port=3308,mongosqldConfig.net.ssl.mode=enabled
 ```
 
 ## Configuration
