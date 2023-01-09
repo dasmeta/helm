@@ -17,13 +17,14 @@ dependencies:
 3. To specify the URI of your MongoDB instance, find the mongodb.net.uri parameter in the values.yaml file and replace the placeholder URI with the real URI of your MongoDB instance. For example:
 ```
 mongodb-bi-connector:
-  mongosqldConfig:
+  mongodbBiConnector:
     ...
-    mongodb:
-      net:
-        uri: mongodb://user:password@host:port/database
-        ssl:
-          enabled: false
+    mongosqldConfig:
+      mongodb:
+        net:
+          uri: mongodb://user:password@host:port/database
+          ssl:
+            enabled: false
     ...
 ```
 4. To access the BI Connector, you can use a SQL client such as MySQL Workbench and connect to the BI Connector using the hostname and port specified in the net.bindIp and net.port parameters.
