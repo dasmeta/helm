@@ -1,5 +1,5 @@
 apiVersion: v2
-name: mongo-bi
+name: mongodb-bi-connector
 description: A Helm chart for MongoDB BI connector
 
 # A chart can be either an 'application' or a 'library' chart.
@@ -21,10 +21,9 @@ version: 0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "1.0.0"
+appVersion: "2.14.5"
 
 dependencies:
 - name: base
   version: 0.1.32
   repository: https://dasmeta.github.io/helm
-  alias: mongo-bi
