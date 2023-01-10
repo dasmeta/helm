@@ -433,22 +433,6 @@ entries:
     urls:
     - helm-chart-test-0.1.0.tgz
     version: 0.1.0
-  mongo-bi:
-  - apiVersion: v2
-    appVersion: 1.0.0
-    created: "2023-01-03T10:38:39.961008674Z"
-    dependencies:
-    - alias: mongo-bi
-      name: base
-      repository: https://dasmeta.github.io/helm
-      version: 0.1.32
-    description: A Helm chart for MongoDB BI connector
-    digest: b980d10bced0b6df860d6910bc0f039e51ed3e74225eeb2daddd1ee03d100187
-    name: mongo-bi
-    type: application
-    urls:
-    - https://github.com/dasmeta/helm/releases/download/mongo-bi-0.1.0/mongo-bi-0.1.0.tgz
-    version: 0.1.0
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
