@@ -93,7 +93,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "base.fullname" . }}
-            {{- if .Values.secretsDefaultEngine }}
+            {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" -}}
             - secretRef:
                 name: {{ include "base.fullname" . }}
                 optional: true
