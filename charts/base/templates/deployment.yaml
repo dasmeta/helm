@@ -126,6 +126,10 @@ spec:
             claimName: {{ include "base.fullname" $ }}
             {{- end }}
           {{- end }}
+          {{- if $element.secret }}
+          secret:
+            secretName: {{ $element.secret.secretName }}
+          {{- end }}
           {{- if $element.emptyDir }}
           emptyDir:
             medium: {{ $element.emptyDir.medium }}
