@@ -59,7 +59,7 @@ ingress:
           path: /*
   tls: []
 
-secrets: {}
+secrets: []
 secretsDefaultEngine: "ExternalSecrets"
 # secrets: 
 #   - external-secret-1
