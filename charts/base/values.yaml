@@ -64,6 +64,7 @@ ingress:
 #   - external-secret-1
 #   - external-secret-2
 #   - external-secret-3
+#   - external-secret-4
 #   - DATABASE:
 #       from: helm-test-secret
 #       key: database
