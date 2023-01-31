@@ -52,11 +52,22 @@ spec:
           command:
             {{  toYaml .Values.command | nindent 12 }}
           {{- end }}
-          {{- if .Values.extraEnv }}
+          {{- if or .Values.extraEnv .Values.secrets}}
           env:
             {{- range $key, $value := .Values.extraEnv }}
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
+            {{- end }}
+            {{- range $secret := .Values.secrets }}
+            {{- if ne (kindOf $secret) "string" }}
+            {{- range $map_key,$map_value := $secret }}
+            - name: {{ $map_key }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ $map_value.key }}
+                  name: {{ $map_value.from }}
+            {{- end }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.service.enabled }}
@@ -82,9 +93,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "base.fullname" . }}
+            {{- if .Values.secretsDefaultEngine }}
             - secretRef:
                 name: {{ include "base.fullname" . }}
                 optional: true
+            {{- end }}
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}
@@ -112,10 +125,6 @@ spec:
             {{- else }}
             claimName: {{ include "base.fullname" $ }}
             {{- end }}
-          {{- end }}
-          {{- if $element.secret }}
-          secret:
-            secretName: {{ $element.secret.secretName }}
           {{- end }}
           {{- if $element.emptyDir }}
           emptyDir:
