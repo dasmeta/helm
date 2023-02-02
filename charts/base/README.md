@@ -292,8 +292,9 @@ readinessProbe: {}
   initialDelaySeconds: 60
   periodSeconds: 5
 ```
-### ExternalContainer
 
+### ExteraContainer
+If you have two container in one deployment you can use extraContainer parameter.
 
 ```
 base:
