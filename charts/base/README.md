@@ -292,3 +292,43 @@ readinessProbe: {}
   initialDelaySeconds: 60
   periodSeconds: 5
 ```
+### ExternalContainer
+
+
+```
+base:
+  extraContainer:
+    name: nginx
+    containerPort: 80
+    image:
+      repository: nginx:1.22-alpine
+      pullPolicy: IfNotPresent
+      tag: latest
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 250m
+        memory: 64Mi
+    deployment:
+      volumes:
+        - name: config
+          mountPath: /etc/nginx/conf.d/nginx.conf
+          configMap:
+            name: config
+    service:
+      enabled: false
+    configmap:
+      name: config
+      config:
+        nginx.conf: |
+          server {
+            listen 80;
+            server_name ********;
+            resolver kube-dns.kube-system.svc.cluster.local valid=10s;
+            location /healthcheck {
+              return 200 'healthy\n';
+            }
+          }
+```
