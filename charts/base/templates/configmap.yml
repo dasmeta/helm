@@ -4,3 +4,13 @@ metadata:
   name: {{ include "base.fullname" . }}
 data:
   {{- toYaml .Values.config | nindent 2 }}
+
+---
+{{- if .Values.extraContainer.configmap }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.extraContainer.configmap.name }}
+data:
+  {{- toYaml .Values.extraContainer.configmap.config | nindent 2 }}
+{{- end }}
