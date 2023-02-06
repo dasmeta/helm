@@ -107,9 +107,11 @@ spec:
           {{- if .Values.extraContainer.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.extraContainer.deployment.volumes }}
+            {{- if eq $element.container "extra"}}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
               readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.extraContainer.deployment.lifecycle }}
@@ -175,9 +177,14 @@ spec:
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}
+            {{- if eq $element.container nil }}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
+              {{- if $element.subPath }}
+              subPath: {{ $element.subPath }}
+              {{- end }}
               readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.deployment.lifecycle }}
