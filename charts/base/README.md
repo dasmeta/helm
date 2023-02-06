@@ -316,6 +316,8 @@ base:
       volumes:
         - name: config
           mountPath: /etc/nginx/conf.d/nginx.conf
+          // Assign volumes on extra container  
+          container: extra
           configMap:
             name: config
     service:
