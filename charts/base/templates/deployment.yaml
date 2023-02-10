@@ -99,7 +99,7 @@ spec:
                 optional: true
             {{- end }}
           {{- end }}
-          {{- if eq .Values.extraContainer.secretsDefaultEngine "ExternalSecrets" -}}
+          {{- if eq .Values.extraContainer.secretsDefaultEngine "ExternalSecrets" }}
           - secretRef:
               name: {{ include "base.fullname" . }}
               optional: true
@@ -169,7 +169,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "base.fullname" . }}
-            {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" -}}
+            {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" }}
             - secretRef:
                 name: {{ include "base.fullname" . }}
                 optional: true
