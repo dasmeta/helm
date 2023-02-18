@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongodb-bi-connector-mysql-test-container
+spec:
+  containers:
+  - name: mysql
+    image: mysql
+    command: ["tail", "-f", "/dev/null"]
