@@ -335,3 +335,12 @@ base:
             }
           }
 ```
+
+### If you want add pod extra label
+```
+  base:
+   labels:
+     label1:
+       name: "app-version"
+       value: "v1.0.19"
+```

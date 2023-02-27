@@ -4,6 +4,11 @@ metadata:
   name: {{ include "base.fullname" . }}
   labels:
     {{- include "base.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- range $key, $value := .Values.labels }}
+    {{ $value.name }}: {{ $value.value | quote}}
+    {{- end }}
+    {{- end }}
 spec:
   {{- if .Values.minReadySeconds}}
   minReadySeconds: {{ .Values.minReadySeconds }}
@@ -30,6 +35,11 @@ spec:
       {{- end }}
       labels:
         {{- include "base.selectorLabels" . | nindent 8 }}
+        {{- if .Values.labels }}
+        {{- range $key, $value := .Values.labels }}
+        {{ $value.name }}: {{ $value.value | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
