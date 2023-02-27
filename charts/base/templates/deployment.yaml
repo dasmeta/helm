@@ -6,7 +6,7 @@ metadata:
     {{- include "base.labels" . | nindent 4 }}
     {{- if .Values.labels }}
     {{- range $key, $value := .Values.labels }}
-    {{ $value.name }}: {{ $value.value }}
+    {{ $value.name }}: {{ $value.value | quote}}
     {{- end }}
     {{- end }}
 spec:
@@ -37,7 +37,7 @@ spec:
         {{- include "base.selectorLabels" . | nindent 8 }}
         {{- if .Values.labels }}
         {{- range $key, $value := .Values.labels }}
-        {{ $value.name }}: {{ $value.value }}
+        {{ $value.name }}: {{ $value.value | quote }}
         {{- end }}
         {{- end }}
     spec:
