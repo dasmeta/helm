@@ -24,4 +24,4 @@ COPY ./certs /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/certs
 
 EXPOSE 3307
 
-CMD ["mongosqld", "--config=/home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/example-mongosqld-config.yml"]
+CMD ["mongosqld", "--config=/home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld/config.yaml"]

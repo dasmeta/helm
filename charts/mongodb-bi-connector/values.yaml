@@ -12,12 +12,6 @@ base:
     type: ClusterIP
     port: 3307
 
-  command:
-    - "/bin/bash"
-    - "-c"
-    - "mongosqld --config /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld/config.yaml --logPath=/home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/log/sqld.log"
-    - "service rsyslog start"
-
   deployment:
     volumes:
       - mountPath: /home/mongobi/mongodb-bi-linux-x86_64-ubuntu1804-v2.14.5/mongosqld
@@ -45,10 +39,6 @@ mongosqldConfigDefault:
     logRotate: "rename"
   schema:
     refreshIntervalSecs: 0
-    stored:
-      mode: "custom"
-      source: "mongosqld_data"
-      name: "mySchema"
     sample:
       size: 1000
       namespaces: ["*.*"]
