@@ -10,7 +10,7 @@ The BI Connector includes a ConfigMap that stores the configuration for the BI C
 ...
 dependencies:
 - name: mongodb-bi-connector
-  version: 1.0.0
+  version: 1.0.1
   repository: https://dasmeta.github.io/helm
 ...
 ```
