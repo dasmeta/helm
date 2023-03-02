@@ -497,6 +497,20 @@ entries:
   mongodb-bi-connector:
   - apiVersion: v2
     appVersion: 2.14.5
+    created: "2023-03-02T11:38:13.355232563Z"
+    dependencies:
+    - name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.1.32
+    description: A Helm chart for MongoDB BI connector
+    digest: 5387adc04f2565d6cee7a5bb4c66c71df3083f5a2f6e1b2117e7731b0c5dd4d4
+    name: mongodb-bi-connector
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/mongodb-bi-connector-1.0.1/mongodb-bi-connector-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v2
+    appVersion: 2.14.5
     created: "2023-03-02T07:07:50.3521018Z"
     dependencies:
     - name: base
