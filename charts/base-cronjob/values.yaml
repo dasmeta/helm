@@ -25,6 +25,14 @@ jobs:
 #      requestedSize: 5Gi
 #      enableDataSource: false
 
+    resources: {}
+#      request:
+#        cpu: 500m
+#        memory: 5Gi
+#      limits:
+#        cpu: 500m
+#        memory: 5Gi
+
   - name: cronjob2
     schedule: "* * * * *"
     restartPolicy: OnFailure
