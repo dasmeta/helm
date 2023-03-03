@@ -4,6 +4,11 @@ metadata:
   name: {{ include "base.fullname" . }}
   labels:
     {{- include "base.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- range $key, $value := .Values.labels }}
+    {{ $value.name }}: {{ $value.value | quote}}
+    {{- end }}
+    {{- end }}
 spec:
   {{- if .Values.minReadySeconds}}
   minReadySeconds: {{ .Values.minReadySeconds }}
@@ -30,6 +35,11 @@ spec:
       {{- end }}
       labels:
         {{- include "base.selectorLabels" . | nindent 8 }}
+        {{- if .Values.labels }}
+        {{- range $key, $value := .Values.labels }}
+        {{ $value.name }}: {{ $value.value | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -43,6 +53,82 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
+        {{- if .Values.extraContainer }}
+        - name: {{ .Values.extraContainer.name }}
+          image: "{{ .Values.extraContainer.image.repository }}:{{ .Values.extraContainer.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.extraContainer.image.pullPolicy }}
+          {{- if $.Values.extraContainer.command }}
+          command:
+            {{  toYaml .Values.extraContainer.command | nindent 12 }}
+          {{- end }} 
+          {{- if .Values.extraContainer.service.enabled }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.extraContainer.containerPort | default 80 }}
+              protocol: TCP
+          {{- end }}
+          {{- if or .Values.extraContainer.extraEnv .Values.extraContainer.secrets}}
+          env:
+          {{- range $key, $value := .Values.extraContainer.extraEnv }}
+          - name: {{ $key | quote}}
+            value: {{ $value | quote }}
+          {{- end }}
+          {{- range $secret := .Values.extraContainer.secrets }}
+          {{- if ne (kindOf $secret) "string" }}
+          {{- range $map_key,$map_value := $secret }}
+          - name: {{ $map_key }}
+            valueFrom:
+              secretKeyRef:
+                key: {{ $map_value.key }}
+                name: {{ $map_value.from }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+          {{- if .Values.extraContainer.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.extraContainer.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.extraContainer.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.extraContainer.readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.extraContainer.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.extraContainer.startupProbe | nindent 12 }}
+          {{- end }}        
+          resources:
+          {{- toYaml .Values.extraContainer.resources | nindent 12 }}
+          {{- if .Values.extraContainer.envFrom }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.extraContainer.name }}
+            {{- if eq .Values.extraContainer.secretsDefaultEngine "ExternalSecrets" -}}
+            - secretRef:
+                name: {{ .Values.extraContainer.secretRef }}
+                optional: true
+            {{- end }}
+          {{- end }}
+          {{- if eq .Values.extraContainer.secretsDefaultEngine "ExternalSecrets" }}
+          - secretRef:
+              name: {{ include "base.fullname" . }}
+              optional: true
+          {{- end }}
+          {{- if .Values.extraContainer.deployment.volumes }}
+          volumeMounts:
+            {{- range $index, $element := .Values.extraContainer.deployment.volumes }}
+            {{- if eq $element.container "extra"}}
+            - name: {{ coalesce $element.name (add $index 1) }}
+              mountPath: {{ $element.mountPath }}
+              readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.extraContainer.deployment.lifecycle }}
+          lifecycle:
+            {{- toYaml .Values.extraContainer.deployment.lifecycle | nindent 12 }}
+          {{- end }}
+        {{- end }} 
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -52,11 +138,22 @@ spec:
           command:
             {{  toYaml .Values.command | nindent 12 }}
           {{- end }}
-          {{- if .Values.extraEnv }}
+          {{- if or .Values.extraEnv .Values.secrets}}
           env:
             {{- range $key, $value := .Values.extraEnv }}
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
+            {{- end }}
+            {{- range $secret := .Values.secrets }}
+            {{- if ne (kindOf $secret) "string" }}
+            {{- range $map_key,$map_value := $secret }}
+            - name: {{ $map_key }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ $map_value.key }}
+                  name: {{ $map_value.from }}
+            {{- end }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.service.enabled }}
@@ -82,15 +179,22 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "base.fullname" . }}
+            {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" }}
             - secretRef:
                 name: {{ include "base.fullname" . }}
                 optional: true
+            {{- end }}
           {{- if .Values.deployment.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.deployment.volumes }}
+            {{- if eq $element.container nil }}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
+              {{- if $element.subPath }}
+              subPath: {{ $element.subPath }}
+              {{- end }}
               readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.deployment.lifecycle }}
@@ -116,6 +220,11 @@ spec:
           {{- if $element.secret }}
           secret:
             secretName: {{ $element.secret.secretName }}
+          {{- end }}
+          {{- if $element.emptyDir }}
+          emptyDir:
+            medium: {{ $element.emptyDir.medium }}
+            sizeLimit: {{ $element.emptyDir.sizeLimit }}
           {{- end }}
       {{- end }}
       {{- end }}

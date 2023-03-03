@@ -9,7 +9,7 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.containerPort }}
+      targetPort: {{ .Values.service.targetPort | default .Values.containerPort }}
       protocol: {{ .Values.service.protocol }}
       name: {{ .Values.service.name }}
   selector:

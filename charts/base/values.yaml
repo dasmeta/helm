@@ -58,9 +58,31 @@ ingress:
             servicePort: 80
           path: /*
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+
+secrets: []
+secretsDefaultEngine: "ExternalSecrets"
+# secrets: 
+#   - external-secret-1
+#   - external-secret-2
+#   - external-secret-3
+#   - external-secret-4
+#   - DATABASE:
+#       from: helm-test-secret
+#       key: database
+#   - ENDPOINT:
+#       from: helm-test-secret
+#       key: endpoint
+#   - PASSWORD:
+#       from: helm-test-secret
+#       key: password
+#   - SPRING_DATASOURCE_URL:
+#       from: helm-test-secret
+#       key: spring_datasource_url
+#   - USERNAME:
+#       from: helm-test-secret
+#       key: username
+
+extraContainer: {}
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -126,5 +148,3 @@ deployment: {}
 
 env: dev
 product: application
-
-secrets: {}

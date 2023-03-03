@@ -3,7 +3,7 @@
 ```
 dependencies:
   - name: base
-    version: 0.1.34
+    version: 0.1.36
     repository: https://dasmeta.github.io/helm
 ```
 
@@ -99,9 +99,9 @@ Here are 2 examples about this:
 **Alias is not specified, name, version and appVersion are not overridden by parent chart**
 In this case, labels will be like this:\*\*
 
-- `helm.sh/chart: base-0.1.34 `
+- `helm.sh/chart: base-0.1.36 `
 - `app.kubernetes.io/name: base`
-- `app.kubernetes.io/version: 0.1.34 `
+- `app.kubernetes.io/version: 0.1.36 `
 
 Chart.yaml
 
@@ -115,7 +115,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.34
+    version: 0.1.36
     repository: https://dasmeta.github.io/helm
 ```
 
@@ -154,7 +154,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.34
+    version: 0.1.36
     repository: https://dasmeta.github.io/helm
     alias: my-app-base
 ```
@@ -184,7 +184,7 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base
-    version: 0.1.34
+    version: 0.1.36
     repository: https://dasmeta.github.io/helm
 ```
 
@@ -243,6 +243,20 @@ my-app-base:
         dynamicName: true
 ```
 
+**Volume type is emptyDir**
+
+```
+my-app-base:
+  ...
+  deployment:
+    volumes:
+      - name: dshm
+        mountPath: /dev/shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2G
+```
+
 ### PVC
 
 By defining `storage` block in values.yaml file you can create a PVC resource.
@@ -277,4 +291,56 @@ readinessProbe: {}
     port: http
   initialDelaySeconds: 60
   periodSeconds: 5
+```
+
+### ExteraContainer
+If you have two container in one deployment you can use extraContainer parameter.
+
+```
+base:
+  extraContainer:
+    name: nginx
+    containerPort: 80
+    image:
+      repository: nginx:1.22-alpine
+      pullPolicy: IfNotPresent
+      tag: latest
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 250m
+        memory: 64Mi
+    deployment:
+      volumes:
+        - name: config
+          mountPath: /etc/nginx/conf.d/nginx.conf
+          // Assign volumes on extra container  
+          container: extra
+          configMap:
+            name: config
+    service:
+      enabled: false
+    configmap:
+      name: config
+      config:
+        nginx.conf: |
+          server {
+            listen 80;
+            server_name ********;
+            resolver kube-dns.kube-system.svc.cluster.local valid=10s;
+            location /healthcheck {
+              return 200 'healthy\n';
+            }
+          }
+```
+
+### If you want add pod extra label
+```
+  base:
+   labels:
+     label1:
+       name: "app-version"
+       value: "v1.0.19"
 ```
