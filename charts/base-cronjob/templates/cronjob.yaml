@@ -13,12 +13,13 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: {{ $job.serviceAccountName }}
+          serviceAccountName: {{ $job.serviceAccount.name }}
           restartPolicy: {{ $job.restartPolicy }}
           containers:
             - name: {{ $job.name | quote }}
               image: {{ $image | quote}}
               imagePullPolicy: IfNotPresent
+              {{ if $job.resources }}
               resources:
                 requests:
                   cpu: {{ $job.resources.request.cpu }}
@@ -26,6 +27,7 @@ spec:
                 limits:
                   cpu: {{ $job.resources.limits.cpu }}
                   memory: {{ $job.resources.limits.memory }}
+                {{ end }}
               command: {{ $job.command }}
               env:
               {{- range $env := $job.env }}
