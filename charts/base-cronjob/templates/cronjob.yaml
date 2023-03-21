@@ -22,13 +22,14 @@ spec:
               {{ if $job.resources }}
               resources:
                 requests:
-                  cpu: {{ $job.resources.request.cpu }}
-                  memory: {{ $job.resources.request.memory }}
+                  cpu: {{ $job.resources.requests.cpu }}
+                  memory: {{ $job.resources.requests.memory }}
                 limits:
                   cpu: {{ $job.resources.limits.cpu }}
                   memory: {{ $job.resources.limits.memory }}
               {{ end }}
               command: {{ $job.command }}
+              args: {{ $job.args }}
               env:
               {{- range $env := $job.env }}
                 - name: {{ $env.name | quote}}
