@@ -40,8 +40,8 @@ jobs:
     schedule: "* * * * *"
     restartPolicy: OnFailure
     serviceAccountName:
-      create: true
-      name: "sa-1"
+      create: false
+      name: "sa-2"
     image:
       registry: docker.io
       repository: busybox
