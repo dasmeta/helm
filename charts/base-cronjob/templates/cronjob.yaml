@@ -40,14 +40,6 @@ spec:
                   cpu: {{ $job.resources.limits.cpu }}
                   memory: {{ $job.resources.limits.memory }}
               {{ end }}
-
-
-{{/*              {{- if $job.args }}*/}}
-{{/*              args:*/}}
-{{/*                {{  toYaml $job.args | nindent 12 }}*/}}
-{{/*              {{- end }}*/}}
-
-
               env:
               {{- range $env := $job.env }}
                 - name: {{ $env.name | quote}}
