@@ -27,7 +27,7 @@ spec:
                 limits:
                   cpu: {{ $job.resources.limits.cpu }}
                   memory: {{ $job.resources.limits.memory }}
-                {{ end }}
+              {{ end }}
               command: {{ $job.command }}
               env:
               {{- range $env := $job.env }}
