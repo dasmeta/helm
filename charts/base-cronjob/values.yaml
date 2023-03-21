@@ -2,6 +2,9 @@ jobs:
   - name: cronjob1
     schedule: "0 * * * *"
     restartPolicy: OnFailure
+    serviceAccountName:
+        create: true
+        name: "sa-1"
     image:
       registry: docker.io
       repository: busybox
@@ -36,6 +39,9 @@ jobs:
   - name: cronjob2
     schedule: "* * * * *"
     restartPolicy: OnFailure
+    serviceAccountName:
+      create: true
+      name: "sa-1"
     image:
       registry: docker.io
       repository: busybox
