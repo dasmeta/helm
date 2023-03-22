@@ -51,6 +51,18 @@ spec:
                   mountPath: {{ $element.mountPath }}
                   readOnly: {{ $element.readOnly | default false }}
             {{- end }}
+          {{- with $job.nodeSelector }}
+          nodeSelector:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $job.affinity }}
+          affinity:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $job.tolerations }}
+          tolerations:
+{{ toYaml . | indent 12 }}
+          {{- end }}
       {{- if $job.volumes }}
           volumes:
         {{- range $index, $element := $job.volumes }}
