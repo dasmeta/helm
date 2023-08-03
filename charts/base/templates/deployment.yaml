@@ -230,6 +230,11 @@ spec:
             medium: {{ $element.emptyDir.medium }}
             sizeLimit: {{ $element.emptyDir.sizeLimit }}
           {{- end }}
+          {{- if $element.hostPath }}
+          hostPath:
+            path: {{ $element.hostPath.path }}
+            type: {{ $element.hostPath.type }}
+          {{- end }}
       {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
