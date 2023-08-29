@@ -1,0 +1,25 @@
+{{- range $integration := .Values.apiGateway.integrations }}
+---
+apiVersion: apigatewayv2.services.k8s.aws/v1alpha1
+kind: Integration
+metadata:
+  name: {{ $integration.name | quote }}
+  namespace: {{ $integration.namespace | quote }}
+spec:
+  apiRef:
+    from:
+      name: {{ $integration.api_name | quote}}
+  integrationType: {{ $integration.integrationType | quote}}
+  integrationMethod: {{ $integration.integrationMethod | quote}}
+  connectionType: {{ $integration.connectionType | quote}}
+  {{ if $integration.secureName }}
+  tlsConfig:
+    serverNameToVerify: {{ $integration.secureName | quote }}
+  {{ end }}
+  connectionRef:
+    from:
+      name: {{ $integration.vpclink_name | quote }}
+  integrationURI: {{ $integration.integrationURI | quote }}
+  payloadFormatVersion: "1.0"
+{{- end }}
+---

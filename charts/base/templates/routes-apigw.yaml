@@ -1,0 +1,18 @@
+{{- range $route := .Values.apiGateway.routes }}
+---
+apiVersion: apigatewayv2.services.k8s.aws/v1alpha1
+kind: Route
+metadata:
+  name:  {{ $route.name | quote}}
+  namespace: {{ $route.namespace | quote }}
+spec:
+  apiRef:
+    from:
+      name:  {{ $route.api_name | quote}}
+  routeKey: {{ $route.routeKey | quote}}
+  targetRef:
+    from:
+      name: {{ $route.integration_name | quote}}
+---
+{{- end }}
+
