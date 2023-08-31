@@ -15,4 +15,3 @@ spec:
       name: {{ $route.integration_name | quote}}
 ---
 {{- end }}
-
