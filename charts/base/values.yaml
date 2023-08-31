@@ -147,23 +147,23 @@ storage: {}
 deployment: {}
 
 apiGateway:
-  integrations:
-    - name: "api-1-integration"
-      api_name: "api-1"
-      namespace: default
-      integrationType: "HTTP_PROXY"
-      integrationMethod: "ANY"
-      connectionType: "VPC_LINK"
-      secureName: "example.com"
-      vpclink_name: "vpc-link"
-      integrationURI: "arn:aws:elasticloadbalancing:region:1111111111:listener/app/alb-name/listener"
+#   integrations:
+#     - name: "api-1-integration"
+#       api_name: "api-1"
+#       namespace: default
+#       integrationType: "HTTP_PROXY"
+#       integrationMethod: "ANY"
+#       connectionType: "VPC_LINK"
+#       secureName: "example.com"
+#       vpclink_name: "vpc-link"
+#       integrationURI: "arn:aws:elasticloadbalancing:region:1111111111:listener/app/alb-name/listener"
 
   routes:
-    - name: "api-route-1"
-      api_name: "api-1"
-      namespace: "default"
-      routeKey: "GET /api/users"
-      integration_name: "api-1-integration"
+#     - name: "api-route-1"
+#       api_name: "api-1"
+#       namespace: "default"
+#       routeKey: "GET /api/users"
+#       integration_name: "api-1-integration"
 
 env: dev
 product: application
