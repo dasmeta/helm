@@ -29,7 +29,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap: {{ .Values.config | toYaml | sha256sum | trunc 8 }}
+        configmap: "{{ .Values.config | toYaml | sha256sum | trunc 8 }}"
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
