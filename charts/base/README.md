@@ -278,8 +278,8 @@ my-app-base:
 By default ingress class is alb and chart attache alb ingress controller annotations. 
 
 #### Ingress Class ALB
+Default ALB Annotations
 ```
-ALB Default Annotations
 kubernetes.io/ingress.class: alb
 alb.ingress.kubernetes.io/target-type: ip
 alb.ingress.kubernetes.io/scheme: internet-facing
@@ -306,17 +306,14 @@ You need add alb group.name. You can add more annotations or overwrite existing 
               port: 80
 ```
 #### Ingress Class Application Gateway
+Default Application Gateway Annotations
 ```
-Application Gateway Default Annotations
-
 kubernetes.io/ingress.class: azure/application-gateway
 external-dns.alpha.kubernetes.io/ttl: 60
 appgw.ingress.kubernetes.io/backend-protocol: http
 appgw.ingress.kubernetes.io/ssl-redirect: true
 ```
-
-You should change class name. You can add more annotations or overwrite existing ones.
-
+You can add more annotations or overwrite existing ones.
 ```
   ingress:
     enabled: true
@@ -334,15 +331,12 @@ You should change class name. You can add more annotations or overwrite existing
 ```
 
 #### Ingress Class CCE
+Default CCE Annotations
 ```
-CCE Default Annotations
-
 kubernetes.io/ingress.class: cce
 kubernetes.io/elb.port: 443
 ```
-
-You should change class name. You can add more annotations or overwrite existing ones.
-
+You can add more annotations or overwrite existing ones.
 ```
   ingress:
     enabled: true
@@ -360,14 +354,11 @@ You should change class name. You can add more annotations or overwrite existing
 ```
 
 #### Ingress Class Nginx
+Default Nginx  Annotations
 ```
-Nginx Default Annotations
-
 kubernetes.io/ingress.class: nginx
 ```
-
-You should change class name. You can add more annotations or overwrite existing ones.
-
+You can add more annotations or overwrite existing ones.
 ```
   ingress:
     enabled: true
