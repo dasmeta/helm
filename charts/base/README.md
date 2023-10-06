@@ -23,16 +23,16 @@ This chart provides a base template helpers which can be used to develop new cha
 
 ## \_helpers.tpl
 
-| Helper identifier         | Description                                                                                   | Expected Input              | Default Value             |
+| Helper identifier         | Description  | Expected Input              | Default Value             |
 | ------------------------- | --------------------------------------------------------------------------------------------- | --------------------------- | ------------------------- |
-| `base.name`               | The name of the chart.                                                                        | .Values.name                | .Chart.Name               |
+| `base.name`               | The name of the chart.           | .Values.name                | .Chart.Name               |
 | `base.fullname`           | Fully qualified app name. If release name contains chart name it will be used as a full name. | .Values.fullnameOverride    | .Release.Name             |
-| `base.version`            | The version of the chart.                                                                     | .Values.version             | .Chart.Version            |
-| `base.appVersion`         | The appVersion of the chart.                                                                  | .Values.appVersion          | .Chart.AppVersion         |
-| `base.chart`              | It's made of base.name and base.version.                                                      | ---                         | ---                       |
-| `base.labels`             | Common labels.                                                                                | ---                         | ---                       |
-| `base.selectorLabels`     | Selector labels.                                                                              | ---                         | ---                       |
-| `base.serviceAccountName` | The name of the service account to use.                                                       | .Values.serviceAccount.name | base.fullname / "default" |
+| `base.version`            | The version of the chart.        | .Values.version             | .Chart.Version            |
+| `base.appVersion`         | The appVersion of the chart.     | .Values.appVersion          | .Chart.AppVersion         |
+| `base.chart`              | It's made of base.name and base.version.             | ---    | ---  |
+| `base.labels`             | Common labels. ---    | ---  |
+| `base.selectorLabels`     | Selector labels.                 | ---    | ---  |
+| `base.serviceAccountName` | The name of the service account to use.              | .Values.serviceAccount.name | base.fullname / "default" |
 
 ## Default Values
 
@@ -57,6 +57,7 @@ service:
   port: 80
 ingress:
   enabled: false
+  class: alb
   annotations: {}
   hosts:
     - host: host.name.com
@@ -271,6 +272,108 @@ my-app-base:
     requestedSize: 4Gi
 ```
 
+
+### Ingress
+
+By default ingress class is alb and chart attache alb ingress controller annotations. 
+
+#### Ingress Class ALB
+Default ALB Annotations
+```
+kubernetes.io/ingress.class: alb
+alb.ingress.kubernetes.io/target-type: ip
+alb.ingress.kubernetes.io/scheme: internet-facing
+alb.ingress.kubernetes.io/group.order: 20
+alb.ingress.kubernetes.io/healthcheck-path: /
+alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+alb.ingress.kubernetes.io/success-codes: 200-399
+```
+You need add alb group.name. You can add more annotations or overwrite existing ones.
+```
+  ingress:
+    enabled: true
+    class: alb
+    annotations:
+     alb.ingress.kubernetes.io/group.name: dev-orders-co
+    hosts:
+      - host: partners.dev.orders.co
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: web-partners
+              port: 80
+```
+#### Ingress Class Application Gateway
+Default Application Gateway Annotations
+```
+kubernetes.io/ingress.class: azure/application-gateway
+external-dns.alpha.kubernetes.io/ttl: 60
+appgw.ingress.kubernetes.io/backend-protocol: http
+appgw.ingress.kubernetes.io/ssl-redirect: true
+```
+You can add more annotations or overwrite existing ones.
+```
+  ingress:
+    enabled: true
+    class: application-gateway
+    annotations: {}
+    hosts:
+      - host: partners.dev.orders.co
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: web-partners
+              port: 80
+```
+
+#### Ingress Class CCE
+Default CCE Annotations
+```
+kubernetes.io/ingress.class: cce
+kubernetes.io/elb.port: 443
+```
+You can add more annotations or overwrite existing ones.
+```
+  ingress:
+    enabled: true
+    class: cce
+    annotations: {}
+    hosts:
+      - host: partners.dev.orders.co
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: web-partners
+              port: 80
+```
+
+#### Ingress Class Nginx
+Default Nginx  Annotations
+```
+kubernetes.io/ingress.class: nginx
+```
+You can add more annotations or overwrite existing ones.
+```
+  ingress:
+    enabled: true
+    class: nginx
+    annotations: {}
+    hosts:
+      - host: partners.dev.orders.co
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: web-partners
+              port: 80
+```
 ### Health Checks
 
 ```

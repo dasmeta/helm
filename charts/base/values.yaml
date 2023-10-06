@@ -45,6 +45,7 @@ service:
 
 ingress:
   enabled: false
+  class: alb
   annotations: {}
   hosts:
     - host: host.name.com

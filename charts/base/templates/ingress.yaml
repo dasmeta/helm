@@ -14,10 +14,8 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "base.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- include "annotations" . | nindent 4 }}
 spec:
   {{- if .Values.ingress.tls }}
   tls:
