@@ -85,7 +85,7 @@ Return the target/server Kubernetes version
                     "alb.ingress.kubernetes.io/healthcheck-path" "/"
                     "alb.ingress.kubernetes.io/listen-ports" "[{\"HTTP\":80},{\"HTTPS\":443}]"
                     "alb.ingress.kubernetes.io/success-codes" "200-399" -}}
-{{- $mergedAnnotations := merge $defaultAnnotations $ingressAnnotations -}}
+{{- $mergedAnnotations := merge $ingressAnnotations $defaultAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
 {{- else if eq .Values.ingress.class "application-gateway" }}
 {{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "azure/application-gateway"
@@ -97,11 +97,11 @@ Return the target/server Kubernetes version
 {{- else if eq .Values.ingress.class "cce" }}
 {{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "cce"
                     "kubernetes.io/elb.port" "443" -}}
-{{- $mergedAnnotations := merge $defaultAnnotations $ingressAnnotations -}}
+{{- $mergedAnnotations := merge $ingressAnnotations $defaultAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
 {{- else if eq .Values.ingress.class "nginx" }}
 {{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "nginx" -}}
-{{- $mergedAnnotations := merge $defaultAnnotations $ingressAnnotations -}}
+{{- $mergedAnnotations := merge $ingressAnnotations $defaultAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
 {{- end }}
 {{- end }}
