@@ -1,0 +1,82 @@
+{{- if eq .Values.type "CronJob" -}}
+{{- range $job := .Values.jobs }}
+{{- $tag := $job.image.tag }}
+{{- $image := print  $job.image.repository ":" $tag }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $job.name | quote}}
+spec:
+  schedule: {{ $job.schedule | quote}}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ $job.serviceAccount.name }}
+          restartPolicy: {{ $job.restartPolicy }}
+          containers:
+            - name: {{ $job.name | quote }}
+              image: {{ $image | quote}}
+              imagePullPolicy: IfNotPresent
+              {{- if $job.command }}
+              command:
+                {{- range $cmd := $job.command }}
+                - {{ $cmd }}
+                {{- end }}
+              {{- end }}
+              {{- if $job.args }}
+              args:
+                {{- range $args := $job.args }}
+                - {{ $args }}
+                {{- end }}
+              {{- end }}
+              {{ if $job.resources }}
+              resources:
+                requests:
+                  cpu: {{ $job.resources.requests.cpu }}
+                  memory: {{ $job.resources.requests.memory }}
+                limits:
+                  cpu: {{ $job.resources.limits.cpu }}
+                  memory: {{ $job.resources.limits.memory }}
+              {{ end }}
+              env:
+                {{- range $key, $value := $job.env }}
+                - name: {{ $key | quote}}
+                  value: {{ $value | quote }}
+                {{- end }}
+              {{- if $job.volumes }}
+              volumeMounts:
+            {{- range $index, $element := $job.volumes }}
+                - name: {{ coalesce $element.name (add $index 1) }}
+                  mountPath: {{ $element.mountPath }}
+                  readOnly: {{ $element.readOnly | default false }}
+            {{- end }}
+              {{- end }}
+          {{- with $job.nodeSelector }}
+          nodeSelector:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $job.affinity }}
+          affinity:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $job.tolerations }}
+          tolerations:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+      {{- if $job.volumes }}
+          volumes:
+        {{- range $index, $element := $job.volumes }}
+            - name: {{ coalesce $element.name (add $index 1) }}
+          {{- if $element.persistentVolumeClaim }}
+              persistentVolumeClaim:
+            {{- if $element.persistentVolumeClaim.claimName }}
+                claimName: {{ $element.persistentVolumeClaim.claimName }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+{{- end }}
+{{- end }}
+---
+{{- end }}

@@ -463,3 +463,19 @@ base:
       maxSkew: 2
       topologyKey: kubernetes.io/hostname
       whenUnsatisfiable: ScheduleAnyway
+
+### If you want create cronjob
+  jobs:
+  - name: events
+    schedule: "*/2 * * * *"
+    restartPolicy: OnFailure
+    serviceAccount:
+      create: false
+    image:
+      repository: dasmeta/events
+      tag: 0.1.18
+    env:
+      HOST: "0.0.0.0"
+      PORT: "1337"
+      SERVE_ADMIN_PANEL: "true"
+      NODE_ENV: "production"

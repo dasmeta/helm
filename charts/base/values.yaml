@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+type: Deployment
+
 replicaCount: 1
 
 image:
@@ -154,3 +156,41 @@ pdb:
   enabled: false
   minAvailable: 1
   pdbName:
+
+jobs: {}
+#   - name: cronjob1
+#     schedule: "0 * * * *"
+#     restartPolicy: OnFailure
+#     serviceAccount:
+#       create: true
+#       name: "sa-1"
+#     image:
+#       registry: docker.io
+#       repository: busybox
+#       pullPolicy: IfNotPresent
+#       tag: latest
+#     env:
+#       - name: key3
+#         value: value3
+#       - name: key4
+#         value: value4
+#     volumes: {}
+# #      - name: persistent-storage
+# #        mountPath: /path
+# #        persistentVolumeClaim:
+# #          claimName: claim
+#     storage: {}
+# #      persistentVolumeClaimName: claim
+# #      accessModes:
+# #        - ReadWriteMany
+# #      className: claim
+# #      requestedSize: 5Gi
+# #      enableDataSource: false
+
+#     resources: {}
+#     #  request:
+#     #    cpu: 500m
+#     #    memory: 5Gi
+#     #  limits:
+#     #    cpu: 500m
+#     #    memory: 5Gi
