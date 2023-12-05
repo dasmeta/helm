@@ -10,6 +10,10 @@ image:
   # Overrides the image tag whose default is  the chart appVersion.
   tag: 1.21
 
+initContainer:
+  image: busybox
+  tag: 1.28
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
