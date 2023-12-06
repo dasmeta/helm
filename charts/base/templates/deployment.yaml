@@ -48,8 +48,45 @@ spec:
       serviceAccountName: {{ include "base.serviceAccountName" . }}
       {{- if .Values.initContainers }}
       initContainers:
-      {{-  toYaml .Values.initContainers | nindent 6 }}
-        image: {{ .Values.initContainer.image }}:{{ .Values.initContainer.tag }}
+        - name: {{ .Values.initContainers.name }}
+          image: "{{ .Values.initContainers.image.repository }}:{{ .Values.initContainers.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.initContainers.image.pullPolicy }}
+          {{- if $.Values.initContainers.command }}
+          command:
+            {{  toYaml .Values.initContainers.command | nindent 12 }}
+          {{- end }}
+          {{- if $.Values.initContainers.args }}
+          args: {{  toYaml .Values.initContainers.args | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.initContainers.extraEnv .Values.initContainers.secrets}}
+          env:
+          {{- range $key, $value := .Values.initContainers.extraEnv }}
+          - name: {{ $key | quote}}
+            value: {{ $value | quote }}
+          {{- end }}
+          {{- range $secret := .Values.initContainers.secrets }}
+          {{- if ne (kindOf $secret) "string" }}
+          {{- range $map_key,$map_value := $secret }}
+          - name: {{ $map_key }}
+            valueFrom:
+              secretKeyRef:
+                key: {{ $map_value.key }}
+                name: {{ $map_value.from }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.initContainers.volumes }}
+          volumeMounts:
+            {{- range $index, $element := .Values.initContainers.volumes }}
+            - name: {{ coalesce $element.name (add $index 1) }}
+              mountPath: {{ $element.mountPath }}
+              readOnly: {{ $element.readOnly | default false }}
+              {{- if $element.subPath }}
+              subPath: {{ $element.subPath }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
       {{- end }}
       {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:

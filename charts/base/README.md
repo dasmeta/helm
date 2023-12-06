@@ -463,3 +463,27 @@ base:
       maxSkew: 2
       topologyKey: kubernetes.io/hostname
       whenUnsatisfiable: ScheduleAnyway
+
+
+### Init container
+
+  initContainers:
+    name: config
+    args:
+    - /config.json
+    - /test/config.json
+    secrets: 
+      - CLIENT_ID:
+          from: client-market
+          key: client_id
+      - AUTH_TOKEN:
+          from: auth-token
+          key: token
+    image: 
+      repository: nginx
+      pullPolicy: IfNotPresent
+      tag: latest
+    volumes:
+      - mountPath: /config.json
+        name: config-json
+        subPath: config.json
