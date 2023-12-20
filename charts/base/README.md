@@ -275,7 +275,7 @@ my-app-base:
 
 ### Ingress
 
-By default ingress class is alb and chart attache alb ingress controller annotations. 
+By default ingress class is alb and chart attache alb ingress controller annotations.
 
 #### Ingress Class ALB
 Default ALB Annotations
@@ -419,7 +419,7 @@ base:
       volumes:
         - name: config
           mountPath: /etc/nginx/conf.d/nginx.conf
-          // Assign volumes on extra container  
+          // Assign volumes on extra container
           container: extra
           configMap:
             name: config
@@ -472,14 +472,14 @@ base:
     args:
     - /config.json
     - /test/config.json
-    secrets: 
+    secrets:
       - CLIENT_ID:
           from: client-market
           key: client_id
       - AUTH_TOKEN:
           from: auth-token
           key: token
-    image: 
+    image:
       repository: nginx
       pullPolicy: IfNotPresent
       tag: latest
