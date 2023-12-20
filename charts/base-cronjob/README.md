@@ -7,8 +7,7 @@ helm repo add dasmeta https://dasmeta.github.io/helm/
 helm update --install my-cronjob dasmeta/base-cronjob \
   --set jobs[0].name=my-cronjob \
   --set jobs[0].image.repository=my-cronjob \
-  --set jobs[0].schedule="* * * * *" \
-  -f path/to/values.yaml
+  --set jobs[0].schedule="* * * * *"
 ```
 
 ## Via values file
