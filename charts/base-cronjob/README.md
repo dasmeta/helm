@@ -4,7 +4,7 @@
 Easiest option to deploy cronjob is:
 ```bash
 helm repo add dasmeta https://dasmeta.github.io/helm/
-helm update --install my-cronjob dasmeta/base-cronjob \
+helm upgrade --install my-cronjob dasmeta/base-cronjob \
   --set jobs[0].name=my-cronjob \
   --set jobs[0].image.repository=my-cronjob \
   --set jobs[0].schedule="* * * * *"
@@ -22,7 +22,7 @@ jobs:
 
 ```bash
 helm repo add dasmeta https://dasmeta.github.io/helm/
-helm update --install my-cronjob dasmeta/base-cronjob -f path/to/values.yaml
+helm upgrade --install my-cronjob dasmeta/base-cronjob -f path/to/values.yaml
 ```
 
 ## As sub-chart
