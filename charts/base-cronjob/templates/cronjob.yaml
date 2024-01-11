@@ -7,11 +7,20 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ $job.name | quote}}
+  {{- if $job.labels }}
+  labels:
+    {{- range $key, $value := $job.labels }}
+    {{ $value.name }}: {{ $value.value | quote}}
+    {{- end }}
+  {{- end }}
 spec:
   schedule: {{ $job.schedule | quote}}
   jobTemplate:
     spec:
       template:
+        metadata:
+          annotations:
+            configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
         spec:
           serviceAccountName: {{ $job.serviceAccount.name }}
           restartPolicy: {{ $job.restartPolicy }}
@@ -45,6 +54,9 @@ spec:
                 - name: {{ $env.name | quote}}
                   value: {{ $env.value | quote }}
               {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: {{ $job.name | quote}}
               volumeMounts:
             {{- range $index, $element := $job.volumes }}
                 - name: {{ coalesce $element.name (add $index 1) }}

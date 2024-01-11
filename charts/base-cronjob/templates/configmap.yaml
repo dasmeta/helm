@@ -1,0 +1,9 @@
+{{- range $job := .Values.jobs }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ $job.name | quote}}
+data:
+  {{- toYaml $job.config | nindent 2 }}
+{{- end }}
