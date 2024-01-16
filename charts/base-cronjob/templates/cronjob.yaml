@@ -85,15 +85,11 @@ spec:
                 claimName: {{ $element.persistentVolumeClaim.claimName }}
             {{- end }}
           {{- end }}
-          {{- if $element.configMap }}
               configMap:
-            {{- if $element.configMap.name }}
-                name: {{ $element.configMap.name }}
-            {{- end }}
+                name: {{ $element.configMap.name | default $job.name}}
             {{- if $element.configMap.defaultMode }}
                 defaultMode: {{ $element.configMap.defaultMode }}
             {{- end }}
-          {{- end }}
           {{- end }}
 {{- end }}
 {{- end }}
