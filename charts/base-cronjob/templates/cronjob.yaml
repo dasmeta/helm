@@ -12,6 +12,7 @@ metadata:
     {{- range $key, $value := $job.labels }}
     {{ $value.name }}: {{ $value.value | quote}}
     {{- end }}
+    app-name: {{ $job.name | quote}}
   {{- end }}
 spec:
   schedule: {{ $job.schedule | quote}}
@@ -25,6 +26,7 @@ spec:
             {{- range $key, $value := $job.labels }}
             {{ $value.name }}: {{ $value.value | quote}}
             {{- end }}
+            app-name: {{ $job.name | quote}}
           {{- end }}
           annotations:
             configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
