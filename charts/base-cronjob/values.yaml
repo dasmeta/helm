@@ -5,6 +5,7 @@ jobs:
     serviceAccountName:
       create: true
       name: "sa-1"
+    concurrencyPolicy: Forbid
     image:
       registry: docker.io
       repository: busybox

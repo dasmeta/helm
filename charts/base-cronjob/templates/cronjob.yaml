@@ -12,13 +12,22 @@ metadata:
     {{- range $key, $value := $job.labels }}
     {{ $value.name }}: {{ $value.value | quote}}
     {{- end }}
+    app-name: {{ $job.name | quote}}
   {{- end }}
 spec:
   schedule: {{ $job.schedule | quote}}
+  concurrencyPolicy: {{ $job.concurrencyPolicy }}
   jobTemplate:
     spec:
       template:
         metadata:
+          {{- if $job.labels }}
+          labels:
+            {{- range $key, $value := $job.labels }}
+            {{ $value.name }}: {{ $value.value | quote}}
+            {{- end }}
+            app-name: {{ $job.name | quote}}
+          {{- end }}
           annotations:
             configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
         spec:
