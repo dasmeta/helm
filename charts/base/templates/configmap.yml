@@ -1,9 +1,11 @@
+{{- if .Values.config }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ include "base.fullname" . }}
 data:
   {{- toYaml .Values.config | nindent 2 }}
+{{- end }}
 
 ---
 {{- if .Values.extraContainer.configmap }}
