@@ -219,8 +219,14 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           envFrom:
+            {{- if .Values.config }}
             - configMapRef:
                 name: {{ include "base.fullname" . }}
+            {{- end }}
+            {{- if .Values.externalconfigmap }}
+            - configMapRef:
+                name:  {{ .Values.externalconfigmap.name }}
+            {{- end }}
             {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" }}
             - secretRef:
                 name: {{ include "base.fullname" . }}

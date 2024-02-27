@@ -464,6 +464,10 @@ base:
       topologyKey: kubernetes.io/hostname
       whenUnsatisfiable: ScheduleAnyway
 
+### Connect to external configmap
+
+  externalconfigmap:
+    name: docflow-config
 
 ### Init container
 
