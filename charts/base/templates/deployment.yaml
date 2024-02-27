@@ -223,9 +223,9 @@ spec:
             - configMapRef:
                 name: {{ include "base.fullname" . }}
             {{- end }}
-            {{- if .Values.externalconfigmap }}
+            {{- if .Values.externalConfigmap }}
             - configMapRef:
-                name:  {{ .Values.externalconfigmap.name }}
+                name:  {{ .Values.externalConfigmap.name }}
             {{- end }}
             {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" }}
             - secretRef:

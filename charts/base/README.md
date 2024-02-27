@@ -466,7 +466,7 @@ base:
 
 ### Connect to external configmap
 
-  externalconfigmap:
+  externalConfigmap:
     name: docflow-config
 
 ### Init container
