@@ -50,6 +50,20 @@ spec:
       initContainers:
         - name: {{ .Values.initContainers.name }}
           image: "{{ .Values.initContainers.image.repository }}:{{ .Values.initContainers.image.tag | default .Chart.AppVersion }}"
+          envFrom:
+            {{- if .Values.config }}
+            - configMapRef:
+                name: {{ include "base.fullname" . }}
+            {{- end }}
+            {{- if .Values.initContainers.externalConfigmap }}
+            - configMapRef:
+                name:  {{ .Values.initContainers.externalConfigmap.name }}
+            {{- end }}
+            {{- if eq .Values.secretsDefaultEngine "ExternalSecrets" }}
+            - secretRef:
+                name: {{ include "base.fullname" . }}
+                optional: true
+            {{- end }}
           imagePullPolicy: {{ .Values.initContainers.image.pullPolicy }}
           {{- if $.Values.initContainers.command }}
           command:
