@@ -76,6 +76,10 @@ spec:
           {{- end }}
           {{- end }}
           {{- end }}
+          {{- if .Values.initContainers.envFrom }}
+          envFrom:
+            {{- toYaml .Values.initContainers.envFrom | nindent 12 }}
+          {{- end }}
           {{- if .Values.initContainers.volumes }}
           volumeMounts:
             {{- range $index, $element := .Values.initContainers.volumes }}
