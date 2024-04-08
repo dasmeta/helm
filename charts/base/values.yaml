@@ -136,6 +136,9 @@ readinessProbe: {}
   # initialDelaySeconds: 60
 # periodSeconds: 5
 
+envFrom:
+  secret:
+
 startupProbe: {}
   # httpGet:
   #   path: /
