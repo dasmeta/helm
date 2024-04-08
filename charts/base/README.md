@@ -491,3 +491,44 @@ base:
       - mountPath: /config.json
         name: config-json
         subPath: config.json
+
+### Job 
+  job:
+    name: db-commands
+    annotations:
+        "helm.sh/hook": pre-install,pre-upgrade
+    image:
+      repository: ********.dkr.ecr.eu-central-1.amazonaws.com/
+      tag: latest
+      pullPolicy: IfNotPresent
+    volumes:
+    - name: storage
+      mountPath: /opt/storage/
+    envFrom:
+        secret: api
+    command:
+      - "/bin/bash"
+      - "-c"
+      - |
+        env > .env
+
+### Deployment read full secret
+
+  envFrom:
+    secret: site-stage
+
+### Deployment add additionalvolume mount path for same pvc
+
+  deployment:
+    volumes:
+      - name: storage
+        mountPath: /storage/aaaa
+        subPath: aaaa
+        persistentVolumeClaim:
+          claimName: storage
+
+    additionalvolumeMounts:
+      - name: storage
+        mountPath: /storage/bbbb
+        subPath: bbbb
+  
