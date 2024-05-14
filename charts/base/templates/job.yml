@@ -5,8 +5,8 @@ metadata:
   name: {{ .Values.job.name | default (include "base.fullname" .) }}
   labels:
     {{- include "base.labels" . | nindent 4 }}
-    {{- if .Values.labels }}
-    {{- range $key, $value := .Values.labels }}
+    {{- if .Values.job.labels }}
+    {{- range $key, $value := .Values.job.labels }}
     {{ $value.name }}: {{ $value.value | quote}}
     {{- end }}
     {{- end }}
@@ -24,8 +24,8 @@ spec:
       {{- end }}
       labels:
         {{- include "base.selectorLabels" . | nindent 8 }}
-        {{- if .Values.labels }}
-        {{- range $key, $value := .Values.labels }}
+        {{- if .Values.job.labels }}
+        {{- range $key, $value := .Values.job.labels }}
         {{ $value.name }}: {{ $value.value | quote }}
         {{- end }}
         {{- end }}

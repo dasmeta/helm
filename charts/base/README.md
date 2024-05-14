@@ -501,6 +501,10 @@ base:
       repository: ********.dkr.ecr.eu-central-1.amazonaws.com/
       tag: latest
       pullPolicy: IfNotPresent
+   labels:
+     label1:
+       name: "app-version"
+       value: "v1.0.19"
     volumes:
     - name: storage
       mountPath: /opt/storage/
