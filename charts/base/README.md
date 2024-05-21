@@ -1,4 +1,4 @@
-# How to
+# How to use as dependency, basic example
 
 ```
 dependencies:
@@ -6,6 +6,32 @@ dependencies:
     version: 0.1.65
     repository: https://dasmeta.github.io/helm
 ```
+
+# How to set ingress default backend
+
+```yaml
+# file values.yaml
+...
+
+ingress:
+  enabled: true
+  class: nginx
+  annotations: {}
+  defaultBackend:
+    service:
+      name: my-backend-service
+      port:
+        number: 80
+  hosts:
+    - host: my-domain.com
+      paths:
+        - backend:
+            serviceName: my-backend-service
+            servicePort: 80
+          path: /*
+...
+```
+
 
 ```bash
 $ helm dependency update
