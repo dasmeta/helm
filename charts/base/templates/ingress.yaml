@@ -27,6 +27,10 @@ spec:
       secretName: {{ .secretName }}
     {{- end }}
   {{- end }}
+  {{- if .Values.ingress.defaultBackend }}
+  defaultBackend:
+    {{- toYaml .Values.ingress.defaultBackend | nindent 4 }}
+  {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
     - host: {{ .host | quote }}

@@ -3,7 +3,7 @@
 ```
 dependencies:
   - name: base
-    version: 0.1.36
+    version: 0.1.65
     repository: https://dasmeta.github.io/helm
 ```
 
