@@ -562,3 +562,11 @@ base:
         mountPath: /storage/bbbb
         subPath: bbbb
   
+### Deployment send command and args
+
+  command:
+    - "/bin/bash"
+    - "-c"
+  args:
+    - |
+      /test.sh
