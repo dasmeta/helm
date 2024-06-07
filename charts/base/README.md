@@ -518,7 +518,7 @@ initContainers:
       name: config-json
       subPath: config.json
 
-#### 0.1.67 version support multiple init containers
+#### 0.2.0 version support multiple init containers
 initContainers:
   - name: config
     args:
