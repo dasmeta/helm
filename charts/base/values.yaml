@@ -10,9 +10,27 @@ image:
   # Overrides the image tag whose default is  the chart appVersion.
   tag: 1.21
 
-# initContainer:
-#   image: busybox
-#   tag: 1.28
+# Init containers
+# initContainers:
+#   - name: config
+#     args:
+#     - /config.json
+#     - /test/config.json
+#     secrets:
+#       - CLIENT_ID:
+#           from: client-market
+#           key: client_id
+#       - AUTH_TOKEN:
+#           from: auth-token
+#           key: token
+#     image:
+#       repository: nginx
+#       pullPolicy: IfNotPresent
+#       tag: latest
+#     volumes:
+#       - mountPath: /config.json
+#         name: config-json
+#         subPath: config.json
 
 imagePullSecrets: []
 nameOverride: ""
