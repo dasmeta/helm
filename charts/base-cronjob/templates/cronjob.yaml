@@ -32,6 +32,10 @@ spec:
             configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
         spec:
           serviceAccountName: {{ $job.serviceAccount.name }}
+          {{- with $job.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           restartPolicy: {{ $job.restartPolicy }}
           containers:
             - name: {{ $job.name | quote }}
@@ -66,6 +70,9 @@ spec:
               envFrom:
                 - configMapRef:
                     name: {{ $job.name | quote}}
+              {{- with $job.envFrom }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
               volumeMounts:
             {{- range $index, $element := $job.volumes }}
                 - name: {{ coalesce $element.name (add $index 1) }}
@@ -94,10 +101,12 @@ spec:
                 claimName: {{ $element.persistentVolumeClaim.claimName }}
             {{- end }}
           {{- end }}
+            {{- if $element.configMap }}
               configMap:
                 name: {{ $element.configMap.name | default $job.name}}
             {{- if $element.configMap.defaultMode }}
                 defaultMode: {{ $element.configMap.defaultMode }}
+            {{- end }}
             {{- end }}
           {{- end }}
 {{- end }}

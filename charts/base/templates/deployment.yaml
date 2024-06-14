@@ -171,6 +171,9 @@ spec:
             {{- if eq $element.container "extra"}}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
+              {{- if $element.subPath }}
+              subPath: {{ $element.subPath }}
+              {{- end }}
               readOnly: {{ $element.readOnly | default false }}
             {{- end }}
             {{- end }}

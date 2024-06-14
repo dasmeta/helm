@@ -3,21 +3,36 @@ name: Release helm chart
 on:
   push:
     branches:
-      - main
+      - DMVP-3604-helm-charts-improvements
 
 jobs:
-  release:
+  semantic-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
         with:
-          fetch-depth: 0
-      - name: Configure Git
+          filters: |
+            charts_changed:
+              - 'charts/*'
+
+      # run only if some 'charts' files were changed
+      - name: backend tests
+        if: steps.filter.outputs.backend == 'true'
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-      - name: Run Release
-        uses: helm/chart-releaser-action@v1.0.0
-        env:
-          CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          echo "charts changed: ${{ steps.filter.outputs.charts_changed_files }}"
+  # release:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - name: Configure Git
+  #       run: |
+  #         git config user.name "$GITHUB_ACTOR"
+  #         git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+  #     - name: Run Release
+  #       uses: helm/chart-releaser-action@v1.6.0
+  #       env:
+  #         CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
