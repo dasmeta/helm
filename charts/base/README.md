@@ -1,5 +1,6 @@
 # How to use as dependency, basic example
 
+
 ```
 dependencies:
   - name: base

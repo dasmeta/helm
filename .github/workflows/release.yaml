@@ -17,8 +17,8 @@ jobs:
               - 'charts/**'
 
       # run only if some 'charts' files were changed
-      - name: backend tests
-        if: steps.filter.outputs.backend == 'true'
+      - name: charts changed
+        if: steps.filter.outputs.charts_changed == 'true'
         run: |
           echo "charts changed: ${{ steps.filter.outputs.charts_changed_files }}"
   # release:
