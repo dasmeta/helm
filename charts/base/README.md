@@ -496,9 +496,31 @@ base:
     name: docflow-config
 
 ### Init container
+####  0.1.66 Version which support one init container
+initContainers:
+  name: config
+  args:
+  - /config.json
+  - /test/config.json
+  secrets:
+    - CLIENT_ID:
+        from: client-market
+        key: client_id
+    - AUTH_TOKEN:
+        from: auth-token
+        key: token
+  image:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    tag: latest
+  volumes:
+    - mountPath: /config.json
+      name: config-json
+      subPath: config.json
 
-  initContainers:
-    name: config
+#### 0.2.0 version support multiple init containers
+initContainers:
+  - name: config
     args:
     - /config.json
     - /test/config.json
@@ -517,6 +539,7 @@ base:
       - mountPath: /config.json
         name: config-json
         subPath: config.json
+
 
 ### Job 
   job:

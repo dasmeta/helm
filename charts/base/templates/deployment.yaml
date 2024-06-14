@@ -53,23 +53,24 @@ spec:
       serviceAccountName: {{ include "base.serviceAccountName" . }}
       {{- if .Values.initContainers }}
       initContainers:
-        - name: {{ .Values.initContainers.name }}
-          image: "{{ .Values.initContainers.image.repository }}:{{ .Values.initContainers.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.initContainers.image.pullPolicy }}
-          {{- if $.Values.initContainers.command }}
+       {{- range $initContainer := .Values.initContainers }}
+        - name: {{ $initContainer.name }}
+          image: "{{ $initContainer.image.repository }}:{{ $initContainer.image.tag }}"
+          imagePullPolicy: {{ $initContainer.image.pullPolicy }}
+          {{- if $initContainer.command }}
           command:
-            {{  toYaml .Values.initContainers.command | nindent 12 }}
+            {{  toYaml $initContainer.command | nindent 12 }}
           {{- end }}
-          {{- if $.Values.initContainers.args }}
-          args: {{  toYaml .Values.initContainers.args | nindent 12 }}
+          {{- if $initContainer.args }}
+          args: {{  toYaml $initContainer.args | nindent 12 }}
           {{- end }}
-          {{- if or .Values.initContainers.extraEnv .Values.initContainers.secrets}}
+          {{- if or $initContainer.extraEnv $initContainer.secrets}}
           env:
-          {{- range $key, $value := .Values.initContainers.extraEnv }}
+          {{- range $key, $value := $initContainer.extraEnv }}
           - name: {{ $key | quote}}
             value: {{ $value | quote }}
           {{- end }}
-          {{- range $secret := .Values.initContainers.secrets }}
+          {{- range $secret := $initContainer.secrets }}
           {{- if ne (kindOf $secret) "string" }}
           {{- range $map_key,$map_value := $secret }}
           - name: {{ $map_key }}
@@ -81,13 +82,13 @@ spec:
           {{- end }}
           {{- end }}
           {{- end }}
-          {{- if .Values.initContainers.envFrom }}
+          {{- if $initContainer.envFrom }}
           envFrom:
-            {{- toYaml .Values.initContainers.envFrom | nindent 12 }}
+            {{- toYaml $initContainer.envFrom | nindent 12 }}
           {{- end }}
-          {{- if .Values.initContainers.volumes }}
+          {{- if $initContainer.volumes }}
           volumeMounts:
-            {{- range $index, $element := .Values.initContainers.volumes }}
+            {{- range $index, $element := $initContainer.volumes }}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
               readOnly: {{ $element.readOnly | default false }}
@@ -96,6 +97,7 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+      {{- end }}
       {{- end }}
       {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
