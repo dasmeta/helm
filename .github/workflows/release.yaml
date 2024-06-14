@@ -18,7 +18,7 @@ jobs:
 
       # run only if some 'charts' files were changed
       - name: charts changed
-        if: ${{ steps.filter.outputs.charts_changed == 'true' }}
+        if: ${{ steps.filter.outputs.charts_changed == true }}
         run: |
           echo "charts changed: ${{ steps.filter.outputs.charts_changed_files }}"
   # release:
