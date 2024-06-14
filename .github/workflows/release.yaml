@@ -14,7 +14,7 @@ jobs:
         with:
           filters: |
             charts_changed:
-              - 'charts/*'
+              - 'charts/**'
 
       # run only if some 'charts' files were changed
       - name: backend tests
