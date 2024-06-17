@@ -64,6 +64,11 @@ service:
   type: NodePort
   port: 80
   protocol: TCP
+  # extraPorts:
+  #   - port: 8080
+  #     targetPort: 8080
+  #     protocol: TCP
+  #     name: http-second
 
 ingress:
   enabled: false
