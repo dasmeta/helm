@@ -16,6 +16,9 @@ spec:
       targetPort: {{ .Values.service.targetPort | default .Values.containerPort }}
       protocol: {{ .Values.service.protocol }}
       name: {{ .Values.service.name }}
+    {{- if .Values.service.extraPorts }}
+    {{- toYaml .Values.service.extraPorts | nindent 4 }}
+    {{- end }}
   selector:
     {{- include "base.selectorLabels" . | nindent 4 }}
 {{- end }}

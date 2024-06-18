@@ -540,6 +540,7 @@ initContainers:
         name: config-json
         subPath: config.json
 
+#### the version 0.2.1 supports both new multiple/list and single-map/old initContainers config formats
 
 ### Job 
   job:

@@ -53,7 +53,7 @@ spec:
       serviceAccountName: {{ include "base.serviceAccountName" . }}
       {{- if .Values.initContainers }}
       initContainers:
-       {{- range $initContainer := .Values.initContainers }}
+       {{- range $initContainer := (ternary .Values.initContainers (list .Values.initContainers) (kindIs "slice" .Values.initContainers)) }}
         - name: {{ $initContainer.name }}
           image: "{{ $initContainer.image.repository }}:{{ $initContainer.image.tag }}"
           imagePullPolicy: {{ $initContainer.image.pullPolicy }}
@@ -173,6 +173,9 @@ spec:
             {{- if eq $element.container "extra"}}
             - name: {{ coalesce $element.name (add $index 1) }}
               mountPath: {{ $element.mountPath }}
+              {{- if $element.subPath }}
+              subPath: {{ $element.subPath }}
+              {{- end }}
               readOnly: {{ $element.readOnly | default false }}
             {{- end }}
             {{- end }}
