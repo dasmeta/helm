@@ -1,0 +1,90 @@
+base:
+  image:
+    repository: dasmeta/kafka-connect
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  service:
+    type: ClusterIP
+    port: 8083
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  secretsDefaultEngine: disabled
+
+  encodedGcsCredentials: ""
+
+  kafka:
+    bootstrapServers: "broker:9092"
+
+  schemaRegistry:
+    enabled: true
+    url: "http://schema-registry:8081"
+
+  #this is going to be a configmap where configs of connector will be stored
+  connector:
+    gcs:
+      class: io.aiven.kafka.connect.gcs.GcsSinkConnector
+      bucketName: your-gcs-bucket
+      partSize: 5242880
+      flushSize: 3
+      credentialsPath: /opt/kafka/plugins/credentials.json
+      format: json
+      topics: "your-kafka-topic"
+      tasksMax: "1"
+
+  deployment:
+    volumes:
+      - mountPath: /opt/kafka/plugins/credentials.json
+        name: gcs-credentials
+        secret:
+          secretName: gcs-credentials
+        readOnly: true
+
+  extraEnv:
+    CONNECT_BOOTSTRAP_SERVERS: "{{ .Values.kafka.bootstrapServers }}"
+    CONNECT_REST_PORT: "8083"
+    CONNECT_GROUP_ID: "kafka-connect"
+    CONNECT_CONFIG_STORAGE_TOPIC: "_kafka-connect-configs"
+    CONNECT_OFFSET_STORAGE_TOPIC: "_kafka-connect-offsets"
+    CONNECT_STATUS_STORAGE_TOPIC: "_kafka-connect-status"
+    CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+    CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+    CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "{{ .Values.schemaRegistry.url }}"
+    CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+    CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+    CONNECT_LOG4J_ROOT_LOGLEVEL: "WARN"
+    CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+    CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+    CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components/,/data/connect-jars"
+
+  job:
+    name: deploy-gcs-connector
+    image:
+      repository: curlimages/curl
+      tag: latest
+      pullPolicy: IfNotPresent
+    volumes:
+      - name: config
+        mountPath: /config
+        configMap:
+          name: kafka-connect-config
+    command:
+      - "sh"
+      - "-c"
+      - |
+        echo "===> Waiting for Kafka Connect to start"
+        while ! curl -s http://{{ include "kafka-connect.fullname" . }}:8083/; do sleep 5; done
+        echo "===> Deploying GCS Sink Connector"
+        curl -X POST -H "Content-Type: application/json" --data @/config/gcs-sink-connector.json http://{{ include "kafka-connect.fullname" . }}:8083/connectors

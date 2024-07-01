@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-connect-config
+  labels:
+    app: kafka-connect-config
+data:
+  gcs-sink-connector.json: |
+    {
+      "name": "gcs-sink-connector",
+      "config": {
+        "connector.class": "{{ .Values.base.connector.gcs.class }}",
+        "tasks.max": "{{ .Values.base.connector.gcs.tasksMax }}",
+        "topics": "{{ .Values.base.connector.gcs.topics }}",
+        "gcs.bucket.name": "{{ .Values.base.connector.gcs.bucketName }}",
+        "gcs.part.size": "{{ .Values.base.connector.gcs.partSize }}",
+        "flush.size": "{{ .Values.base.connector.gcs.flushSize }}",
+        "gcs.credentials.path": "{{ .Values.base.connector.gcs.credentialsPath }}",
+        "format.output.type": "jsonl",
+        "format.output.envelope": false,
+        "format.output.fields": "value",
+        "_format.output.fields": "key,value,offset,timestamp,headers",
+        "file.name.prefix": "raw/",
+        "file.compression.type": "gzip",
+        "file.name.timestamp.timezone": "UTC",
+        "file.name.timestamp.source": "wallclock",
+        "file.name.template": "{{ printf `y={{{{timestamp:unit=yyyy}}}}/m={{{{timestamp:unit=MM}}}}/d={{{{timestamp:unit=dd}}}}/H={{{{timestamp:unit=HH}}}}/{{topic}}-{{partition:padding=true}}-{{start_offset:padding=true}}.gz` }}",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "_key.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+        "key.converter.schemas.enable": false,
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "_value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+        "__value.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter.schemas.enable": false,
+        "errors.tolerance": "all",
+        "errors.deadletterqueue.topic.name": "connect.sink.dlt.gcs.users",
+        "errors.log.include.messages": true,
+        "errors.deadletterqueue.context.headers.enable": true,
+        "errors.deadletterqueue.topic.replication.factor": 1
+      }
+    }
