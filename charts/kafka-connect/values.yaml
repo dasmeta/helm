@@ -28,7 +28,7 @@ base:
 
   deployment:
     volumes:
-      - mountPath: /opt/kafka/plugins/credentials.json
+      - mountPath: /opt/confluent/secrets/credential.json
         name: gcs-credentials
         secret:
           secretName: gcs-credentials
