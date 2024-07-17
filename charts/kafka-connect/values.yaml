@@ -22,24 +22,9 @@ base:
 
   encodedGcsCredentials: ""
 
-  kafka:
-    bootstrapServers: "broker:9092"
-
   schemaRegistry:
     enabled: true
     url: "http://schema-registry:8081"
-
-  #this is going to be a configmap where configs of connector will be stored
-  connector:
-    gcs:
-      class: io.aiven.kafka.connect.gcs.GcsSinkConnector
-      bucketName: your-gcs-bucket
-      partSize: 5242880
-      flushSize: 3
-      credentialsPath: /opt/kafka/plugins/credentials.json
-      format: json
-      topics: "your-kafka-topic"
-      tasksMax: "1"
 
   deployment:
     volumes:
@@ -88,3 +73,19 @@ base:
         while ! curl -s http://{{ include "kafka-connect.fullname" . }}:8083/; do sleep 5; done
         echo "===> Deploying GCS Sink Connector"
         curl -X POST -H "Content-Type: application/json" --data @/config/gcs-sink-connector.json http://{{ include "kafka-connect.fullname" . }}:8083/connectors
+
+config:
+  kafka:
+    bootstrapServers: "broker:9092"
+
+  #this is going to be a configmap where configs of connector will be stored
+  connector:
+    gcs:
+      class: io.aiven.kafka.connect.gcs.GcsSinkConnector
+      bucketName: "your-gcs-bucket-name"
+      partSize: 5242880
+      flushSize: 3
+      credentialsPath: /opt/kafka/plugins/credentials.json
+      format: json
+      topics: "your-kafka-topic"
+      tasksMax: "1"

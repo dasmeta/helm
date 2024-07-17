@@ -21,7 +21,7 @@ spec:
             - containerPort: 8081
           env:
             - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
-              value: {{ .Values.base.kafka.bootstrapServers }}
+              value: "{{ .Values.config.kafka.bootstrapServers }}"
             - name: SCHEMA_REGISTRY_HOST_NAME
               value: "schema-registry"
             - name: SCHEMA_REGISTRY_LISTENERS

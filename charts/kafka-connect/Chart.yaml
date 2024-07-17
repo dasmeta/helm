@@ -25,5 +25,5 @@ appVersion: "2.14.5"
 
 dependencies:
   - name: base
-    version: 1.0.0
+    version: 0.2.1
     repository: https://dasmeta.github.io/helm
