@@ -7,9 +7,9 @@ metadata:
 data:
   gcs-sink-connector.json: |
     {
-      "name": "gcs-sink-connector",
+      "name": "{{ .Values.config.connector.name }}",
       "config": {
-        "connector.class": "{{ .Values.config.connector.gcs.class }}",
+        "connector.class": "io.aiven.kafka.connect.gcs.GcsSinkConnector",
         "tasks.max": "{{ .Values.config.connector.gcs.tasksMax }}",
         "topics": "{{ .Values.config.connector.gcs.topics }}",
         "gcs.bucket.name": "{{ .Values.config.connector.gcs.bucketName }}",
