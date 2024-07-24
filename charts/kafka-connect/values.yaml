@@ -39,6 +39,10 @@ base:
         mountPath: /config
         configMap:
           name: kafka-connect-config
+      - name: deploy-config
+        mountPath: /config/deploy
+        configMap:
+          name: deploy-gcs-connector
 
   extraEnv:
     CONNECT_BOOTSTRAP_SERVERS: ""
@@ -73,14 +77,12 @@ base:
     volumes:
       - name: config
         mountPath: /config
+      - name: deploy-config
+        mountPath: /config/deploy
     command:
-      - "sh"
+      - "/bin/sh"
       - "-c"
-      - |
-        echo "===> Waiting for Kafka Connect to start"
-        while ! curl -s http://kafka-connect:8083/; do sleep 5; done
-        echo "===> Deploying GCS Sink Connector"
-        curl -X POST -H "Content-Type: application/json" --data @/config/gcs-sink-connector.json http://kafka-connect:8083/connectors
+      - "sh /config/deploy/deploy-gcs-connector.sh"
 
 config:
   kafka:
