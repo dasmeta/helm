@@ -1,0 +1,101 @@
+base:
+  image:
+    repository: dasmeta/kafka-connect
+    tag: 1.0.1
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  service:
+    type: ClusterIP
+    port: 8083
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
+    requests:
+      cpu: 1500m
+      memory: 2048Mi
+
+  secretsDefaultEngine: disabled
+
+  containerPort: 8083
+
+  encodedGcsCredentials: ""
+
+  schemaRegistry:
+    enabled: true
+    url: "http://schema-registry:8081"
+
+  deployment:
+    volumes:
+      - mountPath: /opt/confluent/secrets/credential
+        name: gcs-credentials
+        secret:
+          secretName: gcs-credentials
+        readOnly: true
+      - name: config
+        mountPath: /config
+        configMap:
+          name: kafka-connect-config
+      - name: deploy-config
+        mountPath: /config/deploy
+        configMap:
+          name: deploy-gcs-connector
+
+  extraEnv:
+    CONNECT_BOOTSTRAP_SERVERS: ""
+    CONNECT_REST_PORT: "8083"
+    CONNECT_GROUP_ID: "kafka-connect"
+    CONNECT_CONFIG_STORAGE_TOPIC: "_kafka-connect-configs"
+    CONNECT_OFFSET_STORAGE_TOPIC: "_kafka-connect-offsets"
+    CONNECT_STATUS_STORAGE_TOPIC: "_kafka-connect-status"
+    CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+    CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+    CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+    CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+    CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+    CONNECT_LOG4J_ROOT_LOGLEVEL: "WARN"
+    CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+    CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+    CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_PLUGIN_PATH: "/data/connect-jars,/usr/share/java,/usr/share/confluent-hub-components/"
+    CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect.kafka.svc.cluster.local"
+    CONNECT_REST_LISTENERS: "http://0.0.0.0:8083"
+
+  job:
+    name: deploy-gcs-connector
+    image:
+      repository: curlimages/curl
+      tag: latest
+      pullPolicy: IfNotPresent
+    annotations:
+      "helm.sh/hook": post-install,post-upgrade
+    volumes:
+      - name: config
+        mountPath: /config
+      - name: deploy-config
+        mountPath: /config/deploy
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "sh /config/deploy/deploy-gcs-connector.sh"
+
+config:
+  kafka:
+    bootstrapServers: "broker:9092"
+
+  #this is going to be a configmap where configs of connector will be stored
+  connector:
+    name: "gcs-sink-connector"
+    gcs:
+      bucketName: "your-gcs-bucket-name"
+      partSize: 5242880
+      flushSize: 3
+      credentialsPath: /opt/confluent/secrets/credential/gcs-credentials.json
+      format: json
+      topics: "your-kafka-topic"
+      tasksMax: "1"

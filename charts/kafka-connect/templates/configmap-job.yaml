@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deploy-gcs-connector
+  labels:
+    app: deploy-gcs-connector
+data:
+  deploy-gcs-connector.sh: |
+    echo "===> Waiting for Kafka Connect to start"
+    while ! curl -s http://{{ .Release.Name }}:8083/; do sleep 5; done
+    echo "===> Deploying GCS Sink Connector"
+    curl -X POST -H "Content-Type: application/json" --data @/config/gcs-sink-connector.json http://{{ .Release.Name }}:8083/connectors
