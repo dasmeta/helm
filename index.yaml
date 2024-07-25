@@ -868,6 +868,21 @@ entries:
     urls:
     - helm-chart-test-0.1.0.tgz
     version: 0.1.0
+  kafka-connect:
+  - apiVersion: v2
+    appVersion: 2.14.5
+    created: "2024-07-25T05:49:10.829490769Z"
+    dependencies:
+    - name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.2.1
+    description: A Helm chart for Kafka Connect
+    digest: 58a9ad846e9a8a6f57034c070bab221a85aa25337bcc3748d60c8c4edf1b157e
+    name: kafka-connect
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/kafka-connect-1.0.0/kafka-connect-1.0.0.tgz
+    version: 1.0.0
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
