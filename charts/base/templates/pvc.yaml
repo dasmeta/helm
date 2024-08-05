@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .name }}
+  name: {{ .persistentVolumeClaimName | default (include "base.fullname" .) }}
   labels:
     {{- include "base.labels" $ | nindent 4 }}
   {{- if .keepPvc }}
@@ -23,6 +23,6 @@ spec:
   {{- if .enableDataSource }}
   dataSource:
     kind: PersistentVolumeClaim
-    name: {{ .name }}
+    name: {{ .persistentVolumeClaimName| default (include "base.fullname" .) }}
   {{- end }}
 {{- end }}
