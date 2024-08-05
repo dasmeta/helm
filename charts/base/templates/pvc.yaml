@@ -1,16 +1,16 @@
-{{- if .Values.storage -}}
+{{- range .Values.storages }}
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.storage.persistentVolumeClaimName | default (include "base.fullname" .) }}
+  name: {{ .name }}
   labels:
-    {{- include "base.labels" . | nindent 4 }}
-  {{- if .Values.storage.keepPvc }}
+    {{- include "base.labels" $ | nindent 4 }}
+  {{- if .keepPvc }}
   annotations:
-    "helm.sh/resource-policy": keep
+    "helm.sh/resource-policy": "keep"
   {{- end }}
 spec:
-  {{- with .Values.storage }}
   accessModes:
     {{- toYaml .accessModes | nindent 4 }}
   volumeMode: {{ .volumeMode | default "Filesystem" }}
@@ -20,10 +20,9 @@ spec:
   {{- if .className }}
   storageClassName: {{ .className }}
   {{- end }}
-  {{- end }}
-  {{ if .Values.storage.enableDataSource}}
+  {{- if .enableDataSource }}
   dataSource:
     kind: PersistentVolumeClaim
-    name: {{ .Values.storage.persistentVolumeClaimName | default (include "base.fullname" .) }}
-{{- end }}
+    name: {{ .name }}
+  {{- end }}
 {{- end }}
