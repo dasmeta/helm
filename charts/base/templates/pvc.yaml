@@ -1,28 +1,31 @@
-{{- range .Values.storage }}
+{{- if .Values.storage -}}
+{{- $storageValues := (kindIs "slice" .Values.storage | ternary .Values.storage (list .Values.storage)) -}}
+{{- range $storage := $storageValues }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .persistentVolumeClaimName | default (include "base.fullname" .) }}
+  name: {{ $storage.persistentVolumeClaimName | default (include "base.fullname" $) }}
   labels:
     {{- include "base.labels" $ | nindent 4 }}
-  {{- if .keepPvc }}
+  {{- if $storage.keepPvc }}
   annotations:
     "helm.sh/resource-policy": "keep"
   {{- end }}
 spec:
   accessModes:
-    {{- toYaml .accessModes | nindent 4 }}
-  volumeMode: {{ .volumeMode | default "Filesystem" }}
+    {{- toYaml $storage.accessModes | nindent 4 }}
+  volumeMode: {{ $storage.volumeMode | default "Filesystem" }}
   resources:
     requests:
-      storage: {{ .requestedSize }}
-  {{- if .className }}
-  storageClassName: {{ .className }}
+      storage: {{ $storage.requestedSize }}
+  {{- if $storage.className }}
+  storageClassName: {{ $storage.className }}
   {{- end }}
-  {{- if .enableDataSource }}
+  {{- if $storage.enableDataSource }}
   dataSource:
     kind: PersistentVolumeClaim
-    name: {{ .persistentVolumeClaimName| default (include "base.fullname" .) }}
+    name: {{ $storage.persistentVolumeClaimName | default (include "base.fullname" $) }}
   {{- end }}
+{{- end }}
 {{- end }}

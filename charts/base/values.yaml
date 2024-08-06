@@ -50,7 +50,8 @@ podAnnotations: {}
 podSecurityContext: {}
 # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -91,7 +92,7 @@ ingress:
 
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
-# secrets: 
+# secrets:
 #   - external-secret-1
 #   - external-secret-2
 #   - external-secret-3
@@ -114,7 +115,8 @@ secretsDefaultEngine: "ExternalSecrets"
 
 extraContainer: {}
 
-resources: {}
+resources:
+  {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -143,7 +145,8 @@ config: {}
 
 containerPort: 80
 
-livenessProbe: {}
+livenessProbe:
+  {}
   # failureThreshold: 3
   # httpGet:
   #   path: /
@@ -154,7 +157,8 @@ livenessProbe: {}
   # successThreshold: 1
 # timeoutSeconds: 1
 
-readinessProbe: {}
+readinessProbe:
+  {}
   # httpGet:
   #   path: /
   #   port: http
@@ -164,18 +168,26 @@ readinessProbe: {}
 envFrom:
   secret:
 
-startupProbe: {}
+startupProbe:
+  {}
   # httpGet:
   #   path: /
 #   port: http
 
-storage: {}
-  # persistentVolumeClaimName: pvc-docs
-  # requestedSize: 1G
-  # className: gp2
-  # accessModes:
-  #   - ReadWriteOnce
-# keepPvc: false
+storage:
+  {}
+  # - persistentVolumeClaimName: "pvc-1"
+  #   accessModes:
+  #     - ReadWriteMany
+  #   className: efs-sc
+  #   requestedSize: 2Gi
+  #   enableDataSource: false
+  # - persistentVolumeClaimName: pvc-2
+  #   accessModes:
+  #     - ReadWriteMany
+  #   className: efs-sc-root
+  #   requestedSize: "2Gi"
+  #   enableDataSource: false
 
 deployment: {}
 
