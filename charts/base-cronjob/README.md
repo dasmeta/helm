@@ -49,7 +49,7 @@ serviceAccount:
 ```
 Set this to have PVCs for a job:
 ```
-storages:
+storage:
   - persistentVolumeClaimName: pvc-job1-storage1
     keepPvc: true
     accessModes:

@@ -1,4 +1,4 @@
-globals:
+default:
   image: {}
 #     registry: "registry"
 #     repository: "repo"
@@ -30,7 +30,7 @@ jobs:
     #        mountPath: /path
     #        persistentVolumeClaim:
     #          claimName: claim
-    storages: {}
+    storage: {}
     #    - persistentVolumeClaimName: claim
     #      accessModes:
     #        - ReadWriteMany
@@ -69,7 +69,7 @@ jobs:
     #        mountPath: /path
     #        persistentVolumeClaim:
     #          claimName: claim
-    storages: {}
+    storage: {}
     #    - persistentVolumeClaimName: claim
     #      accessModes:
     #        - ReadWriteMany
