@@ -1,5 +1,5 @@
 {{- range $job := .Values.jobs }}
-{{- $jobImage := (default $.Values.default.image $job.image) }}
+{{- $jobImage := $job.image | default $.Values.default.image }}
 {{- $jobRegistry := $jobImage.registry | default $.Values.default.image.registry }}
 {{- $jobRepository := $jobImage.repository | default $.Values.default.image.repository }}
 {{- $jobTag := $jobImage.tag | default $.Values.default.image.tag }}
