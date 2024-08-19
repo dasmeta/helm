@@ -7,6 +7,10 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ $job.name | quote}}
+  annotations:
+    {{- with $job.annotations }}
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
   {{- if $job.labels }}
   labels:
     {{- range $key, $value := $job.labels }}
@@ -39,7 +43,15 @@ spec:
           restartPolicy: {{ $job.restartPolicy }}
           containers:
             - name: {{ $job.name | quote }}
+              {{ if $.Values.globals.image }}
+                {{- $globalsrepository := $.Values.globals.image.repository }}
+                {{- $globalsregistry := $.Values.globals.image.registry }}
+                {{- $globalstag := $.Values.globals.image.tag }}
+                {{- $globalsImage := print $globalsregistry "/" $globalsrepository ":" $globalstag }}
+              image: {{  $globalsImage | quote}}
+              {{ else }}
               image: {{ $image | quote}}
+              {{ end }}
               imagePullPolicy: IfNotPresent
               {{- if $job.command }}
               command:
@@ -68,11 +80,18 @@ spec:
                   value: {{ $env.value | quote }}
               {{- end }}
               envFrom:
+              {{- $config := (default dict $job.config) }}
+              {{- if and (kindIs "map" $config) (hasKey $config "enabled") (eq $config.enabled true) }}
                 - configMapRef:
                     name: {{ $job.name | quote}}
               {{- with $job.envFrom }}
                 {{- toYaml . | nindent 16 }}
               {{- end }}
+              {{- end }}
+                {{- range $configMapRef := $job.configMapRefs }}
+                - configMapRef:
+                    name:  {{ $configMapRef }}
+                {{- end }}
               volumeMounts:
             {{- range $index, $element := $job.volumes }}
                 - name: {{ coalesce $element.name (add $index 1) }}

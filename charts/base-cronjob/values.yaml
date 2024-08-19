@@ -1,3 +1,10 @@
+globals:
+  image: {}
+#     registry: "registry"
+#     repository: "repo"
+#     pullPolicy: IfNotPresent
+#     tag: "override"
+
 jobs:
   - name: cronjob1
     schedule: "0 * * * *"
@@ -6,6 +13,8 @@ jobs:
       create: true
       name: "sa-1"
     concurrencyPolicy: Forbid
+    config:
+      enabled: false
     image:
       registry: docker.io
       repository: busybox
@@ -21,8 +30,8 @@ jobs:
     #        mountPath: /path
     #        persistentVolumeClaim:
     #          claimName: claim
-    storage: {}
-    #      persistentVolumeClaimName: claim
+    storages: {}
+    #    - persistentVolumeClaimName: claim
     #      accessModes:
     #        - ReadWriteMany
     #      className: claim
@@ -40,6 +49,8 @@ jobs:
   - name: cronjob2
     schedule: "* * * * *"
     restartPolicy: OnFailure
+    config:
+      enabled: true
     serviceAccount:
       create: false
       name: "sa-2"
@@ -58,8 +69,8 @@ jobs:
     #        mountPath: /path
     #        persistentVolumeClaim:
     #          claimName: claim
-    storage: {}
-    #      persistentVolumeClaimName: claim
+    storages: {}
+    #    - persistentVolumeClaimName: claim
     #      accessModes:
     #        - ReadWriteMany
     #      className: efs-sc

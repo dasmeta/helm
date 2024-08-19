@@ -1,5 +1,5 @@
 {{- range $job := .Values.jobs }}
-{{- if $job.storage -}}
+{{- if $job.storages -}}
 {{ range $storage := $job.storages }}
 ---
 apiVersion: v1

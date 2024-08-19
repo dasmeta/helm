@@ -1,4 +1,5 @@
 {{- range $job := .Values.jobs }}
+{{- if and (hasKey $job "config") (kindIs "map" $job.config) (default false $job.config.enabled) }}
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -6,4 +7,5 @@ metadata:
   name: {{ $job.name | quote}}
 data:
   {{- toYaml $job.config | nindent 2 }}
+{{- end }}
 {{- end }}
