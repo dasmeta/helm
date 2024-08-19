@@ -34,3 +34,36 @@ dependencies:
     version: 0.1.36
     repository: https://dasmeta.github.io/helm
 ```
+
+## Resources
+Some resources are created only when you specify them.
+For example, set this to escape from creating an empty ConfigMap resource:
+```
+config:
+  enabled: false
+```
+Specify this to create ServiceAccount resource:
+```
+serviceAccount:
+  create: true
+```
+Set this to have PVCs for a job:
+```
+storage:
+  - persistentVolumeClaimName: pvc-job1-storage1
+    keepPvc: true
+    accessModes:
+      - ReadWriteOnce
+    volumeMode: Filesystem
+    requestedSize: 5Gi
+    className: standard
+    enableDataSource: false
+  - persistentVolumeClaimName: pvc-job1-storage2
+    keepPvc: false
+    accessModes:
+      - ReadWriteMany
+    volumeMode: Filesystem
+    requestedSize: 10Gi
+    className: standard
+    enableDataSource: true
+```

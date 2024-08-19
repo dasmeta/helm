@@ -1,21 +1,27 @@
 {{- range $job := .Values.jobs }}
-{{- $registry := $job.image.registry }}
-{{- $tag := $job.image.tag }}
-{{- $image := print $registry "/" $job.image.repository ":" $tag }}
+{{- $jobImage := $job.image | default $.Values.default.image }}
+{{- $jobRegistry := $jobImage.registry | default $.Values.default.image.registry }}
+{{- $jobRepository := $jobImage.repository | default $.Values.default.image.repository }}
+{{- $jobTag := $jobImage.tag | default $.Values.default.image.tag }}
+{{- $image := print $jobRegistry "/" $jobRepository ":" $jobTag }}
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ $job.name | quote}}
+  name: {{ $job.name | quote }}
+  annotations:
+    {{- with $job.annotations }}
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
   {{- if $job.labels }}
   labels:
     {{- range $key, $value := $job.labels }}
-    {{ $value.name }}: {{ $value.value | quote}}
+    {{ $value.name }}: {{ $value.value | quote }}
     {{- end }}
-    app-name: {{ $job.name | quote}}
+    app-name: {{ $job.name | quote }}
   {{- end }}
 spec:
-  schedule: {{ $job.schedule | quote}}
+  schedule: {{ $job.schedule | quote }}
   concurrencyPolicy: {{ $job.concurrencyPolicy }}
   jobTemplate:
     spec:
@@ -24,9 +30,9 @@ spec:
           {{- if $job.labels }}
           labels:
             {{- range $key, $value := $job.labels }}
-            {{ $value.name }}: {{ $value.value | quote}}
+            {{ $value.name }}: {{ $value.value | quote }}
             {{- end }}
-            app-name: {{ $job.name | quote}}
+            app-name: {{ $job.name | quote }}
           {{- end }}
           annotations:
             configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
@@ -39,7 +45,7 @@ spec:
           restartPolicy: {{ $job.restartPolicy }}
           containers:
             - name: {{ $job.name | quote }}
-              image: {{ $image | quote}}
+              image: {{ $image | quote }}
               imagePullPolicy: IfNotPresent
               {{- if $job.command }}
               command:
@@ -64,15 +70,22 @@ spec:
               {{ end }}
               env:
               {{- range $env := $job.env }}
-                - name: {{ $env.name | quote}}
+                - name: {{ $env.name | quote }}
                   value: {{ $env.value | quote }}
               {{- end }}
               envFrom:
+              {{- $config := (default dict $job.config) }}
+              {{- if and (kindIs "map" $config) (hasKey $config "enabled") (eq $config.enabled true) }}
                 - configMapRef:
-                    name: {{ $job.name | quote}}
+                    name: {{ $job.name | quote }}
               {{- with $job.envFrom }}
                 {{- toYaml . | nindent 16 }}
               {{- end }}
+              {{- end }}
+                {{- range $configMapRef := $job.configMapRefs }}
+                - configMapRef:
+                    name: {{ $configMapRef }}
+                {{- end }}
               volumeMounts:
             {{- range $index, $element := $job.volumes }}
                 - name: {{ coalesce $element.name (add $index 1) }}
@@ -103,7 +116,7 @@ spec:
           {{- end }}
             {{- if $element.configMap }}
               configMap:
-                name: {{ $element.configMap.name | default $job.name}}
+                name: {{ $element.configMap.name | default $job.name }}
             {{- if $element.configMap.defaultMode }}
                 defaultMode: {{ $element.configMap.defaultMode }}
             {{- end }}

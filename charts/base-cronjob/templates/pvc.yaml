@@ -1,6 +1,6 @@
 {{- range $job := .Values.jobs }}
 {{- if $job.storage -}}
-{{ range $storage := $job.storages }}
+{{ range $storage := $job.storage }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
