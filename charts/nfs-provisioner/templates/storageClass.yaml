@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass }}
+  {{ if .Values.defaultClass }}
+  labels:
+    storageclass.beta.kubernetes.io/is-default-class: true
+  {{ end }}
+provisioner: {{ .Values.provisionerName }}
