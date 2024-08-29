@@ -1,0 +1,26 @@
+image:
+  name: quay.io/kubernetes_incubator/nfs-provisioner
+  tag: v2.3.0
+
+provisionerName: "cluster.local/nfs"
+storageClass: cluster-local-nfs
+defaultClass: false
+hostPath: /srv
+
+clusterRole:
+  apiGroups:
+    - ""
+    - storage.k8s.io
+  resources:
+    - persistentvolumes
+    - persistentvolumeclaims
+    - storageclasses
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - delete
+
+serviceAccount:
+  name: default
