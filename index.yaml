@@ -993,6 +993,21 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/mongodb-bi-connector-0.1.0/mongodb-bi-connector-0.1.0.tgz
     version: 0.1.0
+  nfs-provisioner:
+  - apiVersion: v1
+    created: "2024-08-29T09:41:08.368100707Z"
+    description: nfs-provisioner Chart for Kubernetes.
+    digest: 2ee33b124ab19a6c9264ae7fef0712658bc52819154e3b340ded8fc4a82f1d4e
+    home: https://github.com/kubernetes-incubator/nfs-provisioner
+    maintainers:
+    - email: m@3ko.fr
+      name: Maxime FRANCK
+    name: nfs-provisioner
+    sources:
+    - https://github.com/kubernetes-incubator/nfs-provisioner
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/nfs-provisioner-1.0.0/nfs-provisioner-1.0.0.tgz
+    version: 1.0.0
   weave-scope:
   - apiVersion: v1
     appVersion: 1.10.2
