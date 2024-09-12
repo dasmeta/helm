@@ -6,6 +6,8 @@ provisionerName: "cluster.local/nfs"
 storageClass: cluster-local-nfs
 defaultClass: false
 hostPath: /srv
+persistentVolumeClass:
+persistentVolumeSize: 100Gi
 
 clusterRole:
   apiGroups:

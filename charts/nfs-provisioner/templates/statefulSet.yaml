@@ -82,7 +82,19 @@ spec:
           volumeMounts:
             - name: export-volume
               mountPath: /export
+  {{ if .Values.persistentVolumeClass }}
+  volumeClaimTemplates:
+    - metadata:
+        name: export-volume
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{.Values.persistentVolumeClass}}
+        resources:
+          requests:
+            storage: {{.Values.persistentVolumeSize}}
+  {{ else }}
       volumes:
         - name: export-volume
           hostPath:
             path: {{ .Values.hostPath }}
+  {{ end }}
