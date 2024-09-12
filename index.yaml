@@ -995,6 +995,18 @@ entries:
     version: 0.1.0
   nfs-provisioner:
   - apiVersion: v1
+    created: "2024-09-12T18:26:48.325291221Z"
+    description: nfs-provisioner Chart for Kubernetes.
+    digest: c3ba5e15a816f5631485fe8dd837c0f5e6b861dfa0d0963f40c45cc6af81937e
+    home: https://github.com/dasmeta/helm/blob/main/charts/nfs-provisioner
+    name: nfs-provisioner
+    sources:
+    - https://github.com/kubernetes-incubator/nfs-provisioner
+    - https://github.com/dasmeta/helm/blob/main/charts/nfs-provisioner
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/nfs-provisioner-1.0.1/nfs-provisioner-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v1
     created: "2024-08-29T09:41:08.368100707Z"
     description: nfs-provisioner Chart for Kubernetes.
     digest: 2ee33b124ab19a6c9264ae7fef0712658bc52819154e3b340ded8fc4a82f1d4e
