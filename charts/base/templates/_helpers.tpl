@@ -75,9 +75,9 @@ Return the target/server Kubernetes version
 {{- end -}}
 
 {{- define "annotations" -}}
-{{- $ingressAnnotations := .Values.ingress.annotations -}}
+{{- $ingressAnnotations := .annotations -}}
 
-{{- if eq .Values.ingress.class "alb" }}
+{{- if eq .class "alb" }}
 {{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "alb"
                     "alb.ingress.kubernetes.io/target-type" "ip"
                     "alb.ingress.kubernetes.io/scheme" "internet-facing"
@@ -87,20 +87,20 @@ Return the target/server Kubernetes version
                     "alb.ingress.kubernetes.io/success-codes" "200-399" -}}
 {{- $mergedAnnotations := merge $ingressAnnotations $defaultAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
-{{- else if eq .Values.ingress.class "application-gateway" }}
+{{- else if eq .class "application-gateway" }}
 {{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "azure/application-gateway"
                     "external-dns.alpha.kubernetes.io/ttl" "60"
                     "appgw.ingress.kubernetes.io/backend-protocol" "http"
                     "appgw.ingress.kubernetes.io/ssl-redirect" "true" -}}
 {{- $mergedAnnotations := merge $defaultAnnotations $ingressAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
-{{- else if eq .Values.ingress.class "cce" }}
+{{- else if eq .class "cce" }}
 {{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "cce"
                     "kubernetes.io/elb.port" "443" -}}
 {{- $mergedAnnotations := merge $ingressAnnotations $defaultAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
-{{- else if eq .Values.ingress.class "nginx" }}
-{{- $defaultAnnotations := dict "kubernetes.io/ingress.class" "nginx" -}}
+{{- else }}
+{{- $defaultAnnotations := (ternary ("{}" | fromYaml) (dict "kubernetes.io/ingress.class" .class) .Values.setIngressClassByField) -}}
 {{- $mergedAnnotations := merge $ingressAnnotations $defaultAnnotations -}}
 {{- $mergedAnnotations | toYaml }}
 {{- end }}

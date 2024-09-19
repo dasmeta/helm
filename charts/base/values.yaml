@@ -73,6 +73,14 @@ service:
   #     protocol: TCP
   #     name: http-second
 
+# The ingress class setting by annotation is deprecated and we have setIngressClassByField option for backward compatibility for now, check doc here https://kubernetes.io/docs/concepts/services-networking/ingress/#deprecated-annotation
+# have 'setIngressClassByField: true' to set ingress class by spec.ingressClassName,
+# we seems cant have both "kubernetes.io/ingress.class" and spec.ingressClassName set at once, so there is check(for alb, application-gateway and cce the check is missing for now) to not set annotation if we set ingress class fy field
+# TODO: have ingress class setting by field used always and remove deprecated "kubernetes.io/ingress.class" annotations
+setIngressClassByField: false
+
+# it allows also to pass list of ingresses in following form
+# NOTE: in case of list it will auto attach uniq identify numbers to ingress names starting from second item, you can use nameSuffix field to set custom suffix instead of number
 ingress:
   enabled: false
   class: alb
@@ -89,6 +97,25 @@ ingress:
             servicePort: 80
           path: /*
   tls: []
+# example how can be ingress list passed
+# ingress:
+#   - class: nginx
+#     hosts:
+#       - host: host.name.com
+#         paths:
+#           - backend:
+#               serviceName: base
+#               servicePort: 80
+#             path: /*
+#   - class: nginx-second
+#     nameSuffix: -second
+#     hosts:
+#       - host: host-second.name.com
+#         paths:
+#           - path: /*
+#             backend:
+#               serviceName: base
+#               servicePort: 8080
 
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
