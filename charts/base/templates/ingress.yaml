@@ -1,7 +1,10 @@
-{{- if .Values.ingress.enabled -}}
+{{- if or (and (kindIs "slice" .Values.ingress) .Values.ingress ) ((.Values.ingress).enabled) -}}
 {{- $fullName := include "base.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
 {{- $kubeVersion := (include "base.capabilities.kubeVersion" .) -}}
+{{- $outerScope := . -}}
+{{- range $key, $ingress := (ternary .Values.ingress (list .Values.ingress) (kindIs "slice" .Values.ingress)) }}
+---
 {{- if semverCompare ">=1.19-0" $kubeVersion -}}
 apiVersion: networking.k8s.io/v1
 {{- else if semverCompare ">=1.14-0" $kubeVersion -}}
@@ -11,15 +14,18 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ $fullName }}{{ coalesce $ingress.nameSuffix $key "" }}
   labels:
-    {{- include "base.labels" . | nindent 4 }}
+    {{- include "base.labels" $outerScope | nindent 4 }}
   annotations:
-    {{- include "annotations" . | nindent 4 }}
+    {{- include "annotations" (merge . $) | nindent 4 }}
 spec:
-  {{- if .Values.ingress.tls }}
+  {{- if $.Values.setIngressClassByField }}
+  ingressClassName: {{ $ingress.class }}
+  {{- end }}
+  {{- if $ingress.tls }}
   tls:
-    {{- range .Values.ingress.tls }}
+    {{- range $ingress.tls }}
     - hosts:
         {{- range .hosts }}
         - {{ . | quote }}
@@ -27,12 +33,12 @@ spec:
       secretName: {{ .secretName }}
     {{- end }}
   {{- end }}
-  {{- if .Values.ingress.defaultBackend }}
+  {{- if $ingress.defaultBackend }}
   defaultBackend:
-    {{- toYaml .Values.ingress.defaultBackend | nindent 4 }}
+    {{- toYaml $ingress.defaultBackend | nindent 4 }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
+    {{- range $ingress.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:
@@ -61,4 +67,5 @@ spec:
             {{- end }}
           {{- end }}
     {{- end }}
+{{- end }}
 {{- end }}
