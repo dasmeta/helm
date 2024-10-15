@@ -1,4 +1,4 @@
-{{- if .Values.job -}}
+{{- if .Values.job.image -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -30,6 +30,9 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      {{- if .Values.job.serviceAccount.create }}
+      serviceAccountName: {{ .Values.job.name }}
+      {{- end }}
       containers:
       - name:  {{ .Values.job.name | default (include "base.fullname" .) }}
         image: "{{ .Values.job.image.repository }}:{{ .Values.job.image.tag | default .Chart.AppVersion }}"
