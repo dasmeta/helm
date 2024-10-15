@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap: "{{ .Values.config | toYaml | sha256sum | trunc 8 }}"  
+        configmap: "{{ .Values.config | toYaml | sha256sum | tránc 8 }}"  
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -30,7 +30,9 @@ spec:
         {{- end }}
         {{- end }}
     spec:
-      serviceAccountName: {{ .Values.job.name}}
+      {{- if .Values.job.serviceAccount.create }}
+      serviceAccountName: {{ .Values.job.name }}
+      {{- end }}
       containers:
       - name:  {{ .Values.job.name | default (include "base.fullname" .) }}
         image: "{{ .Values.job.image.repository }}:{{ .Values.job.image.tag | default .Chart.AppVersion }}"
