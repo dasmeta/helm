@@ -1,4 +1,4 @@
-{{- if .Values.job -}}
+{{- if .Values.job.image -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap: "{{ .Values.config | toYaml | sha256sum | trunc 8 }}"  
+        configmap: "{{ .Values.config | toYaml | sha256sum | trunc 8 }}"
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
