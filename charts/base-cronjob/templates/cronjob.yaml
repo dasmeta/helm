@@ -73,6 +73,17 @@ spec:
                 - name: {{ $env.name | quote }}
                   value: {{ $env.value | quote }}
               {{- end }}
+                {{- range $secret := $job.secrets }}
+                {{- if ne (kindOf $secret) "string" }}
+                {{- range $map_key,$map_value := $secret }}
+                - name: {{ $map_key }}
+                  valueFrom:
+                    secretKeyRef:
+                      key: {{ $map_value.key }}
+                      name: {{ $map_value.from }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
               envFrom:
               {{- $config := (default dict $job.config) }}
               {{- if and (kindIs "map" $config) (hasKey $config "enabled") (eq $config.enabled true) }}
