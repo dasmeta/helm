@@ -67,3 +67,11 @@ storage:
     className: standard
     enableDataSource: true
 ```
+
+Use secrets:
+```
+    secrets:
+    - APP_NAME:
+        from: secret-name
+        key: APP_NAME
+```
