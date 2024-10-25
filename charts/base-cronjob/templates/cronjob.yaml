@@ -68,7 +68,6 @@ spec:
                   cpu: {{ $job.resources.limits.cpu }}
                   memory: {{ $job.resources.limits.memory }}
               {{ end }}
-              {{- if or $job.env $job.secrets}}
               env:
               {{- range $env := $job.env }}
                 - name: {{ $env.name | quote }}
@@ -85,7 +84,6 @@ spec:
                 {{- end }}
                 {{- end }}
                 {{- end }}
-              {{- end }}
               envFrom:
               {{- $config := (default dict $job.config) }}
               {{- if and (kindIs "map" $config) (hasKey $config "enabled") (eq $config.enabled true) }}
