@@ -41,6 +41,8 @@ For example, set this to escape from creating an empty ConfigMap resource:
 ```
 config:
   enabled: false
+  data: 
+    <data>
 ```
 Specify this to create ServiceAccount resource:
 ```
