@@ -1062,6 +1062,18 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/nfs-provisioner-1.0.0/nfs-provisioner-1.0.0.tgz
     version: 1.0.0
+  sentry-relay:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-10-29T09:16:19.212153807Z"
+    description: A Helm chart for Kubernetes to create sentry relay with proxy, managed
+      or static mode
+    digest: 36d35533f5635057b8a6e8c78ac3bacfa9b3a3ce25beaf3a04b36cc081d6ed06
+    name: sentry-relay
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/sentry-relay-0.1.0/sentry-relay-0.1.0.tgz
+    version: 0.1.0
   weave-scope:
   - apiVersion: v1
     appVersion: 1.10.2
