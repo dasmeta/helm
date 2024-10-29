@@ -1,0 +1,156 @@
+# Default values for sentry-relay.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# There are 3 supported sentry relay modes: "proxy", "static" and "managed". For details look https://docs.sentry.io/product/relay/modes/
+# By default we use proxy mode, which is the simples mode in terms of requirements/configurations
+# NOTE: the managed mode is only available to use on Business and Enterprise plans
+mode: proxy
+
+# The sentry upstream/dns endpoint to sentry. For sentry cloud it will be in form https://<ORGANIZATION-ID>.ingest.sentry.io
+upstream:
+
+# The k8s workload to use for creating sentry relay pods, it supports following workloads Deployment and DaemonSet
+workload: DaemonSet
+
+# The log level
+loggingLevel: info
+
+# This config used/required only on "managed" mode, check this doc to know how to generate/get this configs: https://docs.sentry.io/product/relay/getting-started/#creating-credentials
+credentials: null
+# credentials:
+#   secretKey: "<SECRET-KEY>"
+#   publicKey: "<PUBLIC-KEY>"
+#   id: "<ID>"
+
+# This config used/required only on "static" mode, check this doc to know what options available/needed: https://docs.sentry.io/product/relay/projects/
+projects: null
+# projects:
+#   "<PROJECT-ID>":
+#     slug: "<PROJECT-SLUG>"
+#     disabled: false
+#     publicKeys:
+#       - publicKey: "<PROJECT-PUBLIC-KEY>"
+#         isEnabled: true
+#     config:
+#       allowedDomains: ["*"]
+#       features:
+#         - organizations:session-replay
+#         - organizations:session-replay-recording-scrubbing
+#         - organizations:session-replay-combined-envelope-items
+#         - organizations:session-replay-video-disabled
+#         - organizations:device-class-synthesis
+#         - organizations:custom-metrics
+#         - organizations:profiling
+#         - organizations:standalone-span-ingestion
+#         - projects:relay-otel-endpoint
+#         - projects:discard-transaction
+#         - organizations:continuous-profiling
+#         - projects:span-metrics-extraction
+#         - projects:span-metrics-extraction-addons
+#         - organizations:indexed-spans-extraction
+#         - organizations:performance-queries-mongodb-extraction
+
+# Allows to configure pod replicas count (applicable for only Deployment workload)
+replicaCount: 1
+
+image:
+  repository: getsentry/relay
+  pullPolicy: IfNotPresent
+  tag: "24.10.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  {}
+  # fsGroup: 2000
+
+securityContext:
+  {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# The resources request/limits defaults here are for to some average values, based on load this values may need to be customized
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /api/relay/healthcheck/live/
+    port: http
+readinessProbe:
+  httpGet:
+    path: /api/relay/healthcheck/ready/
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

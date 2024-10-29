@@ -1,0 +1,18 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "sentry-relay.fullname" . }}-configs
+data: 
+  config.yml: {{- toYaml ( include "sentry-relay.config.yaml" . ) | nindent 2 }}
+ 
+  {{- if eq .Values.mode "managed" }}
+  credentials.json: |-
+{{- toJson ( fromYaml ( include "sentry-relay.managed.credentials.json" . )) | nindent 4 }}
+  {{- end }}
+
+  {{- if eq .Values.mode "static" }}
+  {{- range $key, $value := .Values.projects }}
+  "projects-{{- $key }}.json": |-
+{{- toJson $value | nindent 4 }}
+  {{- end }}
+  {{- end }}
