@@ -23,6 +23,7 @@ metadata:
 spec:
   schedule: {{ $job.schedule | quote }}
   concurrencyPolicy: {{ $job.concurrencyPolicy }}
+  activeDeadlineSeconds: {{ $job.activeDeadlineSeconds | default 600 }}
   jobTemplate:
     spec:
       template:
