@@ -237,9 +237,9 @@ serviceMonitor:
   targetPort: 80
   path: /metrics
 
-# This config allows to enable custom rollout strategies by using different providers
-# right now only flagger (https://flagger.app/) provider supported and tested for canary with nginx
-## NOTEs for flagger provider:
+# This config allows to enable custom rollout strategies by using different providers/operators
+# right now only flagger (https://flagger.app/) operator supported and tested for canary with nginx
+## NOTE for flagger operator:
 ## - flagger supports several service meshes and ingresses as provider for traffic splitting, and by default we have using nginx here, so you have to check docs and have at least one used for you app
 ## - you need to have flagger tool/operator already installed to be able to use its crd, this can be done by installing flagger helm https://artifacthub.io/packages/helm/flagger/flagger
 ## - also there is need to have at least one metric server/provider enabled(it supports) like prometheus as it uses metrics for checking success rates, the flagger helm allows to install prometheus
@@ -249,8 +249,9 @@ rolloutStrategy:
   enabled: false
   operator: flagger
   configs: {}
-  # example for flagger configs
+  # here are all supported flagger configs
   # configs:
+  #   provider: nginx # the flagger ingress/service-mesh provider (default nginx)
   #   progressDeadlineSeconds: 61 # the maximum time in seconds for the canary deployment to make progress before it is rollback (default 600s)
   #   canaryReadyThreshold: 51 # minimum percentage of canary pods that must be ready before considering canary ready for traffic shifting (default 100)
   #   primaryReadyThreshold: 51 # minimum percentage of primary pods that must be ready before considering primary ready for traffic shifting (default 100)
