@@ -1,4 +1,4 @@
-{{- if .Values.service.enabled -}}
+{{- if and .Values.service.enabled (not (and .Values.rolloutStrategy.enabled (eq .Values.rolloutStrategy.operator "flagger") ) ) -}}
 apiVersion: v1
 kind: Service
 metadata:

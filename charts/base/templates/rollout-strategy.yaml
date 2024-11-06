@@ -1,0 +1,60 @@
+{{- if .Values.rolloutStrategy.enabled -}}
+{{- if eq .Values.rolloutStrategy.operator "flagger" -}}
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: {{ include "base.fullname" . }}
+spec:
+  provider: {{ .Values.rolloutStrategy.configs.provider | default "nginx" }}
+  # deployment reference
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "base.fullname" . }}
+  # ingress reference (TODO: there is supports for multiple ingresses, check and implement multiple ingress support here also )
+  ingressRef:
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    name: {{ include "base.fullname" . }}
+  {{- if .Values.autoscaling.enabled }}
+  # HPA reference (optional)
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: {{ include "base.fullname" . }}
+    primaryScalerReplicas:
+      # min and max replicas count for primary hpa, default to main app hpa, the main app hpa values also being used for canary deploy hpa so we use this options to have custom values for primary hpa
+      minReplicas: {{ .Values.rolloutStrategy.configs.primaryScalerMinReplicas | default .Values.autoscaling.minReplicas }}
+      maxReplicas: {{ .Values.rolloutStrategy.configs.primaryScalerMaxReplicas | default .Values.autoscaling.maxReplicas }}
+  {{- end }}
+
+  # the maximum time in seconds for the canary deployment to make progress before it is rollback (default 600s)
+  progressDeadlineSeconds: {{ .Values.rolloutStrategy.configs.progressDeadlineSeconds | default 600 }}
+  service:
+    # ClusterIP port number
+    port: {{ .Values.service.port }}
+    # container port number or name
+    targetPort: {{ .Values.service.targetPort | default .Values.containerPort }}
+  analysis:
+    # minimum percentage of canary pods that must be ready before considering canary ready for traffic shifting (default 100)
+    canaryReadyThreshold: {{ .Values.rolloutStrategy.configs.canaryReadyThreshold | default 100 }}
+    # minimum percentage of primary pods that must be ready before considering primary ready for traffic shifting (default 100)
+    primaryReadyThreshold: {{ .Values.rolloutStrategy.configs.primaryReadyThreshold | default 100 }}
+    # schedule interval (default 60s)
+    interval: {{ .Values.rolloutStrategy.configs.interval | default "60s" }}
+    # max number of failed metric checks before rollback (default 10)
+    threshold: {{ .Values.rolloutStrategy.configs.threshold | default 10 }}
+    # max traffic percentage (0-100) routed to canary (default 30)
+    maxWeight: {{ .Values.rolloutStrategy.configs.maxWeight | default 30 }}
+    # canary increment step percentage (0-100) (default 10)
+    stepWeight: {{ .Values.rolloutStrategy.configs.stepWeight | default 10 }}
+    # metrics checks
+    metrics:
+      {{- toYaml .Values.rolloutStrategy.configs.metrics | nindent 6 }}
+    {{- if .Values.rolloutStrategy.configs.webhooks }}
+    # testing (optional)
+    webhooks:
+      {{- toYaml .Values.rolloutStrategy.configs.webhooks | nindent 6 }}
+    {{- end }}
+{{- end }}
+{{- end }}

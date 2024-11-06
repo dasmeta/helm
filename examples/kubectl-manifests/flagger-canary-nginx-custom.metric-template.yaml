@@ -1,0 +1,62 @@
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: request-success-rate-custom
+  namespace: ingress-nginx
+spec:
+  provider:
+    address: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
+    type: prometheus
+  query: |
+    sum(
+      rate(
+        nginx_ingress_controller_requests{
+          exported_namespace="{{ namespace }}",
+          ingress="{{ ingress }}",
+          canary!="",
+          status!~"5.*"
+        }[{{ interval }}]
+      )
+    ) 
+    / 
+    sum(
+      rate(
+        nginx_ingress_controller_requests{
+          exported_namespace="{{ namespace }}",
+          ingress="{{ ingress }}",
+          canary!=""
+        }[{{ interval }}]
+      )
+    ) 
+    * 100
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: request-duration-custom
+  namespace: ingress-nginx
+spec:
+  provider:
+    address: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
+    type: prometheus
+  query: |
+    sum(
+      rate(
+        nginx_ingress_controller_response_duration_seconds_sum{
+          exported_namespace="{{ namespace }}",
+          ingress="{{ ingress }}",
+          canary!=""
+        }[{{ interval }}]
+      )
+    ) 
+    / 
+    sum(
+      rate(
+        nginx_ingress_controller_response_duration_seconds_count{
+          exported_namespace="{{ namespace }}",
+          ingress="{{ ingress }}",
+          canary!=""
+        }[{{ interval }}]
+      )
+    ) 
+    * 1000
