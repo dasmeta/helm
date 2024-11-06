@@ -5,7 +5,7 @@ metadata:
   namespace: ingress-nginx
 spec:
   provider:
-    address: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
+    address: http://prometheus-service.monitoring:9090
     type: prometheus
   query: |
     sum(
@@ -37,7 +37,7 @@ metadata:
   namespace: ingress-nginx
 spec:
   provider:
-    address: http://rancher-monitoring-prometheus.cattle-monitoring-system:9090
+    address: http://prometheus-service.monitoring:9090
     type: prometheus
   query: |
     sum(
