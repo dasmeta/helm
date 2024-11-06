@@ -9,6 +9,10 @@ metadata:
     {{ $value.name }}: {{ $value.value | quote}}
     {{- end }}
     {{- end }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
 spec:
   {{- if .Values.minReadySeconds}}
   minReadySeconds: {{ .Values.minReadySeconds }}
@@ -46,6 +50,9 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 30 }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
