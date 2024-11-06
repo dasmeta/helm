@@ -602,3 +602,71 @@ terminationGracePeriodSeconds: 65
 ### Deployment use chart-hooks
 annotations:
   "helm.sh/hook": pre-install,pre-upgrade
+
+
+### custom rollout strategy(canary,blue/gree) configs by using flagger
+```yaml
+# This config allows to enable custom rollout strategies by using different providers/operators
+# right now only flagger (https://flagger.app/) operator supported and tested for canary with nginx
+## NOTE for flagger operator:
+## - flagger supports several service meshes and ingresses as provider for traffic splitting, and by default we have using nginx here, so you have to check docs and have at least one used for you app
+## - you need to have flagger tool/operator already installed to be able to use its crd, this can be done by installing flagger helm https://artifacthub.io/packages/helm/flagger/flagger
+## - also there is need to have at least one metric server/provider enabled(it supports) like prometheus as it uses metrics for checking success rates, the flagger helm allows to install prometheus
+## - with flagger enabled we disable native kubernetes service as flagger creates/overrides this service
+## - with separate installed prometheus operator(not one that comes with flagger helm) the default `request-success-rate` and `request-duration` metrics templates may not work so you may need to create custom metric templates, the canary+nginx+prometheus metric template can be created by using `dasmeta/flagger-metric-template` chart
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs: # here are all supported flagger configs
+    provider: nginx # the flagger ingress/service-mesh provider (default nginx)
+    progressDeadlineSeconds: 61 # the maximum time in seconds for the canary deployment to make progress before it is rollback (default 600s)
+    canaryReadyThreshold: 51 # minimum percentage of canary pods that must be ready before considering canary ready for traffic shifting (default 100)
+    primaryReadyThreshold: 51 # minimum percentage of primary pods that must be ready before considering primary ready for traffic shifting (default 100)
+    interval: 11s # schedule interval (default 60s)
+    threshold: 11 # max number of failed metric checks before rollback (default 10)
+    maxWeight: 31 # max traffic percentage (0-100) routed to canary (default 30)
+    stepWeight: 11 # canary increment step percentage (0-100) (default 10)
+    # min and max replicas count for primary hpa, default to main app hpa, the main app hpa values also being used for canary deploy hpa so we use this options to have custom values for primary hpa
+    primaryScalerMinReplicas: 3
+    primaryScalerMaxReplicas: 7
+    metrics: # metrics template configs to use for identifying if canary deploy handles request normally, the `request-success-rate` and `request-duration` named ones are available by default, and you can create custom metric templates
+      - name: request-success-rate
+        # minimum req success rate (non 5xx responses) percentage (0-100)
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: request-duration
+        # maximum req duration P99, milliseconds
+        thresholdRange:
+          max: 500
+        interval: 1m
+      # - name: request-success-rate-custom
+      #   interval: 1m
+      #   templateRef:
+      #     name: request-success-rate-custom
+      #     namespace: ingress-nginx
+      #   # minimum req success rate (non 5xx responses) percentage (0-100)
+      #   thresholdRange:
+      #     min: 99
+      # - name: request-duration-custom
+      #   interval: 1m
+      #   templateRef:
+      #     name: request-duration-custom
+      #     namespace: ingress-nginx
+      #   # maximum req duration P99, milliseconds
+      #   thresholdRange:
+      #     max: 500
+    webhooks: # (optional) webhooks can be used for load testing before traffic switching to canaries by using `pre-rollout` type and also generating traffic
+      - name: acceptance-test
+        type: pre-rollout
+        url: http://flagger-loadtester.localhost/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: "curl -sd 'test' http://http-echo-canary/ping | grep ping"
+      - name: load-test
+        url: http://flagger-loadtester.localhost/
+        timeout: 5s
+        metadata:
+          cmd: "hey -z 1m -q 3 -c 1 http://http-echo.localhost/ping"
+```

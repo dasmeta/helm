@@ -1,0 +1,11 @@
+{{- range $key, $metricTemplate := .Values.metricTemplates }}
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: {{ $metricTemplate.name }}
+spec:
+  provider:
+    {{- toYaml $.Values.provider | nindent 4 }}
+  query: {{ $metricTemplate.query }}
+{{- end }}
