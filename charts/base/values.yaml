@@ -289,8 +289,8 @@ rolloutStrategy:
   #     #   # maximum req duration P99, milliseconds
   #     #   thresholdRange:
   #     #     max: 500
-  #   #
-  #   webhooks: # webhooks can be used for load testing before traffic switching to canaries by using `pre-rollout` type and also generating traffic
+  #
+  #   webhooks: # (optional) webhooks can be used for load testing before traffic switching to canaries by using `pre-rollout` type and also generating traffic
   #     - name: acceptance-test
   #       type: pre-rollout
   #       url: http://flagger-loadtester.localhost/
