@@ -1,0 +1,19 @@
+# Default values for flagger-metric-template.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# metrics provider config for metric-templates, for more info check doc https://docs.flagger.app/usage/metrics#custom-metrics
+provider:
+  type: prometheus
+  address: http://prometheus-service.monitoring:9090
+
+# Whether to create `request-success-rate-custom` and `request-duration-custom` nginx metric templates, this can be used in case we use custom prometheus operator instead of flagger helm included one
+createNginxCustomMetricTemplates: true
+
+# List of custom metric template configs
+# metricTemplates: []
+## example for metric templates
+metricTemplates:
+  - name: my-custom-request-rate-metric-template
+    query: |
+      sum(rate(nginx_ingress_controller_requests{exported_namespace="{{ namespace }}",ingress="{{ ingress }}",status!~"5.*"}[1m]))/sum(rate(nginx_ingress_controller_requests{exported_namespace="{{ namespace }}",ingress="{{ ingress }}"}[1m]))*100

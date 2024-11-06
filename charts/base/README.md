@@ -613,7 +613,7 @@ annotations:
 ## - you need to have flagger tool/operator already installed to be able to use its crd, this can be done by installing flagger helm https://artifacthub.io/packages/helm/flagger/flagger
 ## - also there is need to have at least one metric server/provider enabled(it supports) like prometheus as it uses metrics for checking success rates, the flagger helm allows to install prometheus
 ## - with flagger enabled we disable native kubernetes service as flagger creates/overrides this service
-## - with separate installed prometheus operator(not one that comes with flagger helm) the default `request-success-rate` and `request-duration` metrics templates may not work so you may need to create custom metric templates, an example for canary+nginx+prometheus can be found here /examples/kubectl-manifests/flagger-canary-nginx-custom.metric-template.yaml
+## - with separate installed prometheus operator(not one that comes with flagger helm) the default `request-success-rate` and `request-duration` metrics templates may not work so you may need to create custom metric templates, the canary+nginx+prometheus metric template can be created by using `dasmeta/flagger-metric-template` chart
 rolloutStrategy:
   enabled: true
   operator: flagger
