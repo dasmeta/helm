@@ -594,3 +594,11 @@ initContainers:
   args:
     - |
       /test.sh
+
+
+### Deployment use terminationGracePeriodSeconds parameter
+terminationGracePeriodSeconds: 65
+
+### Deployment use chart-hooks
+annotations:
+  "helm.sh/hook": pre-install,pre-upgrade
