@@ -1,6 +1,6 @@
 apiVersion: v2
-name: flagger-metric-template
-description: A Helm chart for Kubernetes to create Flagger metric templates
+name: flagger-metrics-and-alerts
+description: A Helm chart for Kubernetes to create Flagger metric templates and alert providers
 
 # A chart can be either an 'application' or a 'library' chart.
 #

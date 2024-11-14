@@ -56,5 +56,10 @@ spec:
     webhooks:
       {{- toYaml .Values.rolloutStrategy.configs.webhooks | nindent 6 }}
     {{- end }}
+    {{- if .Values.rolloutStrategy.configs.webhooks }}
+    # custom notification/alerts (optional)
+    alerts:
+      {{- toYaml .Values.rolloutStrategy.configs.alerts | nindent 6 }}
+    {{- end }}
 {{- end }}
 {{- end }}

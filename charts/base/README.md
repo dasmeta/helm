@@ -669,4 +669,10 @@ rolloutStrategy:
         timeout: 5s
         metadata:
           cmd: "hey -z 1m -q 3 -c 1 http://http-echo.localhost/ping"
+    alerts: # (optional) alerts allow to setup custom alerting/notify based on flaggers alert provider crd(there is also option to set global alert config with flagger), for more info look https://docs.flagger.app/usage/alerting
+      - name: "on-call Slack"
+        severity: error
+        providerRef:
+          name: on-call
+          namespace: ingress-nginx
 ```
