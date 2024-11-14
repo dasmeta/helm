@@ -1,0 +1,9 @@
+{{- range $name, $alertProvider := .Values.alertProviders }}
+---
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: {{ $name }}
+spec:
+  {{- toYaml $alertProvider | nindent 2 }}
+{{- end }}

@@ -1,0 +1,37 @@
+# Default values for flagger-metrics-and-alerts.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# metrics templates default provider config for metric-templates, for more info check doc https://docs.flagger.app/usage/metrics#custom-metrics
+metricTemplatesDefaultProvider:
+  type: prometheus
+  address: http://prometheus-service.monitoring:9090
+
+# Whether to create `request-success-rate-nginx-custom` and `request-duration-nginx-custom` nginx metric templates, this can be used in case we use custom prometheus operator instead of flagger helm included one(when the default filter `namespace` should be renamed to `exported_namespace` in query)
+createNginxCustomMetricTemplates: false
+
+# Map of {<metric-template-name>:<metric-template-query>} pairs for custom metric template configs
+metricTemplates: {}
+## example for metric templates
+# metricTemplates:
+#   my-custom-request-rate-metric-template:
+#     provider: # (optional, defaults to metricTemplatesDefaultProvider)
+#       type: prometheus
+#       address: http://prometheus-service.monitoring:9090
+#     query: |
+#       sum(rate(nginx_ingress_controller_requests{exported_namespace="{{ namespace }}",ingress="{{ ingress }}",status!~"5.*"}[1m]))/sum(rate(nginx_ingress_controller_requests{exported_namespace="{{ namespace }}",ingress="{{ ingress }}"}[1m]))*100
+
+# map of flagger alert providers {<alert-provider-name>:<alert-provider-spec>} for creating new alert providers, more info can be found here: https://docs.flagger.app/usage/alerting#canary-configuration
+alertProviders: {}
+## example alert provider
+# alertProviders:
+#   on-call: # The uniq name of channel
+#     type: slack
+#     channel: on-call-alerts # The channel of notify/alerting (optional default to "general") # The channel of notify/alerting (optional default to "general")
+#     username: flagger # The sender name in notify/alert (optional default to "flagger")
+#     # webhook address (ignored if secretRef is specified)
+#     # or https://slack.com/api/chat.postMessage if you use token in the secret
+#     address: https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
+#     # proxy: http://my-http-proxy.com # optional http/s proxy
+#     # secretRef: # secret containing the webhook address (optional)
+#     #   name: on-call-url

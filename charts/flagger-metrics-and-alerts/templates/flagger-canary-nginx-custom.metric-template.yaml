@@ -2,7 +2,7 @@
 apiVersion: flagger.app/v1beta1
 kind: MetricTemplate
 metadata:
-  name: request-success-rate-custom
+  name: request-success-rate-nginx-custom
 spec:
   provider:
     {{- toYaml .Values.provider | nindent 4 }}
@@ -32,7 +32,7 @@ spec:
 apiVersion: flagger.app/v1beta1
 kind: MetricTemplate
 metadata:
-  name: request-duration-custom
+  name: request-duration-nginx-custom
 spec:
   provider:
     {{- toYaml .Values.provider | nindent 4 }}
