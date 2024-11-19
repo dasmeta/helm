@@ -5,7 +5,7 @@ metadata:
   name: request-success-rate-nginx-custom
 spec:
   provider:
-    {{- toYaml .Values.provider | nindent 4 }}
+    {{- toYaml .Values.metricTemplatesDefaultProvider | nindent 4 }}
   query: |
     sum(
       rate(
@@ -35,7 +35,7 @@ metadata:
   name: request-duration-nginx-custom
 spec:
   provider:
-    {{- toYaml .Values.provider | nindent 4 }}
+    {{- toYaml .Values.metricTemplatesDefaultProvider | nindent 4 }}
   query: |
     sum(
       rate(
