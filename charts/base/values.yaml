@@ -273,18 +273,18 @@ rolloutStrategy:
   #       thresholdRange:
   #         max: 500
   #       interval: 1m
-  #     # - name: request-success-rate-custom
+  #     # - name: request-success-rate-nginx-custom
   #     #   interval: 1m
   #     #   templateRef:
-  #     #     name: request-success-rate-custom
+  #     #     name: request-success-rate-nginx-custom
   #     #     namespace: ingress-nginx
   #     #   # minimum req success rate (non 5xx responses) percentage (0-100)
   #     #   thresholdRange:
   #     #     min: 99
-  #     # - name: request-duration-custom
+  #     # - name: request-duration-nginx-custom
   #     #   interval: 1m
   #     #   templateRef:
-  #     #     name: request-duration-custom
+  #     #     name: request-duration-nginx-custom
   #     #     namespace: ingress-nginx
   #     #   # maximum req duration P99, milliseconds
   #     #   thresholdRange:
