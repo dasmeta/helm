@@ -1069,6 +1069,19 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/kafka-connect-1.0.0/kafka-connect-1.0.0.tgz
     version: 1.0.0
+  karpenter-integration:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-11-22T14:12:25.719982855Z"
+    description: A Helm chart for Kubernetes to create configure and create karpenter
+      crd resources(it is supposed that karpenter operator chart with its crds have
+      been already installed)
+    digest: e78b7121632a77f78846bd07dc1cdd3bd57eed0b5611b57b763e8c65317fc96a
+    name: karpenter-integration
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/karpenter-integration-0.1.0/karpenter-integration-0.1.0.tgz
+    version: 0.1.0
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
