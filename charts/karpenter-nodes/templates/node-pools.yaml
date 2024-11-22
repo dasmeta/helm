@@ -1,0 +1,9 @@
+{{- range $name, $nodePoolSpec := .Values.nodePools }}
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ $name }}
+spec:
+  {{- toYaml $nodePoolSpec | nindent 2 }}
+{{- end }}
