@@ -1082,6 +1082,19 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/karpenter-integration-0.1.0/karpenter-integration-0.1.0.tgz
     version: 0.1.0
+  karpenter-nodes:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-11-25T10:24:39.446662464Z"
+    description: A Helm chart for Kubernetes to create configure and create karpenter
+      crd resources(it is supposed that karpenter operator chart with its crds have
+      been already installed)
+    digest: bed73108f111e71a2b79fcac84d98daa11d7d1f2cfb8b537600f4c9e4a1b8f99
+    name: karpenter-nodes
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/karpenter-nodes-0.1.0/karpenter-nodes-0.1.0.tgz
+    version: 0.1.0
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
