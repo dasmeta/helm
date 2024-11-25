@@ -1,5 +1,5 @@
 apiVersion: v2
-name: karpenter-integration
+name: karpenter-nodes
 description: A Helm chart for Kubernetes to create configure and create karpenter crd resources(it is supposed that karpenter operator chart with its crds have been already installed)
 
 # A chart can be either an 'application' or a 'library' chart.
