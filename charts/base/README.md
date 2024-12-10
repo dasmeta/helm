@@ -1,6 +1,6 @@
 # How to use as dependency, basic example
 
-```
+```yaml
 dependencies:
   - name: base
     version: 0.1.65
@@ -62,7 +62,7 @@ This chart provides a base template helpers which can be used to develop new cha
 
 ## Default Values
 
-```
+```yaml
 replicaCount: 1
 image:
   repository: nginx
@@ -132,7 +132,7 @@ In this case, labels will be like this:\*\*
 
 Chart.yaml
 
-```
+```yaml
 apiVersion: v2
 name: my-application
 description: My application service description
@@ -150,7 +150,7 @@ values.yaml
 
 These are mandatory values you should provide.
 
-```
+```yaml
 base:
   image:
     repository: docker-image
@@ -171,7 +171,7 @@ The same labels, given above, now will be:
 
 Chart.yaml
 
-```
+```yaml
 apiVersion: v2
 name: my-application
 description: My application service description
@@ -188,7 +188,7 @@ dependencies:
 
 values.yaml
 
-```
+```yaml
 my-app-base:
   version: 0.1.0
   appVersion: 0.1.0
@@ -201,7 +201,7 @@ my-app-base:
 
 Chart.yaml
 
-```
+```yaml
 apiVersion: v2
 name: my-application
 description: My application service description
@@ -217,7 +217,7 @@ dependencies:
 
 values.yaml
 
-```
+```yaml
 base:
   name: my-app-base
   version: 0.1.0
@@ -227,13 +227,15 @@ base:
     tag: 1.2.3
 ```
 
+## Examples for each component
+
 ### External secrets
 
 This will produce external secrets which will ask secrets from store `my-app-production`.
 Values in Secrets Manager should be put in `my-product/production/my-app` matching secret1, secret2, secret2.
 You have to previously create a Secret Store. Check our `external-secret-store` module in Terraform Registry.
 
-```
+```yaml
 my-app-base:
   ...
   product: my-product
@@ -248,11 +250,10 @@ my-app-base:
 
 **The PVC has a specific name**
 
-```
+```yaml
 my-app-base:
   ...
-  deployment:
-    volumes:
+  volumes:
     - name: test-volume
       persistentVolumeClaim:
         claimName: volume-1
@@ -260,11 +261,10 @@ my-app-base:
 
 **The PVC has the name of the release**
 
-```
+```yaml
 my-app-base:
   ...
-  deployment:
-    volumes:
+  volumes:
     - name: test-volume
       persistentVolumeClaim:
         dynamicName: true
@@ -272,23 +272,33 @@ my-app-base:
 
 **Volume type is emptyDir**
 
-```
+```yaml
 my-app-base:
   ...
-  deployment:
-    volumes:
-      - name: dshm
-        mountPath: /dev/shm
-        emptyDir:
-          medium: Memory
-          sizeLimit: 2G
+  volumes:
+    - name: dshm
+      mountPath: /dev/shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 2G
+```
+
+**share volume for main and extra containers into same mount path**
+```yaml
+volumes:
+  - emptyDir:
+      medium: Memory
+      sizeLimit: 10Mi
+    name: volume-main-and-extra-containers
+    mountPath: /volume-shared
+    container: [main-container-name, extra-container-name]
 ```
 
 ### PVC
 
 By defining `storage` block in values.yaml file you can create a PVC resource.
 
-```
+```yaml
 my-app-base:
   ...
   storage:
@@ -305,7 +315,7 @@ By default ingress class is alb and chart attache alb ingress controller annotat
 
 #### Ingress Class ALB
 Default ALB Annotations
-```
+```yaml
 kubernetes.io/ingress.class: alb
 alb.ingress.kubernetes.io/target-type: ip
 alb.ingress.kubernetes.io/scheme: internet-facing
@@ -315,7 +325,7 @@ alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
 alb.ingress.kubernetes.io/success-codes: 200-399
 ```
 You need add alb group.name. You can add more annotations or overwrite existing ones.
-```
+```yaml
   ingress:
     enabled: true
     class: alb
@@ -333,14 +343,14 @@ You need add alb group.name. You can add more annotations or overwrite existing 
 ```
 #### Ingress Class Application Gateway
 Default Application Gateway Annotations
-```
+```yaml
 kubernetes.io/ingress.class: azure/application-gateway
 external-dns.alpha.kubernetes.io/ttl: 60
 appgw.ingress.kubernetes.io/backend-protocol: http
 appgw.ingress.kubernetes.io/ssl-redirect: true
 ```
 You can add more annotations or overwrite existing ones.
-```
+```yaml
   ingress:
     enabled: true
     class: application-gateway
@@ -358,12 +368,12 @@ You can add more annotations or overwrite existing ones.
 
 #### Ingress Class CCE
 Default CCE Annotations
-```
+```yaml
 kubernetes.io/ingress.class: cce
 kubernetes.io/elb.port: 443
 ```
 You can add more annotations or overwrite existing ones.
-```
+```yaml
   ingress:
     enabled: true
     class: cce
@@ -381,11 +391,11 @@ You can add more annotations or overwrite existing ones.
 
 #### Ingress Class Nginx
 Default Nginx  Annotations
-```
+```yaml
 kubernetes.io/ingress.class: nginx
 ```
 You can add more annotations or overwrite existing ones.
-```
+```yaml
   ingress:
     enabled: true
     class: nginx
@@ -402,7 +412,7 @@ You can add more annotations or overwrite existing ones.
 ```
 ### Health Checks
 
-```
+```yaml
 livenessProbe: {}
   failureThreshold: 3
   httpGet:
@@ -425,7 +435,7 @@ readinessProbe: {}
 ### ExteraContainer
 If you have two container in one deployment you can use extraContainer parameter.
 
-```
+```yaml
 base:
   extraContainer:
     name: nginx
@@ -441,14 +451,13 @@ base:
       requests:
         cpu: 250m
         memory: 64Mi
-    deployment:
-      volumes:
-        - name: config
-          mountPath: /etc/nginx/conf.d/nginx.conf
-          // Assign volumes on extra container
-          container: extra
-          configMap:
-            name: config
+    volumes:
+      - name: config
+        mountPath: /etc/nginx/conf.d/nginx.conf
+        // Assign volumes on extra container
+        container: extra
+        configMap:
+          name: config
     service:
       enabled: false
     configmap:
@@ -466,7 +475,7 @@ base:
 ```
 
 ### If you want add pod extra label
-```
+```yaml
   base:
    labels:
      label1:
@@ -475,7 +484,7 @@ base:
 ```
 
 ### If you want add topologySpreadConstraints for your deployment.
-
+```yaml
   topologySpreadConstraints:
     - labelSelector:
         matchLabels:
@@ -489,14 +498,15 @@ base:
       maxSkew: 2
       topologyKey: kubernetes.io/hostname
       whenUnsatisfiable: ScheduleAnyway
-
+```
 ### Connect to external configmap
-
+```yaml
   externalConfigmap:
     name: docflow-config
-
+```
 ### Init container
 ####  0.1.66 Version which support one init container
+```yaml
 initContainers:
   name: config
   args:
@@ -517,8 +527,9 @@ initContainers:
     - mountPath: /config.json
       name: config-json
       subPath: config.json
-
+```
 #### 0.2.0 version support multiple init containers
+```yaml
 initContainers:
   - name: config
     args:
@@ -539,10 +550,11 @@ initContainers:
       - mountPath: /config.json
         name: config-json
         subPath: config.json
-
+```
 #### the version 0.2.1 supports both new multiple/list and single-map/old initContainers config formats
 
-### Job 
+### Job
+```yaml
   job:
     name: db-commands
     annotations:
@@ -565,44 +577,45 @@ initContainers:
       - "-c"
       - |
         env > .env
-
+```
 ### Deployment read full secret
-
+```yaml
   envFrom:
     secret: site-stage
+```
+### Deployment add additional volume mount path for same pvc
+```yaml
+  volumes:
+    - name: storage
+      mountPath: /storage/aaaa
+      subPath: aaaa
+      persistentVolumeClaim:
+        claimName: storage
 
-### Deployment add additionalvolume mount path for same pvc
-
-  deployment:
-    volumes:
-      - name: storage
-        mountPath: /storage/aaaa
-        subPath: aaaa
-        persistentVolumeClaim:
-          claimName: storage
-
-    additionalvolumeMounts:
-      - name: storage
-        mountPath: /storage/bbbb
-        subPath: bbbb
-  
+  additionalVolumeMounts:
+    - name: storage
+      mountPath: /storage/bbbb
+      subPath: bbbb
+  ```
 ### Deployment send command and args
-
+```yaml
   command:
     - "/bin/bash"
     - "-c"
   args:
     - |
       /test.sh
-
+```
 
 ### Deployment use terminationGracePeriodSeconds parameter
+```yaml
 terminationGracePeriodSeconds: 65
-
+```
 ### Deployment use chart-hooks
+```yaml
 annotations:
   "helm.sh/hook": pre-install,pre-upgrade
-
+```
 
 ### custom rollout strategy(canary,blue/gree) configs by using flagger
 ```yaml
@@ -676,3 +689,9 @@ rolloutStrategy:
           name: on-call
           namespace: ingress-nginx
 ```
+
+## Deprecations and incompatible changes
+
+### Deprecations
+ - starting from 0.2.11 `deployment` option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` moved to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
+ - starting from 0.2.11 for mounting volume to extra container use `container: <extra-container-name>` or `container: [<extra-container-name>]` instead of `container: extra` config in new `volumes` listing.

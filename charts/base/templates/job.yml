@@ -1,4 +1,5 @@
 {{- if .Values.job.image -}}
+{{ $jobVolumes := (coalesce .Values.volumes (.Values.deployment).volumes) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -81,9 +82,9 @@ spec:
             readOnly: {{ $element.readOnly | default false }}
           {{- end }}
         {{- end }}
-      {{- if .Values.deployment.volumes }}
+      {{- if $jobVolumes }}
       volumes:
-        {{- range $index, $element := .Values.deployment.volumes }}
+        {{- range $index, $element := $jobVolumes }}
         - name: {{ coalesce $element.name (add $index 1) }}
           {{- if $element.configMap }}
           configMap:
