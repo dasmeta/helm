@@ -222,7 +222,42 @@ storage:
   #   requestedSize: "2Gi"
   #   enableDataSource: false
 
-deployment: {}
+deployment: {} # option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` changed to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
+volumes: []
+# volumes:
+#   - emptyDir: # if no container field passed like this case it will be mounted to main container
+#       medium: Memory
+#       sizeLimit: 10Mi
+#     name: volume-only-main-container
+#     mountPath: /volume-main
+#   - emptyDir:
+#       medium: Memory
+#       sizeLimit: 10Mi
+#     name: volume-only-extra-container
+#     mountPath: /volume-extra
+#     container: extra-container-name
+#   - emptyDir:
+#       medium: Memory
+#       sizeLimit: 10Mi
+#     name: volume-main-and-extra-containers
+#     mountPath: /volume-shared
+#     container: [main-container-name, extra-container-name]
+#   - configMap:
+#       name: config-map-name
+#     name: volume-config-map
+#     mountPath: /volume-config-map/config-map.txt
+#     subPath: config-map.txt
+#   - secret:
+#       items:
+#         - key: release
+#           path: data.txt
+#       secretName: secret-name
+#     name: volume-secret
+#     mountPath: /volume-secret/
+#   - persistentVolumeClaim:
+#       claimName: pvc-name
+#     mountPath: /volume-pvc/
+#     name: volume-pvc
 
 env: dev
 product: application
