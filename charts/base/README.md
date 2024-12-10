@@ -693,5 +693,8 @@ rolloutStrategy:
 ## Deprecations and incompatible changes
 
 ### Deprecations
- - starting from 0.2.11 `deployment` option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` moved to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
- - starting from 0.2.11 for mounting volume to extra container use `container: <extra-container-name>` or `container: [<extra-container-name>]` instead of `container: extra` config in new `volumes` listing.
+ - 0.3.0: `deployment` option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` moved to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
+ - 0.3.0: for mounting volume to extra container use `container: <extra-container-name>` or `container: [<extra-container-name>]` instead of `container: extra` config in new `volumes` listing.
+
+### incompatible changes
+ - 0.3.0: the `extraContainer.deployment.volumes` field have been removed, use `volumes` field with `container: <extra-container-name>` for having volume mounted to extra container
