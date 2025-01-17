@@ -432,9 +432,10 @@ readinessProbe: {}
   periodSeconds: 5
 ```
 
-### ExteraContainer
-If you have two container in one deployment you can use extraContainer parameter.
+### Extra Container
+If you have two or more containers in one deployment you can use extraContainer parameter.
 
+#### single extra container by object config
 ```yaml
 base:
   extraContainer:
@@ -472,6 +473,26 @@ base:
               return 200 'healthy\n';
             }
           }
+```
+
+#### multiple extra containers with list of objects config
+```yaml
+extraContainer:
+  - name: extra-nginx
+    image:
+      repository: nginx
+      tag: 1.19
+    extraEnv:
+      NGINX_PORT: 8081
+  - name: second-extra-nginx
+    containerPort: 8082
+    service:
+      enabled: true # to have container port definition in deployment
+    image:
+      repository: nginx
+      tag: 1.19
+    extraEnv:
+      NGINX_PORT: 8082
 ```
 
 ### If you want add pod extra label

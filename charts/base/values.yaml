@@ -146,7 +146,23 @@ externalSecretsApiVersion: external-secrets.io/v1alpha1 # TODO: the new version 
 #       from: helm-test-secret
 #       key: username
 
-extraContainer: {}
+extraContainer: {} # allows to have additional containers along side to main one, both single object(if you have just one extra) and list of objects are supported
+# extraContainer:
+#   - name: extra-nginx
+#     image:
+#       repository: nginx
+#       tag: 1.19
+#     extraEnv:
+#       NGINX_PORT: 8081
+#   - name: extra-second-nginx
+#     containerPort: 8082
+#     service:
+#       enabled: true # to have container port definition in deployment
+#     image:
+#       repository: nginx
+#       tag: 1.19
+#     extraEnv:
+#       NGINX_PORT: 8082
 
 resources:
   {}
