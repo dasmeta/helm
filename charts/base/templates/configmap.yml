@@ -8,11 +8,13 @@ data:
 {{- end }}
 
 ---
-{{- if .Values.extraContainer.configmap }}
+{{- range $extraContainer := (ternary .Values.extraContainer (list .Values.extraContainer) (kindIs "slice" .Values.extraContainer)) }}
+{{- if $extraContainer.configmap }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ .Values.extraContainer.configmap.name }}
+  name: {{ $extraContainer.configmap.name }}
 data:
-  {{- toYaml .Values.extraContainer.configmap.config | nindent 2 }}
+  {{- toYaml $extraContainer.configmap.config | nindent 2 }}
+{{- end }}
 {{- end }}
