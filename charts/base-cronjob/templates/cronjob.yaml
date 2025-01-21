@@ -112,6 +112,9 @@ spec:
                 - name: {{ coalesce $element.name (add $index 1) }}
                   mountPath: {{ $element.mountPath }}
                   readOnly: {{ $element.readOnly | default false }}
+                  {{- with $element.subPath }}
+                  subPath: {{ . }}
+                  {{- end }}
             {{- end }}
           {{- with $job.nodeSelector }}
           nodeSelector:
