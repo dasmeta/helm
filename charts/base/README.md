@@ -580,6 +580,9 @@ initContainers:
     name: db-commands
     annotations:
         "helm.sh/hook": pre-install,pre-upgrade
+    selectorLabels:
+      app.kubernetes.io/name: db-commands
+      app.kubernetes.io/instance: db-commands
     image:
       repository: ********.dkr.ecr.eu-central-1.amazonaws.com/
       tag: latest
