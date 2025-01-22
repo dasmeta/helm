@@ -24,12 +24,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- if .Values.job.selectorLabels }}
-        {{- range $key, $value := .Values.job.selectorLabels }}
-        {{ $key }}: {{ $value }}
+        {{- if .Values.job.labels }}
+        {{- range $key, $value := .Values.job.labels }}
+        {{ $value.name }}: {{ $value.value}}
         {{- end }}
-        {{- else }}
-        {{- include "base.selectorLabels" . | nindent 8 }}
         {{- end }}
     spec:
       {{- if .Values.job.serviceAccount.create }}
