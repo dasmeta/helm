@@ -1,6 +1,6 @@
-# How to
+# This helm chart allows to create and configure kubernetes cronjob resources, it designed in way to be able to pass list of cronjobs configs
 
-## Easy Howto
+## Easy how to
 Easiest option to deploy cronjob is:
 ```bash
 helm repo add dasmeta https://dasmeta.github.io/helm/
@@ -28,7 +28,7 @@ helm upgrade --install my-cronjob dasmeta/base-cronjob -f path/to/values.yaml
 ## As sub-chart
 Alternatively base chart can be used as sub-chart.
 
-```
+```yaml
 dependencies:
   - name: base
     version: 0.1.36
@@ -38,19 +38,19 @@ dependencies:
 ## Resources
 Some resources are created only when you specify them.
 For example, set this to escape from creating an empty ConfigMap resource:
-```
+```yaml
 config:
   enabled: false
   data: 
     <data>
 ```
 Specify this to create ServiceAccount resource:
-```
+```yaml
 serviceAccount:
   create: true
 ```
 Set this to have PVCs for a job:
-```
+```yaml
 storage:
   - persistentVolumeClaimName: pvc-job1-storage1
     keepPvc: true
@@ -71,7 +71,7 @@ storage:
 ```
 
 Use secrets:
-```
+```yaml
     secrets:
     - APP_NAME:
         from: secret-name

@@ -3,16 +3,16 @@
 {{- $jobRegistry := $jobImage.registry | default $.Values.default.image.registry }}
 {{- $jobRepository := $jobImage.repository | default $.Values.default.image.repository }}
 {{- $jobTag := $jobImage.tag | default $.Values.default.image.tag }}
-{{- $image := print $jobRegistry "/" $jobRepository ":" $jobTag }}
+{{- $image := print ((empty $jobRegistry)| ternary $jobRegistry (print $jobRegistry "/") ) $jobRepository ":" $jobTag }}
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ $job.name | quote }}
+  {{- with $job.annotations }}
   annotations:
-    {{- with $job.annotations }}
-      {{- toYaml . | nindent 8 }}
-    {{- end }}
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
   {{- if $job.labels }}
   labels:
     {{- range $key, $value := $job.labels }}
@@ -23,7 +23,12 @@ metadata:
 spec:
   schedule: {{ $job.schedule | quote }}
   concurrencyPolicy: {{ $job.concurrencyPolicy }}
-  activeDeadlineSeconds: {{ $job.activeDeadlineSeconds | default 600 }}
+  {{- with $job.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ . }}
+  {{- end }}
+  {{- with $job.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ . }}
+  {{- end }}
   jobTemplate:
     spec:
       template:
@@ -38,16 +43,20 @@ spec:
           annotations:
             configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
         spec:
-          serviceAccountName: {{ $job.serviceAccount.name }}
+          {{- with ($job.serviceAccount).name }}
+          serviceAccountName: {{ . | quote }}
+          {{- end }}
           {{- with $job.imagePullSecrets }}
           imagePullSecrets:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          restartPolicy: {{ $job.restartPolicy }}
+          {{- with $job.restartPolicy }}
+          restartPolicy: {{ . | quote }}
+          {{- end }}
           containers:
             - name: {{ $job.name | quote }}
               image: {{ $image | quote }}
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: {{ $job.imagePullPolicy | default "IfNotPresent" | quote }}
               {{- if $job.command }}
               command:
                 {{- range $cmd := $job.command }}
@@ -103,6 +112,9 @@ spec:
                 - name: {{ coalesce $element.name (add $index 1) }}
                   mountPath: {{ $element.mountPath }}
                   readOnly: {{ $element.readOnly | default false }}
+                  {{- with $element.subPath }}
+                  subPath: {{ . }}
+                  {{- end }}
             {{- end }}
           {{- with $job.nodeSelector }}
           nodeSelector:
@@ -120,20 +132,30 @@ spec:
           volumes:
         {{- range $index, $element := $job.volumes }}
             - name: {{ coalesce $element.name (add $index 1) }}
-          {{- if $element.persistentVolumeClaim }}
-              persistentVolumeClaim:
-            {{- if $element.persistentVolumeClaim.claimName }}
-                claimName: {{ $element.persistentVolumeClaim.claimName }}
-            {{- end }}
-          {{- end }}
-            {{- if $element.configMap }}
+              {{- if $element.configMap }}
               configMap:
                 name: {{ $element.configMap.name | default $job.name }}
-            {{- if $element.configMap.defaultMode }}
+              {{- if $element.configMap.defaultMode }}
                 defaultMode: {{ $element.configMap.defaultMode }}
-            {{- end }}
-            {{- end }}
+              {{- end }}
+              {{- end }}
+              {{- if $element.persistentVolumeClaim }}
+              persistentVolumeClaim:
+                claimName: {{ $element.persistentVolumeClaim.claimName }}
+                readOnly: {{ $element.persistentVolumeClaim.readOnly | default false }}
+              {{- end }}
+              {{- with $element.secret }}
+              secret:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- if or (not (empty $element.emptyDir)) (eq (toYaml $element.emptyDir) "{}") }}
+              emptyDir:
+                {{- toYaml $element.emptyDir | nindent 16 }}
+              {{- end }}
+              {{- with $element.hostPath }}
+              hostPath:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
           {{- end }}
 {{- end }}
 {{- end }}
----

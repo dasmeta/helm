@@ -1,100 +1,88 @@
+# This config allows to have shared same configs across all jobs instead of setting it fo each cronjob item
+# useful for cases when we have large list of similar configs having cronjobs
 default:
-  image: {}
-#     registry: "registry"
+  image:
+    registry: ""
 #     repository: "repo"
 #     pullPolicy: IfNotPresent
 #     tag: "override"
 
+# List of objects configuration for defining cronjobs
 jobs:
-  - name: cronjob1
-    schedule: "0 * * * *"
-    restartPolicy: OnFailure
-    serviceAccount:
+  - name: cronjob1 # (required) cronjob name
+    schedule: "0 * * * *" # (required) the cronjob run schedule
+    image: # allows to set cronjob pod image configs, if you have default set can be optional
+      registry: docker.io
+      repository: busybox
+      pullPolicy: IfNotPresent
+      tag: latest
+    command: [] # (optional)
+    args: [] # (optional)
+
+    restartPolicy: OnFailure # (optional)
+    startingDeadlineSeconds: 60 # (optional)
+    concurrencyPolicy: Forbid # (optional)
+
+    serviceAccount: # (optional)
       create: true
       name: "sa-1"
-    concurrencyPolicy: Forbid
-    config:
+
+    config: # (optional) allows to configure/pass config map for cronjob which items will be used as env variables in cronjob
       enabled: false
-    image:
-      registry: docker.io
-      repository: busybox
-      pullPolicy: IfNotPresent
-      tag: latest
-    env:
-      - name: key3
-        value: value3
-      - name: key4
-        value: value4
-    volumes: {}
-    #      - name: persistent-storage
-    #        mountPath: /path
-    #        persistentVolumeClaim:
-    #          claimName: claim
-    storage: {}
-    #    - persistentVolumeClaimName: claim
-    #      accessModes:
-    #        - ReadWriteMany
-    #      className: claim
-    #      requestedSize: 5Gi
-    #      enableDataSource: false
+    # config:
+    #   enabled: true
+    #   data: "some data here"
 
-    resources: {}
-  #      request:
-  #        cpu: 500m
-  #        memory: 5Gi
-  #      limits:
-  #        cpu: 500m
-  #        memory: 5Gi
+    env: [] # optional
+    # env:
+    #   - name: key3
+    #     value: value3
+    #   - name: key4
+    #     value: value4
 
-  - name: cronjob2
-    schedule: "* * * * *"
-    restartPolicy: OnFailure
-    config:
-      enabled: true
-    serviceAccount:
-      create: false
-      name: "sa-2"
-    image:
-      registry: docker.io
-      repository: busybox
-      pullPolicy: IfNotPresent
-      tag: latest
-    env:
-      - name: key3
-        value: value3
-      - name: key4
-        value: value4
-    volumes: {}
-    #      - name: persistent-storage
-    #        mountPath: /path
-    #        persistentVolumeClaim:
-    #          claimName: claim
-    storage: {}
-    #    - persistentVolumeClaimName: claim
-    #      accessModes:
-    #        - ReadWriteMany
-    #      className: efs-sc
-    #      requestedSize: 5Gi
-    #      enableDataSource: false
+    volumes: {} # optional
+    # volumes:
+    #   - name: persistent-storage
+    #     mountPath: /path
+    #     persistentVolumeClaim:
+    #       claimName: claim
 
-    nodeSelector: {}
-    #     nodeSelector:
-    #       nodetype: "spot"
+    storage: {} # optional
+    # storage:
+    #   - persistentVolumeClaimName: claim
+    #     accessModes:
+    #       - ReadWriteMany
+    #     className: claim
+    #     requestedSize: 5Gi
+    #     enableDataSource: false
 
-    affinity: {}
-    #     affinity:
-    #       nodeAffinity:
-    #         requiredDuringSchedulingIgnoredDuringExecution:
-    #            nodeSelectorTerms:
-    #           - matchExpressions:
+    resources: {} # optional
+    # resources:
+    #   request:
+    #     cpu: 500m
+    #     memory: 5Gi
+    #   limits:
+    #     cpu: 500m
+    #     memory: 5Gi
+
+    nodeSelector: {} # optional
+    # nodeSelector:
+    #   nodetype: "spot"
+
+    affinity: {} # optional
+    # affinity:
+    #   nodeAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #       nodeSelectorTerms:
+    #         - matchExpressions:
     #             - key: topology.kubernetes.io/zone
     #               operator: In
     #               values:
-    #               - antarctica-east1
-    #               - antarctica-west1
+    #                 - antarctica-east1
+    #                 - antarctica-west1
 
-    tolerations: {}
-#     tolerations:
-#     - key: "example-key"
-#     operator: "Exists"
-#     effect: "NoSchedule"
+    tolerations: {} # optional
+    # tolerations:
+    #   - key: "example-key"
+    #     operator: "Exists"
+    #     effect: "NoSchedule"
