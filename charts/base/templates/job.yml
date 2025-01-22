@@ -26,7 +26,7 @@ spec:
       labels:
         {{- if .Values.job.labels }}
         {{- range $key, $value := .Values.job.labels }}
-        {{ $value.name }}: {{ $value.value}}
+        {{ $value.name }}: {{ $value.value | quote }}
         {{- end }}
         {{- end }}
     spec:
