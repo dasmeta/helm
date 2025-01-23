@@ -46,6 +46,10 @@ serviceAccount:
   name: ""
 
 job:
+  labels:
+    - name: app.kubernetes.io/component
+      value: job
+
   serviceAccount:
     create: false
     annotations: {}
