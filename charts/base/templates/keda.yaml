@@ -1,0 +1,22 @@
+{{- if and .Values.autoscaling.enabled .Values.autoscaling.trigger }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "base.fullname" . }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ include "base.fullname" . }}
+  minReplicaCount:  {{ .Values.autoscaling.minReplicas }}
+  maxReplicaCount: {{ .Values.autoscaling.maxReplicas }}
+  triggers:
+    - type: {{ .Values.autoscaling.trigger.type }}
+      authenticationRef:
+        name: {{ .Values.autoscaling.trigger.authRef | default "keda-trigger-auth-default" }}
+        kind: {{ .Values.autoscaling.trigger.kind | default "ClusterTriggerAuthentication" }}
+      metadata:
+        {{- range $key, $value := .Values.autoscaling.trigger.metadata }}
+        {{ $key }}: "{{ $value }}"
+        {{- end }}
+{{- end }}

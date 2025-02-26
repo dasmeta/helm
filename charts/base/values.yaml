@@ -8,7 +8,6 @@ image:
   repository: nginx
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is  the chart appVersion.
-  tag: 1.21
 
 # Init containers
 # initContainers:
@@ -186,7 +185,19 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+
+# If you want scale deployment depends on AWS SQS queue size
+# autoscaling:
+#   enabled: true
+#   minReplicas: 1
+#   maxReplicas: 3
+#   targetCPUUtilizationPercentage: 80
+#   trigger:
+#     type: aws-sqs-queue
+#     metadata:
+#       queueURL: https://sqs.eu-central-1.amazonaws.com/<account-id>/<sqs-name>
+#       queueLength: 3
+#       awsRegion: "eu-central-1"
 
 nodeSelector: {}
 
