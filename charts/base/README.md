@@ -638,6 +638,20 @@ annotations:
   "helm.sh/hook": pre-install,pre-upgrade
 ```
 
+### If you want scale deployment depends on AWS SQS queue size
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  trigger:
+    type: aws-sqs-queue
+    metadata:
+      queueURL: https://sqs.eu-central-1.amazonaws.com/<account-id>/<sqs-name>
+      queueLength: <aws-queue-length>
+      awsRegion: <aws-region>
+```
+
 ### custom rollout strategy(canary,blue/gree) configs by using flagger
 ```yaml
 # This config allows to enable custom rollout strategies by using different providers/operators
