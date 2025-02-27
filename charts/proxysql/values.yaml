@@ -1,0 +1,220 @@
+proxysql:
+  # base chart configs start
+  # base:
+  podAnnotations:
+    app.config/checksum: v1 # Use this value to apply config version update, so that each time you did a change in proxysql.* config to apply the change immediately you can increase version here(or overwise the change will not be applied and you need to restart deployment to apply)
+    # prometheus.io/scrape: "true" # enable in case you have prometheus which scrapes pods based to this annotations
+    # prometheus.io/port: "6070"
+
+  image:
+    repository: proxysql/proxysql
+    tag: 2.7.2
+    pullPolicy: IfNotPresent
+
+  replicaCount: 2
+  autoscaling: # we enable auto scaling for proxysql by default
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  service:
+    type: ClusterIP
+    port: 3306
+    extraPorts:
+      - port: 6032 # admin port
+        targetPort: 6032
+        protocol: TCP
+        name: admin
+
+      ## web ui, to enable uncomment the block and set proxysql.web.enabled=true, ingress configs can be used to expose this endpoint
+      # - port: 6080
+      #   targetPort: 6080
+      #   protocol: TCP
+      #   name: web
+
+  setIngressClassByField: true
+  ingress: # can be used to expose stats web ui, TODO: there seems issue to pass Authorization headers to backend service in nginx, so more checks need to make sure this works
+    enabled: false
+    class: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      # nginx.ingress.kubernetes.io/configuration-snippet: |
+      #   proxy_set_header Authorization $http_authorization;
+    hosts:
+      - host: proxysql-stats.name.com
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 6080
+    tls: []
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  startupProbe:
+    failureThreshold: 10
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+    exec:
+      command:
+        - /bin/bash
+        - -ec
+        - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
+        # - mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive" # can be used in case if we should make sure exposed mysql api available
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+    successThreshold: 1
+    exec:
+      command:
+        - /bin/bash
+        - -ec
+        - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
+        # - mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive" # can be used in case if we should make sure exposed mysql api available
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 5
+    successThreshold: 1
+    exec:
+      command:
+        - /bin/bash
+        - -ec
+        - "mysqladmin status -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT"
+        # - "mysqladmin status -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT" # can be used in case if we should make sure exposed mysql api available
+
+  secretsDefaultEngine: disabled
+
+  containerPort: 3306
+
+  podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: 999
+    runAsUser: 999
+    runAsGroup: 999
+
+  volumes:
+    - name: proxysql-config
+      mountPath: /etc/proxysql.cnf
+      subPath: proxysql.cnf
+      readOnly: true
+      configMap:
+        name: proxysql # NOTE: set this value same as release name
+
+  envFrom:
+    secret: proxysql # NOTE: set this value same as release name
+
+  # base chart configs end
+  admin:
+    user: "admin"
+    password: "admin"
+    port: 6032 # admin service port
+
+  stats: # create a separate user in admin mysql server for using to access only statistics data, the web ui also uses this user for auth
+    user: "sadmin"
+    password: "sadmin"
+    webEnabled: false # allows to enable admin web UI(auth by stats user/password), with port forward the endpoint will be(https schema is must): https://127.0.0.1:6080/
+    webPort: 6080
+
+  mysql:
+    version: "8.4.4"
+    ports: # proxysql exposed mysql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query
+      - 3306
+    maxConnections: 2048
+    connectionMaxAgeMS: 0
+    queyCacheSizeMB: 226
+    queryRetriesOnFailure: 2
+    waitTimeout: 28800000
+    readWriteSplit: false # This field decides if there will be rules to route write traffic only to writer hostgroup/servers (hostgroup id is defined by writerHostgroup value and server belongs to this hostgroup when is_writer=true) and read traffic only to reads hostgroup (hostgroup id is defined by readerHostgroup value and server belongs to this hostgroup when is_writer=false). So if you have both read and write hostgroups make sure to set this to true.
+    writerHostgroup: 0 # The id of writers hostgroup
+    readerHostgroup: 1 # The id of reader hostgroup
+    servers: # mysql origin servers, both read and write servers should be listed here, the writer ones are grouped into hostgroup with id=1 and reader ones into hostgroup with id=2
+      []
+      # - is_writer: true # you can have instead set hostgroup_id field also to have custom hostgroups, by default we have two hostgroups writes(with id 0) and reads(with id 1) managed by is_writer field
+      #   hostname: localhost # required
+      #   port: 3306
+      #   max_connections: 1000
+      #   compression: false
+      #   weight: 1000
+      #   max_replication_lag: 0
+      #   use_ssl: 0
+    users: # the mysql users, NOTE: you have to include here all users you need to use in you client app
+      []
+      # - username: name # required
+      #   password: pwd  # required
+      #   max_connections: 1000
+      #   use_ssl: 0
+      #   transaction_persistent: 1
+      #   active: 1
+      #   read_only: false
+    rules: # allows to create custom routing amd caching rules
+      []
+      # - match_digest: "^SELECT .* FROM test$" # regex to match
+      #   destination_hostgroup: 0 # hostgroup 1 is read and write hostgroup
+      #   cache_ttl: 100000 # milliseconds to keep cache
+      #   apply: 1 # when set to 1 no further queries will be evaluated after this rule is matched and processed
+      #   active: 1 # whether the rule is active
+      # - digest: "0xF73926A51792A836" # digit/hash to match, this one corresponds to queries like "select * from test1"
+      #   destination_hostgroup: 0 # hostgroup 1 is read and write hostgroup
+      #   cache_ttl: 100000 # milliseconds to keep cache
+      #   apply: 1 # when set to 1 no further queries will be evaluated after this rule is matched and processed
+      #   active: 1 # whether the rule is active
+      #   proxy_port: 3306 # the port to use to filter coming queries for the rule
+      # - match_pattern: "^SELECT .* FROM test4$" # routes regex pattern(digest pattern and regex pattern have differences for example regex supports same query different casing) matched queries from all proxy/mysql ports to write hostgroup with caching 100 seconds
+      #   cache_ttl: 100000
+
+    # this config allows to dynamically control read and write hostgroup servers based on checkType, so that proxysql regularly do `SELECT @@global.read_only;` kind sql queries to server to identify if the server is read/write and routes read/write queries based on this
+    # this can be handy in case if we have multi replica setups so that master can dynamically switched from one replica to another.
+    # in general if we already know master and replica endpoint we can skip this option and do routing using servers isWriter option,
+    # NOTE: this option works along side with proxysql.monitor
+    slave:
+      enabled: false
+      checkType: "read_only"
+
+  # allows to enable proxysql monitor which monitors mysql backend servers for their availability and do automated master switch, replica disable or query routing switch to low lag having ones based on servers status
+  monitor:
+    enabled: false
+    user: "monitor"
+    password: "monitor"
+    writerAsReader: true
+    replicationLagInterval: 10000
+    replicationLagTimeout: 1500
+    slaveLagWhenNull: 60
+    connectInterval: 120000
+    connectTimeout: 1000
+    pingInterval: 8000
+    pingMaxFailures: 3
+    pingTimeout: 1500
+    queryInterval: 60000
+    queryTimeout: 1500
+    readOnlyInterval: 1000
+    readOnlyMaxTimeoutCount: 3
+    readOnlyTimeout: 1500
+    threadsMax: 128
+    threadsMin: 8
+    threadsQueueMaxsize: 128
+    timerCached: true
+
+# prometheus pod monitor configs to enable prometheus auto discovery find and scrape proxysql metrics, there is also possibility to do the same by just using "prometheus.io/*" annotations
+# NOTE: if you have no prometheus pod monitor crds this enabling may not work and if prometheus have rules to scrape annotation based then `prometheus.io/scrape` annotation above can be enabled
+podMonitor:
+  enabled: false
+  interval: 30s
+  port: 6070
+
+# this ones are inherited from base chart, we need them just for not getting errors when using define templates from base chart
+nameOverride: ""
+fullnameOverride: ""

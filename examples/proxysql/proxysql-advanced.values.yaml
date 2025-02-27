@@ -1,0 +1,75 @@
+# helm diff upgrade --install -n localhost proxysql-advanced ./charts/proxysql/ -f ./examples/proxysql/proxysql-advanced.values.yaml
+
+proxysql:
+  podAnnotations:
+    prometheus.io/scrape: "true" # we suppose that prometheus is configured to lookup this annotations, also there is possibility to enable metric scraping by. you need to set proxysql.mysql.monitor.enabled=true
+    prometheus.io/port: "6070"
+
+  # we expose second port for service, so that default 3306 will be used for write servers/replicas access and second 3307 will be used for read servers
+  service:
+    extraPorts:
+      - port: 6032 # admin port
+        targetPort: 6032
+        protocol: TCP
+        name: admin
+      - port: 3307 # second port which can be used as read replicas port(3306 comes by default)
+        targetPort: 3307
+        protocol: TCP
+        name: read-replicas
+      - port: 6080 # web ui for admin
+        targetPort: 6080
+        protocol: TCP
+        name: web
+
+  volumes:
+    - name: proxysql-config
+      mountPath: /etc/proxysql.cnf
+      subPath: proxysql.cnf
+      readOnly: true
+      configMap:
+        name: proxysql-advanced
+  envFrom:
+    secret: proxysql-advanced
+
+  web:
+    enabled: true
+  mysql:
+    ports:
+      - 3306 # write/master endpoint
+      - 3307 # read/replica endpoint
+
+    servers:
+      - is_writer: true
+        hostname: mysql.localhost
+        # use_ssl: 1
+      - is_writer: false
+        hostname: mysql.localhost
+
+    users:
+      - username: root
+        password: snM2sBBFbG
+
+    # query routing rules
+    readWriteSplit: true # add general rule to route read queries to read replicas and write queries to write
+    rules: # allows to have custom rules, for caching or routing service port queries to some hostgroup only
+      - match_digest: "^select .* from test$" # routes digest matched 3306 port coming queries to hostgroup=0(write hostgroup) with caching for 100 seconds
+        digest: "0x38DF1D37B3136F42"
+        cache_ttl: 100000
+        proxy_port: 3306
+      - digest: "0xB99A00381BD4F14D" # matches to match_digest="^select * from test1$", routes 3307 queries to writes hostgroup and also caching for 100 seconds
+        cache_ttl: 100000
+        proxy_port: 3307
+      - match_digest: "^SELECT .* FROM test2$" # routes digest pattern matched queries from all proxy/mysql ports(in this case 3306 and 3307) to write hostgroup with caching 100 seconds
+        cache_ttl: 100000
+      - match_digest: "^SELECT .* FROM test3$" # routes digest pattern matched queries from all proxy/mysql ports(in this case 3306 and 3307) to read hostgroup with caching 100 seconds
+        cache_ttl: 100000
+        destination_hostgroup: 1
+      - match_pattern: "^SELECT .* FROM test4$" # routes regex pattern(digest pattern and regex pattern have differences for example regex supports same query different casing) matched queries from all proxy/mysql ports(in this case both 3306 and 3307) to read hostgroup with caching 100 seconds
+        cache_ttl: 100000
+        destination_hostgroup: 1
+      - match_digest: "." # routes all queries coming to 3306 port to write hostgroup(destination_hostgroup=0 by default) without caching
+        proxy_port: 3306
+
+# we use `prometheus.io/scrape` annotation in this example to get metrics available in prometheus, but if you have prometheus configured to lookup for PodMonitor crds then you can set podMonitor.enable=true also instead
+podMonitor:
+  enabled: false

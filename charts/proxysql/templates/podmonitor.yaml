@@ -1,0 +1,16 @@
+{{- if .Values.podMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "base.fullname" . }}
+spec:
+  podMetricsEndpoints:
+    - interval: {{ .Values.podMonitor.interval }}
+      port: {{ .Values.podMonitor.port }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "base.selectorLabels" . | nindent 6 }}
+{{- end }}
