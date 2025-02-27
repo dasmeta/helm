@@ -1,0 +1,18 @@
+# helm diff upgrade --install -n localhost proxysql-basic ./charts/proxysql/ -f ./examples/proxysql/proxysql-basic.values.yaml
+proxysql:
+  volumes:
+    - name: proxysql-config
+      mountPath: /etc/proxysql.cnf
+      subPath: proxysql.cnf
+      readOnly: true
+      configMap:
+        name: proxysql-basic
+  envFrom:
+    secret: proxysql-basic
+
+  mysql:
+    servers:
+      - hostname: mysql.localhost
+    users:
+      - username: root
+        password: snM2sBBFbG
