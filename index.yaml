@@ -1241,6 +1241,22 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/nfs-provisioner-1.0.0/nfs-provisioner-1.0.0.tgz
     version: 1.0.0
+  proxysql:
+  - apiVersion: v2
+    appVersion: 2.7.2
+    created: "2025-02-27T11:33:53.023919572Z"
+    dependencies:
+    - alias: proxysql
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.3
+    description: A Helm chart for Kubernetes to deploy proxysql
+    digest: d3ecab36f720c78346809d5a383d0a39a0dba1436ff0b5b46bd6ca125cab2e4d
+    name: proxysql
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/proxysql-0.1.0/proxysql-0.1.0.tgz
+    version: 0.1.0
   sentry-relay:
   - apiVersion: v2
     appVersion: 0.1.0
