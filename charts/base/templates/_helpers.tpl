@@ -52,8 +52,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "base.selectorLabels" -}}
+{{- if .Values.selectorLabelsOverride -}}
+{{ .Values.selectorLabelsOverride | toYaml }}
+{{- else -}}
 app.kubernetes.io/name: {{ include "base.fullname" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 {{- end }}
 
 {{/*

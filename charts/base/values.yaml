@@ -34,6 +34,7 @@ image:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+selectorLabelsOverride: {} # allows to override selector labels, this can be used for example in case when we want to have deployment pods attached to another release service(see in repo folder /examples/base/with-second-deployment)
 
 serviceAccount:
   # Specifies whether a service account should be created

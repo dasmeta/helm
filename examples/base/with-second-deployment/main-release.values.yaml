@@ -1,0 +1,41 @@
+# helm diff upgrade --install -n localhost http-echo-main ./charts/base/ -f ./examples/base/with-second-deployment/main-release.values.yaml
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+service:
+  enabled: true
+  type: ClusterIP
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 99
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 6m
+
+ingress:
+  enabled: true
+  class: nginx
+  hosts:
+    - host: http-echo.localhost
+      paths:
+        - path: "/ping"
