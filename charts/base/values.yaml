@@ -299,11 +299,24 @@ pdb:
   minAvailable: 1
   pdbName:
 
+# serviceMonitor:
+#   enabled: false
+#   interval: 30s
+#   targetPort: 80
+#   path: /metrics
+
 serviceMonitor:
   enabled: false
   interval: 30s
   targetPort: 80
   path: /metrics
+  # For authorization 
+  # authorization:
+  #   credentials:
+  #     key: API_TOKEN
+  #     name: talk
+  #   type: Token
+
 
 # This config allows to enable custom rollout strategies by using different providers/operators
 # right now only flagger (https://flagger.app/) operator supported and tested for canary with nginx
