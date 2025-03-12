@@ -299,12 +299,6 @@ pdb:
   minAvailable: 1
   pdbName:
 
-# serviceMonitor:
-#   enabled: false
-#   interval: 30s
-#   targetPort: 80
-#   path: /metrics
-
 serviceMonitor:
   enabled: false
   interval: 30s
