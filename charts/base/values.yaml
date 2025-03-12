@@ -313,8 +313,8 @@ serviceMonitor:
   # For authorization 
   # authorization:
   #   credentials:
-  #     key: API_TOKEN
-  #     name: talk
+  #     key: TOKEN
+  #     name: secret-name
   #   type: Token
 
 
