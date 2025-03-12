@@ -10,6 +10,9 @@ spec:
   - interval: {{ .Values.serviceMonitor.interval }}
     path: {{ .Values.serviceMonitor.path }}
     targetPort: {{ .Values.serviceMonitor.targetPort }}
+    {{- with .Values.serviceMonitor.authorization }}
+    authorization: {{ toYaml . | nindent 6 }}
+    {{- end }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}

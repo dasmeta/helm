@@ -304,6 +304,13 @@ serviceMonitor:
   interval: 30s
   targetPort: 80
   path: /metrics
+  # For authorization 
+  # authorization:
+  #   credentials:
+  #     key: TOKEN
+  #     name: secret-name
+  #   type: Token
+
 
 # This config allows to enable custom rollout strategies by using different providers/operators
 # right now only flagger (https://flagger.app/) operator supported and tested for canary with nginx
