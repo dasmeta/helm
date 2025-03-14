@@ -1,0 +1,4 @@
+To check/get created/updated resources run:
+kubectl get namespaces
+kubectl get ClusterSecretStore
+kubectl get ClusterExternalSecret
