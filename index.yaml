@@ -1236,6 +1236,18 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/mongodb-bi-connector-0.1.0/mongodb-bi-connector-0.1.0.tgz
     version: 0.1.0
+  namespaces-and-docker-auth:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2025-03-14T14:35:33.58265627Z"
+    description: A Helm chart for Kubernetes to create/configure app namespaces and
+      docker image registry secrets
+    digest: 580f0b4a3920e2317d2938db8cd1d1c38a0467b4b82006a9068c64c7d64e8afc
+    name: namespaces-and-docker-auth
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/namespaces-and-docker-auth-0.1.0/namespaces-and-docker-auth-0.1.0.tgz
+    version: 0.1.0
   nfs-provisioner:
   - apiVersion: v1
     created: "2024-09-12T18:26:48.325291221Z"
@@ -1264,6 +1276,21 @@ entries:
     - https://github.com/dasmeta/helm/releases/download/nfs-provisioner-1.0.0/nfs-provisioner-1.0.0.tgz
     version: 1.0.0
   proxysql:
+  - apiVersion: v2
+    appVersion: 2.7.3
+    created: "2025-03-14T14:35:33.793725804Z"
+    dependencies:
+    - alias: proxysql
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.3
+    description: A Helm chart for Kubernetes to deploy proxysql
+    digest: f639b20fffa23bd3d0160ddf037a3938008128fd17b47948b7aaf5aadf1d2f1e
+    name: proxysql
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/proxysql-0.1.1/proxysql-0.1.1.tgz
+    version: 0.1.1
   - apiVersion: v2
     appVersion: 2.7.2
     created: "2025-02-27T11:33:53.023919572Z"
