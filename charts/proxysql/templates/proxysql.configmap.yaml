@@ -126,13 +126,14 @@ data:
         {{- if or $element.digest $element.match_digest $element.match_pattern }}
         {{- if $element.digest }}
         digest="{{ $element.digest }}"
-        {{- end }}
         {{- if $element.match_digest }}
-        {{- if $element.digest }}
         # match_digest="{{ $element.match_digest }}"
-        {{- else }}
-        match_digest="{{ $element.match_digest }}"
         {{- end }}
+        {{- if $element.match_pattern }}
+        # match_pattern="{{ $element.match_pattern }}"
+        {{- end }}
+        {{- else if $element.match_digest }}
+        match_digest="{{ $element.match_digest }}"
         {{- else }}
         match_pattern="{{ $element.match_pattern }}"
         {{- end }}

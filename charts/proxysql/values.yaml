@@ -1,6 +1,5 @@
 proxysql:
   # base chart configs start
-  # base:
   podAnnotations:
     app.config/checksum: v1 # Use this value to apply config version update, so that each time you did a change in proxysql.* config to apply the change immediately you can increase version here(or overwise the change will not be applied and you need to restart deployment to apply)
     # prometheus.io/scrape: "true" # enable in case you have prometheus which scrapes pods based to this annotations
@@ -8,7 +7,7 @@ proxysql:
 
   image:
     repository: proxysql/proxysql
-    tag: 2.7.2
+    tag: 2.7.3
     pullPolicy: IfNotPresent
 
   replicaCount: 2
@@ -81,7 +80,7 @@ proxysql:
       command:
         - /bin/bash
         - -ec
-        - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
+        - (mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive") && ! test -f /tmp/sigterm-signal-sent
         # - mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive" # can be used in case if we should make sure exposed mysql api available
   livenessProbe:
     initialDelaySeconds: 5
@@ -117,7 +116,17 @@ proxysql:
   envFrom:
     secret: proxysql # NOTE: set this value same as release name
 
-  # base chart configs end
+  # have 2 minutes graceful termination time so that when pod termination starts(for example because of spot termination) we having enough time to get active connections closed and also wait for 100 seconds before pod shutdown, rest 20 seconds are for running proxysql app shutdown in container
+  terminationGracePeriodSeconds: 120
+  lifecycle:
+    preStop:
+      exec:
+        command:
+          - sh
+          - -c
+          - touch /tmp/sigterm-signal-sent && sleep 100
+
+  # base chart configs end and proxysql specific configs start
   admin:
     user: "admin"
     password: "admin"

@@ -1,0 +1,14 @@
+{{- range $namespaceName := .Values.list }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $namespaceName }}
+  labels:
+  {{- with $.Values.labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if and $.Values.dockerAuth.enabled $.Values.dockerAuth.namespaceSelector.matchLabels }}
+    {{- toYaml $.Values.dockerAuth.namespaceSelector.matchLabels | nindent 4 }}
+  {{- end }}
+{{- end }}
