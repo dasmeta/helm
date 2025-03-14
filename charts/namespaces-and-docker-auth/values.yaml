@@ -1,0 +1,18 @@
+list: [] # the list of namespaces to create
+labels: {} # the labels map to set for all namespaces in list, NOTE: the dockerAuth.namespaceSelector.matchLabels will be set automatically for created namespaces
+dockerAuth:
+  enabled: false
+  serviceAccountRoleArn: # (required) the service account role arn which has access to aws secret manager secret named by .Values.dockerAuth.secretManagerSecretName, this role should be created externally and its arn provided here
+  region: eu-central-1 # aws region
+  refreshTime: 3m # how often to check and make sure that the ExternalSecrets exist in the matching namespaces
+  refreshInterval: 1h # the amount of time before the values are read again from the SecretStore provider, set low value if you just did the username/password change in secret manager and increase greater values to not get charged much, as aws secret reads being charged
+  name: docker-registry-auth # the naming that will be used to create k8s external secret, service account and secret resources
+  secretManagerSecretName: account # aws secret manager secret name from where it will pull docker image registry username/password values by set key values
+  namespaceSelector: # the namespaces selector which will be used to identify the namespaces where docker-registry-auth secrets will be created, NOTE: for namespaces from list[] it will attach this labels automatically
+    matchLabels:
+      docker-auth: enabled # this label you can add to a namespace to get docker-registry-auth secret available in that namespace
+  registries: # docker image registries configs, by default we have only dockerhub here but there is possibility to add custom ones
+    - url: https://index.docker.io/v1/ # the url of docker registry for which auth secret will be configured
+      usernameKey: DOCKER_HUB_USERNAME # docker image registry auth username key to lookup in .Values.dockerAuth.secretManagerSecretName aws secret resource
+      passwordKey: DOCKER_HUB_PASSWORD # docker image registry auth password key to lookup in .Values.dockerAuth.secretManagerSecretName aws secret resource, NOTE: for dockerhub this is personal access token instead of standard ui/profile password
+      authKey: # the auth key in aws secret resource which contains base64(username:password) hash value, NOTE: this can be omitted if above username/password keys provided, or you can unset above keys and only provide this one
