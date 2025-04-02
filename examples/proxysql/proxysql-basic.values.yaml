@@ -1,6 +1,8 @@
 # helm diff upgrade --install -n localhost mysql  bitnami/mysql --set auth.rootPassword=root # install mysql
 # helm diff upgrade --install -n localhost proxysql-basic ./charts/proxysql/ -f ./examples/proxysql/proxysql-basic.values.yaml
 proxysql:
+  podAnnotations:
+    app.config/checksum: v2
   autoscaling:
     minReplicas: 1
   volumes:

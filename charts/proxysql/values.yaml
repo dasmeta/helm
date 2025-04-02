@@ -2,7 +2,7 @@ proxysql:
   # base chart configs start
   podAnnotations:
     app.config/checksum: v1 # Use this value to apply config version update, so that each time you did a change in proxysql.* config to apply the change immediately you can increase version here(or overwise the change will not be applied and you need to restart deployment to apply)
-    # prometheus.io/scrape: "true" # enable in case you have prometheus which scrapes pods based to this annotations
+    # prometheus.io/scrape: "true" # enable in case you have prometheus which scrapes pods based to this annotations, it is possible also to enable metric scrapping by using proxysql.serviceMonitor or podMonitor configs. just one scrapping config is enough to be enabled
     # prometheus.io/port: "6070"
 
   image:
@@ -217,12 +217,16 @@ proxysql:
     threadsQueueMaxsize: 128
     timerCached: true
 
-# prometheus pod monitor configs to enable prometheus auto discovery find and scrape proxysql metrics, there is also possibility to do the same by just using "prometheus.io/*" annotations
-# NOTE: if you have no prometheus pod monitor crds this enabling may not work and if prometheus have rules to scrape annotation based then `prometheus.io/scrape` annotation above can be enabled
+  # allows to enable service monitor to scrape proxysql metrics, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
+  # NOTE: if you have no prometheus service monitor crds this enabling may fail to install helm
+  serviceMonitor:
+    enabled: false
+    targetPort: 6070
+# prometheus pod monitor configs to enable prometheus auto discovery find and scrape proxysql metrics, there is also possibility to do the same by just using "prometheus.io/*" annotations or proxysql.serviceMonitor configs. just one scrapping config is enough to be enabled
+# NOTE: if you have no prometheus pod monitor crds this enabling may fail to install helm
 podMonitor:
   enabled: false
-  interval: 30s
-  port: 6070
+  targetPort: 6070
 
 # this ones are inherited from base chart, we need them just for not getting errors when using define templates from base chart
 nameOverride: ""
