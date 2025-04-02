@@ -16,6 +16,10 @@ autoscaling:
   maxReplicas: 3
   targetCPUUtilizationPercentage: 99
 
+pdb:
+  enabled: true
+  minAvailable: 1
+
 readinessProbe:
   initialDelaySeconds: 5
   failureThreshold: 1

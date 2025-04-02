@@ -5,8 +5,7 @@ metadata:
   name: {{ include "base.fullname" . }}
 spec:
   podMetricsEndpoints:
-    - interval: {{ .Values.podMonitor.interval }}
-      port: {{ .Values.podMonitor.port }}
+    - targetPort: {{ .Values.podMonitor.targetPort }}
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}
