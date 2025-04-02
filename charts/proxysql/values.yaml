@@ -217,12 +217,19 @@ proxysql:
     threadsQueueMaxsize: 128
     timerCached: true
 
-  # allows to enable service monitor to scrape proxysql metrics, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
+  # allows to enable service monitor to scrape proxysql metrics, you have to set/enable also proxysql.extraPorts, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
   # NOTE: if you have no prometheus service monitor crds this enabling may fail to install helm
   serviceMonitor:
     enabled: false
     targetPort: 6070
-# prometheus pod monitor configs to enable prometheus auto discovery find and scrape proxysql metrics, there is also possibility to do the same by just using "prometheus.io/*" annotations or proxysql.serviceMonitor configs. just one scrapping config is enough to be enabled
+
+  ## in case you use serviceMonitor or podMonitor for prometheus metric scrapping you have to also enable container metric port by uncommenting the following extraPorts configs
+  # extraPorts:
+  #   - name: metrics
+  #     containerPort: 6070
+  #     protocol: TCP
+
+# prometheus pod monitor configs to enable prometheus auto discovery find and scrape proxysql metrics, you have to set/enable also proxysql.extraPorts, there is also possibility to do the same by just using "prometheus.io/*" annotations or proxysql.serviceMonitor configs. just one scrapping config is enough to be enabled
 # NOTE: if you have no prometheus pod monitor crds this enabling may fail to install helm
 podMonitor:
   enabled: false
