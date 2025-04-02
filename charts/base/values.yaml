@@ -167,6 +167,20 @@ extraContainer: {} # allows to have additional containers along side to main one
 #       tag: 1.19
 #     extraEnv:
 #       NGINX_PORT: 8082
+#   - name: extra-third-nginx
+#     containerPort: 8083
+#     # allows to have extra ports on extra container. generally there is no need for this in order to use it in service as target, but some tools, like prometheus podMonitor/serviceMonitor need port configs set on pod
+#     extraPorts:
+#       - name: http-third-second
+#         containerPort: 8084
+#         protocol: TCP
+#     service:
+#       enabled: true # to have container port definition in deployment
+#     image:
+#       repository: nginx
+#       tag: 1.19
+#     extraEnv:
+#       NGINX_PORT: 8083
 
 resources:
   {}
@@ -209,6 +223,11 @@ affinity: {}
 config: {}
 
 containerPort: 80
+## allows to have extra ports on main container. generally there is no need for this in order to use it in service as target, but some tools, like prometheus podMonitor/serviceMonitor need port configs set on pod
+# extraPorts:
+#   - name: http-second
+#     containerPort: 8080
+#     protocol: TCP
 
 livenessProbe:
   {}
@@ -304,13 +323,12 @@ serviceMonitor:
   interval: 30s
   targetPort: 80
   path: /metrics
-  # For authorization 
+  # For authorization
   # authorization:
   #   credentials:
   #     key: TOKEN
   #     name: secret-name
   #   type: Token
-
 
 # This config allows to enable custom rollout strategies by using different providers/operators
 # right now only flagger (https://flagger.app/) operator supported and tested for canary with nginx

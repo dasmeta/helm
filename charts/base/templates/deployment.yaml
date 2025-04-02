@@ -158,6 +158,9 @@ spec:
             - name: http
               containerPort: {{ .Values.containerPort | default 80 }}
               protocol: TCP
+            {{- with .Values.extraPorts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- if .Values.livenessProbe }}
           livenessProbe:
@@ -230,6 +233,9 @@ spec:
             - name: http
               containerPort: {{ $extraContainer.containerPort | default 80 }}
               protocol: TCP
+            {{- with $extraContainer.extraPorts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- if or $extraContainer.extraEnv $extraContainer.secrets}}
           env:
