@@ -1,0 +1,84 @@
+# helm diff upgrade --install -n localhost canary-with-manual-approval ./charts/base/ -f ./examples/base/with-canary-deployment/canary-with-manual-approval.yaml
+
+# the following configs will allow to have flagger canary deployment with cookie based routing insider ones(check curl below) and manual approval based on flagger loadtester(grafana custom button can be created to approve this via UI)
+# curl -b 'insider=always' http://http-echo-canary.localhost/ping # for request to canary when there is canary deployment in progress
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+config:
+  CANARY_ROLLOUT_TRIGGER_VERSION: "2"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# NOTE: when canary deployment are enabled, like in this example, this auto-scaling min/max replicas being used for canary deploys, for primary deploy there is separate config under rolloutStrategy.config
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 99
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# have deployment strategy by 20%
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 15%
+    maxUnavailable: 0
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 6m
+
+setIngressClassByField: true
+ingress:
+  enabled: true
+  class: nginx
+  hosts:
+    - host: http-echo-canary.localhost
+      paths:
+        - path: "/ping"
+
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    iterations: 2
+    match:
+      - headers:
+          cookie:
+            exact: "insider"
+    interval: 10s # schedule interval (default 60s)
+    threshold: 10 # max number of failed metric checks before rollback (default 10)
+    primaryScalerMinReplicas: 10
+    primaryScalerMaxReplicas: 15
+
+    webhooks: # webhooks can be used for load testing before traffic switching to canaries by using `pre-rollout` type and also generating traffic
+      - name: "pre rollout close gate" # close the flagger canary gate to have it closed before rollout starts(pos rollout close can be used if there is need to have pre-open open gate even before rollout start)
+        type: pre-rollout
+        url: http://flagger-loadtester.localhost.svc.cluster.local/gate/close
+      - name: "confirm promotion"
+        type: confirm-promotion
+        url: http://flagger-loadtester.localhost.svc.cluster.local/gate/check # do not rollout the new version and wait until gate gets open, the gate gets open by manual approval via api call `curl -v -d '{"name": "canary-with-manual-approval","namespace":"localhost"}' http://flagger-loadtester.localhost.svc.cluster.local/gate/open`
+      # - name: "post rollout close gate" # close the flagger canary gate to have it closed on next deploy, so that again on next rollout it will wait for manual approval
+      #   type: post-rollout
+      #   url: http://flagger-loadtester.localhost.svc.cluster.local/gate/close

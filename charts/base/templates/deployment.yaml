@@ -37,7 +37,7 @@ spec:
       {{- end }}
   {{- if .Values.strategy }}
   strategy:
-    {{- toYaml .Values.strategy | nindent 12 }}
+    {{- toYaml .Values.strategy | nindent 4 }}
   {{- end }}
   template:
     metadata:

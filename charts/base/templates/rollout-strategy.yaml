@@ -27,39 +27,64 @@ spec:
       minReplicas: {{ .Values.rolloutStrategy.configs.primaryScalerMinReplicas | default .Values.autoscaling.minReplicas }}
       maxReplicas: {{ .Values.rolloutStrategy.configs.primaryScalerMaxReplicas | default .Values.autoscaling.maxReplicas }}
   {{- end }}
-
+  {{- with .Values.rolloutStrategy.configs.progressDeadlineSeconds }}
   # the maximum time in seconds for the canary deployment to make progress before it is rollback (default 600s)
-  progressDeadlineSeconds: {{ .Values.rolloutStrategy.configs.progressDeadlineSeconds | default 600 }}
+  progressDeadlineSeconds: {{ . | default 600 }}
+  {{- end }}
   service:
     # ClusterIP port number
     port: {{ .Values.service.port }}
     # container port number or name
     targetPort: {{ .Values.service.targetPort | default .Values.containerPort }}
   analysis:
+    {{- with .Values.rolloutStrategy.configs.canaryReadyThreshold }}
     # minimum percentage of canary pods that must be ready before considering canary ready for traffic shifting (default 100)
-    canaryReadyThreshold: {{ .Values.rolloutStrategy.configs.canaryReadyThreshold | default 100 }}
+    canaryReadyThreshold: {{ . | default 100 }}
+    {{- end }}
+    {{- with .Values.rolloutStrategy.configs.primaryReadyThreshold }}
     # minimum percentage of primary pods that must be ready before considering primary ready for traffic shifting (default 100)
-    primaryReadyThreshold: {{ .Values.rolloutStrategy.configs.primaryReadyThreshold | default 100 }}
+    primaryReadyThreshold: {{ . | default 100 }}
+    {{- end }}
     # schedule interval (default 60s)
     interval: {{ .Values.rolloutStrategy.configs.interval | default "60s" }}
     # max number of failed metric checks before rollback (default 10)
     threshold: {{ .Values.rolloutStrategy.configs.threshold | default 10 }}
+    {{- with .Values.rolloutStrategy.configs.maxWeight }}
     # max traffic percentage (0-100) routed to canary (default 30)
-    maxWeight: {{ .Values.rolloutStrategy.configs.maxWeight | default 30 }}
+    maxWeight: {{ . | default 30 }}
+    {{- end }}
+    {{- with .Values.rolloutStrategy.configs.stepWeight }}
     # canary increment step percentage (0-100) (default 10)
-    stepWeight: {{ .Values.rolloutStrategy.configs.stepWeight | default 10 }}
+    stepWeight: {{ . | default 10 }}
+    {{- end }}
+    {{- with .Values.rolloutStrategy.configs.stepWeightPromotion }}
+    # primary promotion increment step percentage (0-100) (default 100)
+    stepWeightPromotion: {{ . | default 100 }}
+    {{- end }}
+    {{- with .Values.rolloutStrategy.configs.metrics }}
     # metrics checks
-    metrics:
-      {{- toYaml .Values.rolloutStrategy.configs.metrics | nindent 6 }}
-    {{- if .Values.rolloutStrategy.configs.webhooks }}
+    metrics: {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.rolloutStrategy.configs.webhooks }}
     # testing (optional)
     webhooks:
-      {{- toYaml .Values.rolloutStrategy.configs.webhooks | nindent 6 }}
+      {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- if .Values.rolloutStrategy.configs.alerts }}
     # custom notification/alerts (optional)
     alerts:
       {{- toYaml .Values.rolloutStrategy.configs.alerts | nindent 6 }}
     {{- end }}
+    # the following config items `iterations` and `match` are being used for A/B testing configuration, so that if Flagger finds a HTTP match condition, it will ignore the maxWeight and stepWeight settings
+    {{- with .Values.rolloutStrategy.configs.iterations }}
+    iterations: {{ . }}
+    {{- end }}
+    {{- with .Values.rolloutStrategy.configs.match }}
+    match: {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- with .Values.rolloutStrategy.configs.skipAnalysis }}
+  # setting skipAnalysis to `true` allows deploy straight to production without the metrics and webhook checks
+  skipAnalysis: {{ . | default false }}
+  {{- end }}
 {{- end }}
 {{- end }}
