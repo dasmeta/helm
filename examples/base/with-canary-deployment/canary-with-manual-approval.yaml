@@ -1,0 +1,172 @@
+# helm diff upgrade --install -n localhost canary-with-manual-approval ./charts/base/ -f ./examples/base/with-canary-deployment/canary-with-manual-approval.yaml
+
+# the following configs will allow to have flagger canary A/B test type deployment with cookie based routing insider ones(check curl below) and manual approval based on flagger loadtester(grafana custom button can be created to approve this via UI), this can be used to have fully controlled switch users to new website version, there is also js/html sample codes to run and have switch old/new(canary) version of website and this also being used to route live users specified percent to new/old version of website
+# curl -b 'canaryNewWebsite=always' http://http-echo-canary.localhost/ping # for request to canary when there is canary deployment in progress
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+config:
+  CANARY_ROLLOUT_TRIGGER_VERSION: "3"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# NOTE: when canary deployment are enabled, like in this example, this auto-scaling min/max replicas being used for canary deploys, for primary deploy there is separate config under rolloutStrategy.config
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 99
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 6m
+
+setIngressClassByField: true
+ingress:
+  enabled: true
+  class: nginx
+  hosts:
+    - host: http-echo-canary.localhost
+      paths:
+        - path: "/ping"
+        - path: "/api"
+
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    iterations: 2
+    match:
+      - headers:
+          cookie:
+            exact: "canaryNewWebsite"
+    interval: 10s # schedule interval (default 60s)
+    threshold: 10 # max number of failed metric checks before rollback (default 10)
+    primaryScalerMinReplicas: 5
+    primaryScalerMaxReplicas: 10
+
+    webhooks: # webhooks can be used for load testing before traffic switching to canaries by using `pre-rollout` type and also generating traffic
+      - name: "pre rollout close gate" # close the flagger canary gate to have it closed before rollout starts(pos rollout close can be used if there is need to have pre-open open gate even before rollout start)
+        type: pre-rollout
+        url: http://flagger-loadtester.localhost.svc.cluster.local/gate/close
+      - name: "confirm promotion" # do not rollout the new version and wait until gate gets open, the gate gets open by manual approval via api call `curl -v -d '{"name": "canary-with-manual-approval","namespace":"localhost"}' http://flagger-loadtester.localhost.svc.cluster.local/gate/open`
+        type: confirm-promotion
+        url: http://flagger-loadtester.localhost.svc.cluster.local/gate/check
+      # - name: "post rollout close gate" # close the flagger canary gate to have it closed on next deploy, so that again on next rollout it will wait for manual approval
+      #   type: post-rollout
+      #   url: http://flagger-loadtester.localhost.svc.cluster.local/gate/close
+      - name: "rollback gate" # for having manual rollback option in case something did not work as expected, to trigger rollback run this curl `curl -v -d '{"name": "canary-with-manual-approval","namespace":"localhost"}' http://flagger-loadtester.localhost.svc.cluster.local/rollback/open`, and then after close rollback gate by `curl -v -d '{"name": "canary-with-manual-approval","namespace":"localhost"}' http://flagger-loadtester.localhost.svc.cluster.local/rollback/close`
+        type: rollback
+        url: http://flagger-loadtester.localhost.svc.cluster.local/rollback/check
+## html buttons to switch between old and new website versions
+# ```html
+# <button style="position: fixed;z-index: 999;top: 1px;" onclick="return canaryAction('switch-to-old-manual');">Switch to old</button>
+# <button style="position: fixed;z-index: 999;top: 1px;" onclick="return canaryAction('switch-to-new-manual');">Switch to new</button>
+# ```
+## js script to use in website ui to switch between old and new versions
+# ```js
+# // This function allows to set cookies that will switch users between old and new website versions, this takes affect if canary deployment is deployed which has cookie based routing(when we set cookie 'newWebsite=always' it routes users requests to new website app)
+# // possible values for action are following:
+# // "switch-auto" - meant to automatically/randomly switch part/percent of users to new/old website, this value can be used when the page got loaded to have some percent of users switched to new version of website
+# // "reset" - this action resets and removes the set cookies, this can be used to have final cleanup and remove of the cookie when we are promoted new version of website completely and the old version is dropped and no back to old version button. also this can be used to reset already set cookies and have all started from scratch
+# // "switch-to-new-manual" - when user clicks on button to switch to new version manually, this can be used to call the function when clicking switch button in old version of website
+# // "switch-to-old-manual" - when user clicks on button to switch to old version manually, this can be used to call the function when clicking switch button in new version of website
+# function canaryAction(action) {
+#     if (!navigator.cookieEnabled) return;
+#     const newVersionAutoSwitchUsersPercent = 50; // this defines the percent of users which will be switched to new website version automatically, can be increased/decrease users percent to new website, NOTE that the change here do not impact on users which set website manually to old/new(this default behavior can be changed)
+#     const cookieVersion = "canaryNewWebsite"; // the cookie name which defines the version of website that user should see
+#     const cookieSwitchSource = "canarySwitchSource"; // this cookie allows to keep in browser if user have been switched automatically to new/old website version or manually(by button click)
+#     const cookieAutoSwitchPercent = "canaryAutoSwitchPercent"; // we store this data in cookie to have the data in user/client browser that this were been proceeded by this percent of auto switch
+#     const cookieDefaultExpire = "expires=Mon, 14 Jul 2025 07:58:08 GMT"; // by default this expire date will be set on cookies, it is about 3 months, this is for auto cleanup of above 3 used cookies after this period
+#     const removeCookieExpire = "expires=Thu, 01 Jan 1970 00:00:00 UTC"; // this back-day expire date for cookies is just for cleanup/remove of cookies
+#     let cookies = [];
+#     switch(action) {
+#         case "switch-auto":
+#             if ( !document.cookie.includes(`${cookieSwitchSource}=manual`) // we do auto switch for ones who do not change to new/old manually
+#                   && (!document.cookie.includes(`${cookieVersion}=`) // if this is first load
+#                   || !document.cookie.includes(`${cookieAutoSwitchPercent}=${newVersionAutoSwitchUsersPercent}`)) // or if percent changed
+#                 ) {
+#                 cookies = [
+#                     `${cookieSwitchSource}=auto`,
+#                     `${cookieAutoSwitchPercent}=${newVersionAutoSwitchUsersPercent}`
+#                 ];
+#                 if ((Math.floor(Math.random() * 100) + 1) < newVersionAutoSwitchUsersPercent) {
+#                     cookies.push(`${cookieVersion}=always`);
+#                 } else {
+#                     cookies.push(`${cookieVersion}=no`);
+#                 }
+#             }
+#             break;
+#         case "switch-to-new-manual":
+#             cookies = [
+#                 `${cookieVersion}=always; ${cookieDefaultExpire}`,
+#                 `${cookieSwitchSource}=manual; ${cookieDefaultExpire}`,
+#                 `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
+#             ];
+#             break;
+#         case "switch-to-old-manual":
+#             cookies = [
+#                 `${cookieVersion}=no; ${cookieDefaultExpire}`,
+#                 `${cookieSwitchSource}=manual; ${cookieDefaultExpire}`,
+#                 `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
+#             ];
+#             break;
+#         case "reset":
+#             cookies = [
+#                 `${cookieVersion}=r; ${removeCookieExpire}`,
+#                 `${cookieSwitchSource}=r; ${removeCookieExpire}`,
+#                 `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
+#             ];
+#             break;
+#         default:
+#             console.log("undefined action");
+#             break;
+#     }
+
+#     for (let i = 0; i < cookies.length; i++) {
+#         document.cookie = `${cookies[i]}; path=/;`; // setting cookies
+#     }
+#     if (cookies.length>0) window.location.reload(); // reload the current page to make cookie change applied
+# }
+# function createSwitchButton() {
+#     function isWebsiteNewVersion() {
+#        return document.cookie.includes("canaryNewWebsite=always");
+#     }
+
+#     const switchButton = document.createElement("button");
+#     switchButton.style.cssText = "position: fixed;z-index: 999;top: 1px";
+#     switchButton.innerHTML = isWebsiteNewVersion() ? "Switch to old UI" : "Switch to New UI";
+#     switchButton.onclick = function () {
+#         if (isWebsiteNewVersion()) {
+#             canaryAction('switch-to-old-manual');
+#         } else {
+#             canaryAction('switch-to-new-manual');
+#         }
+#     };
+
+#     document.body.appendChild(switchButton);
+# }
+# canaryAction("switch-auto"); // possible values "switch-auto", "reset", "switch-to-new-manual" and "switch-to-old-manual"
+# createSwitchButton(); // place/crate a switch button in UI for manual switching(should be seen bottom left corner)
+# ```

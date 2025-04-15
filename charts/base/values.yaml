@@ -344,6 +344,7 @@ rolloutStrategy:
   configs: {}
   # here are all supported flagger configs
   # configs:
+  #   # skipAnalysis: true # do not run analytics and immediately proceed to promotion as soon as we have canary pods running, can be used in case we need promote change without any webhook/metric checks (if canary pod still remain in pending/containerCreating state the immediate deploy will not work and canary may fail)
   #   provider: nginx # the flagger ingress/service-mesh provider (default nginx)
   #   progressDeadlineSeconds: 61 # the maximum time in seconds for the canary deployment to make progress before it is rollback (default 600s)
   #   canaryReadyThreshold: 51 # minimum percentage of canary pods that must be ready before considering canary ready for traffic shifting (default 100)
