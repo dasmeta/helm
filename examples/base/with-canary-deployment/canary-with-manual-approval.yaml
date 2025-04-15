@@ -26,13 +26,6 @@ pdb:
   enabled: true
   minAvailable: 1
 
-# have deployment strategy by 20%
-strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxSurge: 15%
-    maxUnavailable: 0
-
 readinessProbe:
   initialDelaySeconds: 5
   failureThreshold: 1
