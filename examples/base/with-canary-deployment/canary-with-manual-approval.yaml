@@ -1,7 +1,7 @@
 # helm diff upgrade --install -n localhost canary-with-manual-approval ./charts/base/ -f ./examples/base/with-canary-deployment/canary-with-manual-approval.yaml
 
-# the following configs will allow to have flagger canary deployment with cookie based routing insider ones(check curl below) and manual approval based on flagger loadtester(grafana custom button can be created to approve this via UI)
-# curl -b 'insider=always' http://http-echo-canary.localhost/ping # for request to canary when there is canary deployment in progress
+# the following configs will allow to have flagger canary A/B test type deployment with cookie based routing insider ones(check curl below) and manual approval based on flagger loadtester(grafana custom button can be created to approve this via UI), this can be used to have fully controlled switch users to new website version, there is also js/html sample codes to run and have switch old/new(canary) version of website and this also being used to route live users specified percent to new/old version of website
+# curl -b 'canaryNewWebsite=always' http://http-echo-canary.localhost/ping # for request to canary when there is canary deployment in progress
 
 image:
   repository: mendhak/http-https-echo
