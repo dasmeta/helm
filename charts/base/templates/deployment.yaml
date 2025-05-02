@@ -1,7 +1,8 @@
 {{ $baseFullName := (include "base.fullname" .) }}
 {{ $volumes := (coalesce .Values.volumes (.Values.deployment).volumes) }}
 {{ $additionalVolumeMounts := (coalesce .Values.additionalVolumeMounts (.Values.deployment).additionalvolumeMounts) }}
-{{ $lifecycle := (coalesce .Values.lifecycle (.Values.deployment).lifecycle) }}
+{{ $defaultLifecycle := ternary (unset (deepCopy .Values.defaultLifecycle) "enabled" ) (dict) .Values.defaultLifecycle.enabled }}
+{{ $lifecycle := merge (coalesce .Values.lifecycle (.Values.deployment).lifecycle) $defaultLifecycle }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -300,9 +301,9 @@ spec:
             {{- toYaml $extraContainer.additionalVolumeMounts | nindent 12 }}
             {{- end }}
           {{- end }}
-          {{- if (coalesce $extraContainer.lifecycle ($extraContainer.deployment).lifecycle)  }}
+          {{- if (merge (coalesce $extraContainer.lifecycle ($extraContainer.deployment).lifecycle) $defaultLifecycle) }}
           lifecycle:
-            {{- toYaml (coalesce $extraContainer.lifecycle ($extraContainer.deployment).lifecycle) | nindent 12 }}
+            {{- toYaml (merge (coalesce $extraContainer.lifecycle ($extraContainer.deployment).lifecycle) $defaultLifecycle) | nindent 12 }}
           {{- end }}
         {{- end }}
         {{- end }}

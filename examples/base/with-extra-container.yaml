@@ -1,0 +1,61 @@
+# helm diff upgrade --install -n localhost with-extra-container ./charts/base/ -f ./examples/base/with-extra-container.yaml
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+config:
+  ROLLOUT_TRIGGER_VERSION: "8"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 99
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 100m
+
+setIngressClassByField: true
+ingress:
+  enabled: true
+  class: nginx
+  hosts:
+    - host: with-extra-container.localhost
+      paths:
+        - path: "/ping"
+
+extraContainer:
+  - name: extra-http-echo
+    containerPort: 8081
+    service:
+      enabled: true
+    image:
+      repository: mendhak/http-https-echo
+      tag: 33
+    extraEnv:
+      HTTP_PORT: 8180
+      HTTPS_PORT: 8543

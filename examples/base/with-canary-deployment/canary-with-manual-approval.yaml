@@ -98,46 +98,52 @@ rolloutStrategy:
 #     const cookieVersion = "canaryNewWebsite"; // the cookie name which defines the version of website that user should see
 #     const cookieSwitchSource = "canarySwitchSource"; // this cookie allows to keep in browser if user have been switched automatically to new/old website version or manually(by button click)
 #     const cookieAutoSwitchPercent = "canaryAutoSwitchPercent"; // we store this data in cookie to have the data in user/client browser that this were been proceeded by this percent of auto switch
-#     const cookieDefaultExpire = "expires=Mon, 14 Jul 2025 07:58:08 GMT"; // by default this expire date will be set on cookies, it is about 3 months, this is for auto cleanup of above 3 used cookies after this period
+#     const cookieDefaultExpire = "expires=Mon, 14 Jul 2025 07:58:08 UTC"; // by default this expire date will be set on cookies, it is about 3 months, this is for auto cleanup of above 3 used cookies after this period
 #     const removeCookieExpire = "expires=Thu, 01 Jan 1970 00:00:00 UTC"; // this back-day expire date for cookies is just for cleanup/remove of cookies
 #     let cookies = [];
 #     switch(action) {
 #         case "switch-auto":
 #             if ( !document.cookie.includes(`${cookieSwitchSource}=manual`) // we do auto switch for ones who do not change to new/old manually
 #                   && (!document.cookie.includes(`${cookieVersion}=`) // if this is first load
-#                   || !document.cookie.includes(`${cookieAutoSwitchPercent}=${newVersionAutoSwitchUsersPercent}`)) // or if percent changed
+#                   || (!document.cookie.includes(`${cookieAutoSwitchPercent}=${newVersionAutoSwitchUsersPercent}`) && !document.cookie.includes(`${cookieVersion}=always`))) // or if percent changed and user is not using new version of website
 #                 ) {
 #                 cookies = [
-#                     `${cookieSwitchSource}=auto`,
-#                     `${cookieAutoSwitchPercent}=${newVersionAutoSwitchUsersPercent}`
+#                     `${cookieSwitchSource}=auto; ${cookieDefaultExpire}`,
+#                     `${cookieAutoSwitchPercent}=${newVersionAutoSwitchUsersPercent}; ${cookieDefaultExpire}`
 #                 ];
 #                 if ((Math.floor(Math.random() * 100) + 1) < newVersionAutoSwitchUsersPercent) {
-#                     cookies.push(`${cookieVersion}=always`);
+#                     cookies.push(`${cookieVersion}=always; ${cookieDefaultExpire}`);
 #                 } else {
-#                     cookies.push(`${cookieVersion}=no`);
+#                     cookies.push(`${cookieVersion}=no; ${cookieDefaultExpire}`);
 #                 }
 #             }
 #             break;
 #         case "switch-to-new-manual":
-#             cookies = [
-#                 `${cookieVersion}=always; ${cookieDefaultExpire}`,
-#                 `${cookieSwitchSource}=manual; ${cookieDefaultExpire}`,
-#                 `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
-#             ];
+#             if (!document.cookie.includes(`${cookieVersion}=always`)) { // if this cookies were not been set yet
+#               cookies = [
+#                   `${cookieVersion}=always; ${cookieDefaultExpire}`,
+#                   `${cookieSwitchSource}=manual; ${cookieDefaultExpire}`,
+#                   `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
+#               ];
+#             }
 #             break;
 #         case "switch-to-old-manual":
-#             cookies = [
-#                 `${cookieVersion}=no; ${cookieDefaultExpire}`,
-#                 `${cookieSwitchSource}=manual; ${cookieDefaultExpire}`,
-#                 `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
-#             ];
+#             if (!document.cookie.includes(`${cookieVersion}=no`)) { // if this cookies were not been set yet
+#               cookies = [
+#                   `${cookieVersion}=no; ${cookieDefaultExpire}`,
+#                   `${cookieSwitchSource}=manual; ${cookieDefaultExpire}`,
+#                   `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
+#               ];
+#             }
 #             break;
 #         case "reset":
-#             cookies = [
-#                 `${cookieVersion}=r; ${removeCookieExpire}`,
-#                 `${cookieSwitchSource}=r; ${removeCookieExpire}`,
-#                 `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
-#             ];
+#             if (document.cookie.includes(`${cookieVersion}=`)) { // if this cookies were been set
+#               cookies = [
+#                   `${cookieVersion}=r; ${removeCookieExpire}`,
+#                   `${cookieSwitchSource}=r; ${removeCookieExpire}`,
+#                   `${cookieAutoSwitchPercent}=r; ${removeCookieExpire}`
+#               ];
+#             }
 #             break;
 #         default:
 #             console.log("undefined action");
@@ -155,7 +161,7 @@ rolloutStrategy:
 #     }
 
 #     const switchButton = document.createElement("button");
-#     switchButton.style.cssText = "position: fixed;z-index: 999;top: 1px";
+#     switchButton.style.cssText = "position: fixed;z-index: 999;bottom: 1px; right: 1px; color: black; background: white; border: 3px solid black; padding: 1px 6px;";
 #     switchButton.innerHTML = isWebsiteNewVersion() ? "Switch to old UI" : "Switch to New UI";
 #     switchButton.onclick = function () {
 #         if (isWebsiteNewVersion()) {
@@ -167,6 +173,6 @@ rolloutStrategy:
 
 #     document.body.appendChild(switchButton);
 # }
-# canaryAction("switch-auto"); // possible values "switch-auto", "reset", "switch-to-new-manual" and "switch-to-old-manual"
-# createSwitchButton(); // place/crate a switch button in UI for manual switching(should be seen bottom left corner)
+# document.location.href.includes("staging-canary") && canaryAction("switch-auto"); // possible values "switch-auto", "reset", "switch-to-new-manual" and "switch-to-old-manual"
+# document.location.href.includes("staging-canary") && createSwitchButton(); // place/crate a switch button in UI for manual switching(should be seen bottom left corner)
 # ```
