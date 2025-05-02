@@ -320,7 +320,7 @@ pdb:
 
 # the default lifecycle rule to apply which allows to have some kind of graceful shutdown by waiting/sleep for 5 seconds, even if there is no sleep command in os this will not produce issues and container will get shuted down
 defaultLifecycle:
-  enabled: true
+  enabled: true # whether this default is enabled, by default it is enabled but can be disabled if needed by setting this to false
   preStop:
     exec:
       command:
