@@ -318,6 +318,16 @@ pdb:
   minAvailable: 1
   pdbName:
 
+# the default lifecycle rule to apply which allows to have some kind of graceful shutdown by waiting/sleep for 5 seconds, even if there is no sleep command in os this will not produce issues and container will get shuted down
+defaultLifecycle:
+  enabled: true
+  preStop:
+    exec:
+      command:
+        - sh
+        - -c
+        - sleep 5 # the sleep interval can vary for app, if you still get issues at pod termination consider increasing it little by little to get optimal one for you, based on tests the 5 seconds seems suitable for standard web app on eks to get the pod IP removed from service targets and to finish active client requests/connections to not have failed request at pod termination
+
 serviceMonitor:
   enabled: false
   interval: 30s
