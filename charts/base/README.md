@@ -725,7 +725,7 @@ rolloutStrategy:
           namespace: ingress-nginx
 ```
 
-## Deprecations and incompatible changes
+## Deprecations and incompatible changes and release important notes
 
 ### Deprecations
  - 0.3.0: `deployment` option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` moved to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
@@ -733,3 +733,14 @@ rolloutStrategy:
 
 ### incompatible changes
  - 0.3.0: the `extraContainer.deployment.volumes` field have been removed, use `volumes` field with `container: <extra-container-name>` for having volume mounted to extra container
+
+### release important notes
+ - Version 0.3.8:
+   This release introduces a new feature that enhances the robustness of pod termination by implementing a default preStop lifecycle hook.
+    - Default preStop Hook: Version 0.3.8 introduces the `defaultLifecycle` variable, which, by default, automatically configures a preStop hook with a `sleep 5` command.
+    - Graceful Pod Termination: This 5-second delay before container shutdown provides sufficient time for the pod's IP address to be unregistered from service target lists. This proactive measure minimizes the occurrence of failed HTTP requests during pod termination, leading to improved application stability and user experience.
+    - sleep Command Dependency: While the absence of the sleep command within a container's operating system will prevent the 5-second delay from functioning, but will not produce any additional issues, it is strongly recommended to include or install the sleep utility in your container images to ensure the intended graceful termination behavior.
+    - Custom preStop Configurations: If your containers already have custom `preStop` lifecycle configurations defined, these existing configurations will take precedence, effectively overriding the default configuration introduced in this release. However, to benefit from the graceful termination feature, it is advisable to incorporate a sleep 5 command within your custom `preStop` configurations.
+    - Scope of Default Configuration: The default `preStop` configuration is applied uniformly to all containers within a pod, including the main application container and all extra containers.
+    - Default Timeout Considerations: The default 5-second sleep duration has been determined through testing on standard web applications within an EKS cluster and is generally sufficient for facilitating a graceful shutdown. However, applications with longer request processing times (exceeding 2 seconds) may require an increased timeout value. You can adjust this by defining custom `preStop` configurations with a longer sleep duration.
+    - Disabling the Default Configuration: The default `preStop` hook can be easily disabled by setting the Helm chart value `defaultLifecycle.enabled=false`.
