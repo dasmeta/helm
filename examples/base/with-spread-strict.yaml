@@ -47,6 +47,6 @@ ingress:
   enabled: true
   class: nginx
   hosts:
-    - host: http-echo-basic.localhost
+    - host: http-echo-with-spread-strict.localhost
       paths:
         - path: "/ping"
