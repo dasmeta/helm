@@ -3,6 +3,7 @@
 {{ $additionalVolumeMounts := (coalesce .Values.additionalVolumeMounts (.Values.deployment).additionalvolumeMounts) }}
 {{ $defaultLifecycle := ternary (unset (deepCopy .Values.defaultLifecycle) "enabled" ) (dict) .Values.defaultLifecycle.enabled }}
 {{ $lifecycle := merge (coalesce .Values.lifecycle (.Values.deployment).lifecycle) $defaultLifecycle }}
+{{ $topologySpreadConstraints := concat (ternary (list (dict "maxSkew" .Values.spread.maxSkew "topologyKey" "kubernetes.io/hostname" "whenUnsatisfiable" .Values.spread.whenUnsatisfiable "labelSelector" (dict "matchLabels" (include "base.selectorLabels" . | fromYaml)))) (list) .Values.spread.enabled ) .Values.topologySpreadConstraints }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -114,9 +115,8 @@ spec:
           {{- end }}
       {{- end }}
       {{- end }}
-      {{- if .Values.topologySpreadConstraints }}
-      topologySpreadConstraints:
-      {{-  toYaml .Values.topologySpreadConstraints | nindent 6 }}
+      {{- with $topologySpreadConstraints }}
+      topologySpreadConstraints: {{ toYaml . | nindent 6 }}
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
