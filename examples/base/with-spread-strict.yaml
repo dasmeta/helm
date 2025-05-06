@@ -1,4 +1,7 @@
-# helm diff upgrade --install -n localhost basic ./charts/base/ -f ./examples/base/basic.yaml
+# helm diff upgrade --install -n localhost with-spread-strict ./charts/base/ -f ./examples/base/with-spread-strict.yaml
+
+spread:
+  whenUnsatisfiable: DoNotSchedule # do not allows pods be provisioned in the same nodes, so that if not free nodes the pod will stay in pending mode until new node will be available to provision there
 
 image:
   repository: mendhak/http-https-echo

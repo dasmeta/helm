@@ -220,6 +220,12 @@ tolerations: []
 
 affinity: {}
 
+topologySpreadConstraints: []
+spread: # this option creates a default topologySpreadConstraints rule to spread release pods across available nodes
+  enabled: true
+  maxSkew: 1 # defines the maximum allowed difference in the number of matching pods between any two nodes
+  whenUnsatisfiable: ScheduleAnyway # by default the spread rule is not strict, so that it will provision pod by breaking the rule if there is no other way, for having the strict rule just set the value to "DoNotSchedule"
+
 config: {}
 
 containerPort: 80
