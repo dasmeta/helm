@@ -55,6 +55,24 @@ jobs:
     #     className: claim
     #     requestedSize: 5Gi
     #     enableDataSource: false
+    #   - persistentVolumeClaimName: claim-pv-csi
+    #     accessModes:
+    #       - ReadWriteMany
+    #     className: ""
+    #     requestedSize: 1Gi
+    #     enableDataSource: false
+    #     persistentVolume:
+    #       create: true
+    #       csi:
+    #         driver: s3.csi.aws.com # required
+    #         volumeHandle: with-s3-bucket-mount-cronjob-volume-handle # Must be unique
+    #         volumeAttributes:
+    #           bucketName: test-eks-with-s3-csi-dasmeta-bucket # the bucket name
+    #       mountOptions:
+    #         - allow-delete # to allow removal of files
+    #         # - allow-other # to allows other than root group/user access to mounted files, set if there are permission issues
+    #         # - uid=1000 # to allow mount volume with with this user id, by default this is root, set if there are permission issues
+    #         # - gid=1000 # to allow mount volume with with this group id, by default this is root, set if there are permission issues
 
     resources: {} # optional
     # resources:

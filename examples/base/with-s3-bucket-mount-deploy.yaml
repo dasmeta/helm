@@ -1,0 +1,84 @@
+# helm diff upgrade --install -n default with-s3-bucket-mount-deploy ./charts/base -f ./examples/base/with-s3-bucket-mount-deploy.yaml
+
+# in this cronjob we mount s3 bucket as volume to job pod container and place test file there
+# NOTEs:
+#  - you have to have s3 csi driver installed in k8s,
+#    - for eks it can be done via "aws-mountpoint-s3-csi-driver" addon, the 'dasmeta/eks/aws' terraform module already support this starting from 2.22.0 version
+#    - you can also use the helm chart on non eks k8s setups to have driver installed, the helm chart can be found here: https://github.com/awslabs/mountpoint-s3-csi-driver
+#   - only static provisioning allowed, meaning that bucket should already be created
+#   - it allows to read, create and delete(delete allowed if 'allow-delete' mount option is set) objects in bucket, no change/override of existing object allowed, so in case if you need to override you have to remove old one and create new one
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+config:
+  ROLLOUT_TRIGGER_VERSION: "8"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 99
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 100m
+  limits:
+    cpu: 100m
+
+setIngressClassByField: true
+ingress:
+  enabled: true
+  class: nginx
+  hosts:
+    - host: with-s3-bucket-mount-deploy.devops.dasmeta.com
+      paths:
+        - path: "/ping"
+
+storage:
+  - persistentVolumeClaimName: with-s3-bucket-mount-deploy
+    requestedSize: 1Gi # required but ignored
+    accessModes: # required
+      - ReadWriteMany
+    className: "" # need to be set to ""
+    enableDataSource: false
+    persistentVolume:
+      create: true
+      csi:
+        driver: s3.csi.aws.com # required
+        volumeHandle: with-s3-bucket-mount-deploy-volume-handle # Must be unique
+        volumeAttributes:
+          bucketName: test-eks-with-s3-csi-dasmeta-bucket # the bucket name
+      mountOptions:
+        - allow-delete # to allow removal of files
+        - allow-other # to allow other than root group/user access to mounted files
+        - uid=1000 # to allow mount volume with with this user id
+        - gid=1000 # to allow mount volume with with this group id
+volumes:
+  - name: with-s3-bucket-mount-deploy-volume
+    mountPath: /s3
+    persistentVolumeClaim:
+      claimName: with-s3-bucket-mount-deploy

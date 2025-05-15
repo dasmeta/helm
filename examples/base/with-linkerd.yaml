@@ -13,6 +13,7 @@ podAnnotations:
   linkerd.io/inject: enabled
   config.linkerd.io/proxy-cpu-request: 50m
   config.linkerd.io/proxy-cpu-limit: 50m
+  config.alpha.linkerd.io/proxy-wait-before-exit-seconds: "5"
 
 service:
   enabled: true

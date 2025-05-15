@@ -1,0 +1,47 @@
+# helm diff upgrade --install -n default with-s3-bucket-mount-cronjob ./charts/base-cronjob -f ./examples/base-cronjob/with-s3-bucket-mount-cronjob.yaml
+
+# in this cronjob we mount s3 bucket as volume to job pod container and place test file there
+# NOTEs:
+#  - you have to have s3 csi driver installed in k8s,
+#    - for eks it can be done via "aws-mountpoint-s3-csi-driver" addon, the 'dasmeta/eks/aws' terraform module already support this starting from 2.22.0 version
+#    - you can also use the helm chart on non eks k8s setups to have driver installed, the helm chart can be found here: https://github.com/awslabs/mountpoint-s3-csi-driver
+#   - only static provisioning allowed, meaning that bucket should already be created
+#   - it allows to read, create and delete(delete allowed if 'allow-delete' mount option is set) objects in bucket, no change/override of existing object allowed, so in case if you need to override you have to remove old one and create new one
+jobs:
+  - name: with-s3-bucket-mount-cronjob
+    schedule: "* * * * *"
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 60
+    restartPolicy: Never
+    image:
+      repository: nginx
+      tag: latest
+    command:
+      - /bin/sh
+      - -c
+      - rm -rf /s3/hi1.txt && echo "hi" > /s3/hi1.txt && sleep 120
+
+    storage:
+      - persistentVolumeClaimName: with-s3-bucket-mount-cronjob
+        requestedSize: 1Gi # required but ignored
+        accessModes: # required
+          - ReadWriteMany
+        className: "" # need to be set to ""
+        enableDataSource: false
+        persistentVolume:
+          create: true
+          csi:
+            driver: s3.csi.aws.com # required
+            volumeHandle: with-s3-bucket-mount-cronjob-volume-handle # Must be unique
+            volumeAttributes:
+              bucketName: test-eks-with-s3-csi-dasmeta-bucket # the bucket name
+          mountOptions:
+            - allow-delete # to allow removal of files
+            # - allow-other # to allows other than root group/user access to mounted files, set if there are permission issues
+            # - uid=1000 # to allow mount volume with with this user id, by default this is root, set if there are permission issues
+            # - gid=1000 # to allow mount volume with with this group id, by default this is root, set if there are permission issues
+    volumes:
+      - name: with-s3-bucket-mount-cronjob-volume
+        mountPath: /s3
+        persistentVolumeClaim:
+          claimName: with-s3-bucket-mount-cronjob

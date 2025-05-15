@@ -1,28 +1,50 @@
 {{- range $job := .Values.jobs }}
 {{- if $job.storage -}}
 {{ range $storage := $job.storage }}
+{{- if ($storage.persistentVolume).create -}}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ ($storage.persistentVolume).name | default $storage.persistentVolumeClaimName }}
+  labels:
+    app-name: {{ $job.name | quote }}
+spec:
+  capacity:
+    storage: {{ $storage.requestedSize | default "1Gi" }}
+  accessModes:
+    {{- toYaml $storage.accessModes | nindent 4 }}
+  storageClassName: {{ $storage.className | default "" }}
+  claimRef: # To ensure no other PVCs can claim this PV
+    namespace: {{ $.Release.Namespace }}
+    name: {{ $storage.persistentVolumeClaimName }}
+  {{- with ($storage.persistentVolume).csi }}
+  csi: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with ($storage.persistentVolume).mountOptions }}
+  mountOptions: {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ $storage.persistentVolumeClaimName }}
   labels:
-{{/*    {{- include "base.labels" . | nindent 4 }}*/}}
+    app-name: {{ $job.name | quote }}
   {{- if $storage.keepPvc }}
   annotations:
     "helm.sh/resource-policy": keep
   {{- end }}
 spec:
-  {{- with $storage }}
   accessModes:
-    {{- toYaml .accessModes | nindent 4 }}
-  volumeMode: {{ .volumeMode | default "Filesystem" }}
+    {{- toYaml $storage.accessModes | nindent 4 }}
+  volumeMode: {{ $storage.volumeMode | default "Filesystem" }}
   resources:
     requests:
-      storage: {{ .requestedSize }}
-  {{- if .className }}
-  storageClassName: {{ .className }}
-  {{- end }}
+      storage: {{ $storage.requestedSize }}
+  {{- with $storage.className }}
+  storageClassName: {{ . }}
   {{- end }}
   {{ if $storage.enableDataSource}}
   dataSource:
