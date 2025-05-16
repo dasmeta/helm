@@ -22,6 +22,7 @@ jobs:
     restartPolicy: OnFailure # (optional)
     startingDeadlineSeconds: 60 # (optional)
     concurrencyPolicy: Forbid # (optional)
+    timeZone: "Asia/Yerevan" # (optional), the schedule interpreted in this timezone, in most k8s setups like eks by default "Etc/UTC" being used, possible values are : "Europe/Berlin", "US/Pacific", ... For supported values check: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
     serviceAccount: # (optional)
       create: true
