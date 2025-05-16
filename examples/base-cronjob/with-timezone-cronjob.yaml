@@ -1,0 +1,16 @@
+# helm diff upgrade --install -n default with-timezone-cronjob ./charts/base-cronjob -f ./examples/base-cronjob/with-timezone-cronjob.yaml
+
+jobs:
+  - name: with-timezone-cronjob
+    schedule: "10 16 * * *"
+    timeZone: "Asia/Yerevan" # in most k8s setups like eks by default "Etc/UTC" being used, possible values are : "Europe/Berlin", "US/Pacific"... For supported values check: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 60
+    restartPolicy: Never
+    image:
+      repository: nginx
+      tag: latest
+    command:
+      - /bin/sh
+      - -c
+      - echo "hi" && sleep 120

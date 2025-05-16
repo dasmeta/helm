@@ -29,6 +29,9 @@ spec:
   {{- with $job.activeDeadlineSeconds }}
   activeDeadlineSeconds: {{ . }}
   {{- end }}
+  {{- with $job.timeZone }}
+  timeZone: {{ . }}
+  {{- end }}
   jobTemplate:
     spec:
       template:
