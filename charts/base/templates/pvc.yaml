@@ -1,6 +1,30 @@
 {{- if .Values.storage -}}
 {{- $storageValues := (kindIs "slice" .Values.storage | ternary .Values.storage (list .Values.storage)) -}}
 {{- range $storage := $storageValues }}
+{{- if ($storage.persistentVolume).create -}}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ ($storage.persistentVolume).name | default $storage.persistentVolumeClaimName | default (include "base.fullname" $) }}
+  labels:
+    {{- include "base.labels" $ | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ $storage.requestedSize | default "1Gi" }}
+  accessModes:
+    {{- toYaml $storage.accessModes | nindent 4 }}
+  storageClassName: {{ $storage.className | default "" }}
+  claimRef: # To ensure no other PVCs can claim this PV
+    namespace: {{ $.Release.Namespace }}
+    name: {{ $storage.persistentVolumeClaimName | default (include "base.fullname" $)  }}
+  {{- with ($storage.persistentVolume).csi }}
+  csi: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with ($storage.persistentVolume).mountOptions }}
+  mountOptions: {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

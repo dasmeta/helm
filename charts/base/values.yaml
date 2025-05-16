@@ -278,6 +278,24 @@ storage:
   #   className: efs-sc-root
   #   requestedSize: "2Gi"
   #   enableDataSource: false
+  # - persistentVolumeClaimName: pvc-pv-csi
+  #   accessModes:
+  #     - ReadWriteMany
+  #   className: ""
+  #   requestedSize: "1Gi"
+  #   enableDataSource: false
+  #   persistentVolume: # create pv along side to pvc, can be used cases when we have some custom pv configuration like csi configs
+  #     create: true
+  #     csi:
+  #       driver: s3.csi.aws.com # required
+  #       volumeHandle: with-s3-bucket-mount-deploy-volume-handle # Must be unique
+  #       volumeAttributes:
+  #         bucketName: test-eks-with-s3-csi-dasmeta-bucket # the bucket name
+  #     mountOptions:
+  #       - allow-delete # to allow removal of files
+  #       - allow-other # to allow other than root group/user access to mounted files
+  #       - uid=1000 # to allow mount volume with with this user id
+  #       - gid=1000 # to allow mount volume with with this group id
 
 deployment: {} # option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` changed to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
 volumes: []
