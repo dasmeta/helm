@@ -82,11 +82,10 @@ service:
   #     protocol: TCP
   #     name: http-second
 
-# The ingress class setting by annotation is deprecated and we have setIngressClassByField option for backward compatibility for now, check doc here https://kubernetes.io/docs/concepts/services-networking/ingress/#deprecated-annotation
+# The ingress class setting by "kubernetes.io/ingress.class" annotation is deprecated and we have setIngressClassByField option for backward compatibility for now, check doc here https://kubernetes.io/docs/concepts/services-networking/ingress/#deprecated-annotation
 # have 'setIngressClassByField: true' to set ingress class by spec.ingressClassName,
 # we seems cant have both "kubernetes.io/ingress.class" and spec.ingressClassName set at once, so there is check(for alb, application-gateway and cce the check is missing for now) to not set annotation if we set ingress class fy field
-# TODO: have ingress class setting by field used always and remove deprecated "kubernetes.io/ingress.class" annotations
-setIngressClassByField: false
+setIngressClassByField: true
 
 # it allows also to pass list of ingresses in following form
 # NOTE: in case of list it will auto attach uniq identify numbers to ingress names starting from second item, you can use nameSuffix field to set custom suffix instead of number
@@ -128,7 +127,7 @@ ingress:
 
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
-externalSecretsApiVersion: external-secrets.io/v1beta1 # TODO: the new version external-secrets.io/v1beta1 is available in external-secret operator, please update to new version as soon as you upgrade operator(the new dasmeta eks module already uses the new one)
+externalSecretsApiVersion: external-secrets.io/v1beta1 # the new version "external-secrets.io/v1beta1" is already available in external-secret operator(the new dasmeta eks module already uses the new one), the old/deprecated version was "external-secrets.io/v1alpha1" and it was deprecated
 # secrets:
 #   - external-secret-1
 #   - external-secret-2

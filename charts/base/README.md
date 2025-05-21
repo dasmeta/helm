@@ -699,5 +699,7 @@ rolloutStrategy:
     This release introduced new ability to create PVs along side to PVCs, which can be used for example with csi drivers
   - Version 0.3.11:
     This release introduced new ability to
-     - Create volume/file mountable config-maps/secrets config items beside standard env variable ones we had. The config/secret items which have prefix "/" in `configs`/`secrets` fields will be treated as mountable configs, check default values.yaml or examples for info how to use this.
-     - We have introduced new `configs` field for passing config map data, the old `config` still supported
+      - Create volume/file mountable config-maps/secrets config items beside standard env variable ones we had. The config/secret items which have prefix "/" in `configs`/`secrets` fields will be treated as mountable configs, check default values.yaml or examples for info how to use this.
+      - We have introduced new `configs` field for passing config map data, the old `config` still supported
+      - The external secret operator resource default `apiVersion` got changed from "external-secrets.io/v1alpha1" to "external-secrets.io/v1beta1", as `v1alpha1` got deprecated and we already support the new `v1beta1` in k8s/eks setups. It is is still possible to set old version via `externalSecretsApiVersion` config variable
+      - the ingress class setting via `ingressClassName` field is default on. Before this it was set via "kubernetes.io/ingress.class" annotation, which is deprecated. It is still possible to switch ingress class setting from `ingressClassName` field back to "kubernetes.io/ingress.class" annotation via config variable `setIngressClassByField: false`
