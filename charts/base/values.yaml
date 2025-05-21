@@ -128,7 +128,7 @@ ingress:
 
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
-externalSecretsApiVersion: external-secrets.io/v1alpha1 # TODO: the new version external-secrets.io/v1beta1 is available in external-secret operator, please update to new version as soon as you upgrade operator(the new dasmeta eks module already uses the new one)
+externalSecretsApiVersion: external-secrets.io/v1beta1 # TODO: the new version external-secrets.io/v1beta1 is available in external-secret operator, please update to new version as soon as you upgrade operator(the new dasmeta eks module already uses the new one)
 # secrets:
 #   - external-secret-1
 #   - external-secret-2
@@ -149,6 +149,11 @@ externalSecretsApiVersion: external-secrets.io/v1alpha1 # TODO: the new version 
 #   - USERNAME:
 #       from: helm-test-secret
 #       key: username
+#   - /folder-path-to-mount-as-secret/: # the path to folder which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets
+#       example-file11.txt: | # file name in folder and its content
+#         Some test content 11 here
+#       example-file12.txt: |
+#         Some test content 12 here
 
 extraContainer: {} # allows to have additional containers along side to main one, both single object(if you have just one extra) and list of objects are supported
 # extraContainer:
@@ -226,7 +231,22 @@ spread: # this option creates a default topologySpreadConstraints rule to spread
   maxSkew: 1 # defines the maximum allowed difference in the number of matching pods between any two nodes
   whenUnsatisfiable: ScheduleAnyway # by default the spread rule is not strict, so that it will provision pod by breaking the rule if there is no other way, for having the strict rule just set the value to "DoNotSchedule"
 
-config: {}
+# configs that will be placed into config maps and be used as env variable or mounted as file in container, NOTE: do not place secret values here, use instead secrets config
+config: {} # old/deprecated way to pass configs, still supported
+configs: {} # the new way to pass configs
+# example with both env variable and file as volume
+# configs:
+#   ENV_VARIABLE_KEY: TEST_ENV_VARIABLE_VALUE # standard config that will be placed inside container as env variable
+#   /folder-path-to-mount1/: # the path to folder which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets; do not set an existing app folder, to not get the folder removed and replaced with, can be set some non existing in container subfolder
+#     example-file11.txt: | # file name in folder and its content
+#       Some test content 11 here
+#     example-file12.txt: |
+#       Some test content 12 here
+#   /folder-path-to-mount2/:
+#     example-file21.txt: |
+#       Some test content 21 here
+#     example-file22.txt: |
+#       Some test content 22 here
 
 containerPort: 80
 ## allows to have extra ports on main container. generally there is no need for this in order to use it in service as target, but some tools, like prometheus podMonitor/serviceMonitor need port configs set on pod

@@ -1,15 +1,32 @@
-{{- if .Values.config }}
+{{- $envConfigs := fromYaml (include "base.envConfigs" $) -}}
+{{- $volumeConfigs := fromYaml (include "base.volumeConfigs" $) -}}
+
+{{- if $envConfigs }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ include "base.fullname" . }}
+  name: {{ include "base.fullname" $ }}
 data:
-  {{- toYaml .Values.config | nindent 2 }}
+{{- range $key, $value := $envConfigs }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}
 {{- end }}
 
+{{- if $volumeConfigs }}
+{{- range $folder, $files := $volumeConfigs }}
 ---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ include "base.fullname" $ }}-{{ trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))) }}"
+data:
+  {{- toYaml $files | nindent 2 }}
+{{- end }}
+{{- end }}
+
 {{- range $extraContainer := (ternary .Values.extraContainer (list .Values.extraContainer) (kindIs "slice" .Values.extraContainer)) }}
 {{- if $extraContainer.configmap }}
+---
 kind: ConfigMap
 apiVersion: v1
 metadata:

@@ -1,43 +1,3 @@
-# How to use as dependency, basic example
-
-```yaml
-dependencies:
-  - name: base
-    version: 0.1.65
-    repository: https://dasmeta.github.io/helm
-```
-
-# How to set ingress default backend
-
-```yaml
-# file values.yaml
-...
-
-ingress:
-  enabled: true
-  class: nginx
-  annotations: {}
-  defaultBackend:
-    service:
-      name: my-backend-service
-      port:
-        number: 80
-  hosts:
-    - host: my-domain.com
-      paths:
-        - backend:
-            serviceName: my-backend-service
-            servicePort: 80
-          path: /*
-...
-```
-
-
-```bash
-$ helm dependency update
-$ helm install my-app .
-```
-
 ## Introduction
 
 This chart provides a base template helpers which can be used to develop new charts using [Helm](https://helm.sh) package manager.
@@ -47,74 +7,22 @@ This chart provides a base template helpers which can be used to develop new cha
 - Kubernetes 1.18+
 - Helm 3.7.1
 
-## \_helpers.tpl
+### commands
+```bash
+# minimal setup
+helm repo add dasmeta https://dasmeta.github.io/helm # adds dasmeta helm chart into helm repos list
+helm upgrade --install -n default my-test-app dasmeta/base --version 0.3.11 -f ./my-test-app.values.yaml # create/change helm release, you have to have ./my-test-app.values.yaml created, check examples to know how to create/configure it
 
-| Helper identifier         | Description  | Expected Input              | Default Value             |
-| ------------------------- | --------------------------------------------------------------------------------------------- | --------------------------- | ------------------------- |
-| `base.name`               | The name of the chart.           | .Values.name                | .Chart.Name               |
-| `base.fullname`           | Fully qualified app name. If release name contains chart name it will be used as a full name. | .Values.fullnameOverride    | .Release.Name             |
-| `base.version`            | The version of the chart.        | .Values.version             | .Chart.Version            |
-| `base.appVersion`         | The appVersion of the chart.     | .Values.appVersion          | .Chart.AppVersion         |
-| `base.chart`              | It's made of base.name and base.version.             | ---    | ---  |
-| `base.labels`             | Common labels. ---    | ---  |
-| `base.selectorLabels`     | Selector labels.                 | ---    | ---  |
-| `base.serviceAccountName` | The name of the service account to use.              | .Values.serviceAccount.name | base.fullname / "default" |
+# to get diff and debug check what will be created/changed on apply
+helm plugin install https://github.com/databus23/helm-diff # to install helm diff plugin
+helm diff upgrade --install -n default my-test-app dasmeta/base --version 0.3.11 -f ./my-test-app.values.yaml # shows diff of what will be create/changed
 
-## Default Values
-
-```yaml
-replicaCount: 1
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  tag: 1.21
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
-podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
-service:
-  type: NodePort
-  port: 80
-ingress:
-  enabled: false
-  class: alb
-  annotations: {}
-  hosts:
-    - host: host.name.com
-      paths:
-      - path: /*
-        backend:
-          serviceName: ssl-redirect
-          servicePort: use-annotation
-      - backend:
-          serviceName: base
-          servicePort: 80
-        path: /*
-  tls: []
-resources: {}
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-nodeSelector: {}
-tolerations: []
-affinity: {}
-config: {}
-containerPort: 80
-livenessProbe: {}
-readinessProbe: {}
-deployment: {}
-env: dev
-product: application
-secrets: {}
+# for case you have the chart as dependency
+helm dependency update # in case you added `dasmeta/base` in helm chart Chart.yaml as dependency this command will pull/update dependency
+helm upgrade --install my-app . # allows to run current directory helm chart
 ```
+
+### The default values and related description/examples can be found in [./values.yaml](./values.yaml) file
 
 ## Problems
 
@@ -227,7 +135,42 @@ base:
     tag: 1.2.3
 ```
 
-## Examples for each component
+## Examples for each component (for complete working examples look into [../../examples/base](../../examples/base)) folder
+
+### How to use as dependency, basic example
+
+```yaml
+dependencies:
+  - name: base
+    version: 0.3.11
+    repository: https://dasmeta.github.io/helm
+```
+
+### How to set ingress default backend
+
+```yaml
+# file values.yaml
+...
+
+ingress:
+  enabled: true
+  class: nginx
+  annotations: {}
+  defaultBackend:
+    service:
+      name: my-backend-service
+      port:
+        number: 80
+  hosts:
+    - host: my-domain.com
+      paths:
+        - backend:
+            serviceName: my-backend-service
+            servicePort: 80
+          path: /*
+...
+```
+
 
 ### External secrets
 
@@ -754,3 +697,7 @@ rolloutStrategy:
     - Custom `topologySpreadConstraints` Concatenation: If you provide your own custom `topologySpreadConstraints` configuration within the `topologySpreadConstraints` value, these custom rules will be concatenated with the default spread rule generated by the chart. This allows you to add more specific spreading requirements while still benefiting from the default spreading behavior.
   - Version 0.3.10:
     This release introduced new ability to create PVs along side to PVCs, which can be used for example with csi drivers
+  - Version 0.3.11:
+    This release introduced new ability to
+     - Create volume/file mountable config-maps/secrets config items beside standard env variable ones we had. The config/secret items which have prefix "/" in `configs`/`secrets` fields will be treated as mountable configs, check default values.yaml or examples for info how to use this.
+     - We have introduced new `configs` field for passing config map data, the old `config` still supported

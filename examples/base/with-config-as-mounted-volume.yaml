@@ -1,4 +1,4 @@
-# helm diff upgrade --install -n localhost basic ./charts/base/ -f ./examples/base/basic.yaml
+# helm diff upgrade --install -n localhost with-config-as-mounted-volume ./charts/base/ -f ./examples/base/with-config-as-mounted-volume.yaml
 
 image:
   repository: mendhak/http-https-echo
@@ -7,7 +7,21 @@ image:
 containerPort: 8080
 
 configs:
-  ROLLOUT_TRIGGER_VERSION: "8"
+  ENV_VARIABLE_CONFIG: "8" # standard env variable
+  /app/config1/: # folder with its files to mount to main container
+    file-config1.txt: |
+      file multi 
+      line content 11
+    file-config2.txt: |
+      file multi 
+      line content 12
+  /app/config2/:
+    file-config1.txt: |
+      file multi 
+      line content 21
+    file-config2.txt: |
+      file multi 
+      line content 22
 
 service:
   enabled: true
@@ -44,6 +58,6 @@ ingress:
   enabled: true
   class: nginx
   hosts:
-    - host: http-echo-basic.localhost
+    - host: with-config-as-mounted-volume.localhost
       paths:
         - path: "/ping"

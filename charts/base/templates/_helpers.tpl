@@ -109,3 +109,71 @@ Return the target/server Kubernetes version
 {{- $mergedAnnotations | toYaml }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Returns env/volume config maps object/dict as yaml
+*/}}
+{{- define "base.configs" -}}
+{{- (merge $.Values.config $.Values.configs) | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns env config maps object/dict as yaml
+*/}}
+{{- define "base.envConfigs" -}}
+{{- $configs := fromYaml (include "base.configs" $) }}
+{{- $envConfigs := dict -}}
+{{- range $key, $value := $configs -}}
+  {{- if not (hasPrefix "/" $key) -}}
+    {{- $envConfigs = merge $envConfigs (dict $key $value) -}}
+  {{- end -}}
+{{- end -}}
+{{- $envConfigs | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns volume config maps object/dict as yaml
+*/}}
+{{- define "base.volumeConfigs" -}}
+{{- $configs := fromYaml (include "base.configs" $) }}
+{{- $volumeConfigs := dict -}}
+{{- range $key, $value := $configs -}}
+  {{- if hasPrefix "/" $key -}}
+    {{- $volumeConfigs = merge $volumeConfigs (dict $key $value) -}}
+  {{- end -}}
+{{- end -}}
+{{- $volumeConfigs | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns config map volume configs object/dict as yaml
+*/}}
+{{- define "base.configMapVolumes" -}}
+{{- $configMapVolumes := list -}}
+{{- range $folder, $files := fromYaml (include "base.volumeConfigs" $) -}}
+  {{- $configMapVolumes = append $configMapVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "configMap" (dict "name" (printf "%s-%s" (include "base.fullname" $) (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))))) "mountPath" $folder ) -}}
+{{- end -}}
+{{- (dict "data" $configMapVolumes) | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns secret volume configs object/dict as yaml
+*/}}
+{{- define "base.secretVolumes" -}}
+{{- $secretVolumes := list -}}
+{{- range $secret := $.Values.secrets -}}
+  {{- if ne (kindOf $secret) "string" }}
+    {{- range $folder, $files := $secret -}}
+      {{- if hasPrefix "/" $folder }}
+        {{- $secretItems:= list -}}
+        {{- range $file := $files -}}
+          {{- $secretItems = append $secretItems (dict "path" $file "key" (replace "/" "-" (printf "%s%s" $folder $file))) -}}
+        {{- end -}}
+        {{- $secretVolumes = append $secretVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "secret" (dict "secretName" (include "base.fullname" $) "items" $secretItems ) "mountPath" $folder ) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- (dict "data" $secretVolumes) | toYaml -}}
+{{- end -}}

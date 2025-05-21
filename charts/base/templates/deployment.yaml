@@ -1,5 +1,5 @@
 {{ $baseFullName := (include "base.fullname" .) }}
-{{ $volumes := (coalesce .Values.volumes (.Values.deployment).volumes) }}
+{{ $volumes := concat .Values.volumes ((.Values.deployment).volumes | default (list)) (fromYaml (include "base.configMapVolumes" $)).data (fromYaml (include "base.secretVolumes" $)).data }}
 {{ $additionalVolumeMounts := (coalesce .Values.additionalVolumeMounts (.Values.deployment).additionalvolumeMounts) }}
 {{ $defaultLifecycle := ternary (unset (deepCopy .Values.defaultLifecycle) "enabled" ) (dict) .Values.defaultLifecycle.enabled }}
 {{ $lifecycle := merge (coalesce .Values.lifecycle (.Values.deployment).lifecycle) $defaultLifecycle }}
@@ -44,7 +44,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap: "{{ .Values.config | toYaml | sha256sum | trunc 8 }}"
+        configmap: {{ include "base.configs" $ | sha256sum | trunc 8 | quote }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -145,11 +145,13 @@ spec:
             {{- range $secret := .Values.secrets }}
             {{- if ne (kindOf $secret) "string" }}
             {{- range $map_key,$map_value := $secret }}
+            {{- if not (hasPrefix "/" $map_key) -}}
             - name: {{ $map_key }}
               valueFrom:
                 secretKeyRef:
                   key: {{ $map_value.key }}
                   name: {{ $map_value.from }}
+            {{- end }}
             {{- end }}
             {{- end }}
             {{- end }}
@@ -178,7 +180,7 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           envFrom:
-            {{- if .Values.config }}
+            {{- if fromYaml (include "base.envConfigs" $) }}
             - configMapRef:
                 name: {{ include "base.fullname" . }}
             {{- end }}
