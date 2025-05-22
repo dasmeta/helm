@@ -149,7 +149,7 @@ externalSecretsApiVersion: external-secrets.io/v1beta1 # the new version "extern
 #       from: helm-test-secret
 #       key: username
 #   - /file-path-to-mount-as-secret/example.txt: "Some test content" # the path to folder which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets
-#   - /folder-path-to-mount-as-secret/: # the path to folder which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets; do not set an existing app folder here, to not get the folder removed and replaced with this, can be set some non existing in container subfolder
+#   - /folder-path-to-mount-as-secret/: # the path to folder which going to be mounted, the secret key in secret manager corresponds to pattern "$folder/$file"; NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets; do not set an existing app folder here, to not get the folder removed and replaced with this, can be set some non existing in container subfolder
 #       example-file11.txt: | # file name in folder and its content
 #         Some test content 11 here
 #       example-file12.txt: |
