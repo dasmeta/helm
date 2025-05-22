@@ -6,7 +6,7 @@ image:
 
 containerPort: 8080
 
-config:
+configs:
   ROLLOUT_TRIGGER_VERSION: "8"
 
 service:

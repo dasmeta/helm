@@ -82,11 +82,10 @@ service:
   #     protocol: TCP
   #     name: http-second
 
-# The ingress class setting by annotation is deprecated and we have setIngressClassByField option for backward compatibility for now, check doc here https://kubernetes.io/docs/concepts/services-networking/ingress/#deprecated-annotation
+# The ingress class setting by "kubernetes.io/ingress.class" annotation is deprecated and we have setIngressClassByField option for backward compatibility for now, check doc here https://kubernetes.io/docs/concepts/services-networking/ingress/#deprecated-annotation
 # have 'setIngressClassByField: true' to set ingress class by spec.ingressClassName,
 # we seems cant have both "kubernetes.io/ingress.class" and spec.ingressClassName set at once, so there is check(for alb, application-gateway and cce the check is missing for now) to not set annotation if we set ingress class fy field
-# TODO: have ingress class setting by field used always and remove deprecated "kubernetes.io/ingress.class" annotations
-setIngressClassByField: false
+setIngressClassByField: true
 
 # it allows also to pass list of ingresses in following form
 # NOTE: in case of list it will auto attach uniq identify numbers to ingress names starting from second item, you can use nameSuffix field to set custom suffix instead of number
@@ -128,7 +127,7 @@ ingress:
 
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
-externalSecretsApiVersion: external-secrets.io/v1alpha1 # TODO: the new version external-secrets.io/v1beta1 is available in external-secret operator, please update to new version as soon as you upgrade operator(the new dasmeta eks module already uses the new one)
+externalSecretsApiVersion: external-secrets.io/v1beta1 # the new version "external-secrets.io/v1beta1" is already available in external-secret operator(the new dasmeta eks module already uses the new one), the old/deprecated version was "external-secrets.io/v1alpha1" and it was deprecated
 # secrets:
 #   - external-secret-1
 #   - external-secret-2
@@ -149,6 +148,12 @@ externalSecretsApiVersion: external-secrets.io/v1alpha1 # TODO: the new version 
 #   - USERNAME:
 #       from: helm-test-secret
 #       key: username
+#   - /file-path-to-mount-as-secret/example.txt: "Some test content" # the path to folder which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets
+#   - /folder-path-to-mount-as-secret/: # the path to folder which going to be mounted, the secret key in secret manager corresponds to pattern "$folder/$file"; NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets; do not set an existing app folder here, to not get the folder removed and replaced with this, can be set some non existing in container subfolder
+#       example-file11.txt: | # file name in folder and its content
+#         Some test content 11 here
+#       example-file12.txt: |
+#         Some test content 12 here
 
 extraContainer: {} # allows to have additional containers along side to main one, both single object(if you have just one extra) and list of objects are supported
 # extraContainer:
@@ -226,7 +231,23 @@ spread: # this option creates a default topologySpreadConstraints rule to spread
   maxSkew: 1 # defines the maximum allowed difference in the number of matching pods between any two nodes
   whenUnsatisfiable: ScheduleAnyway # by default the spread rule is not strict, so that it will provision pod by breaking the rule if there is no other way, for having the strict rule just set the value to "DoNotSchedule"
 
-config: {}
+# configs that will be placed into config maps and be used as env variable or mounted as file in container, NOTE: do not place secret values here, use instead secrets config
+config: {} # old/deprecated way to pass configs, still supported
+configs: {} # the new way to pass configs
+# example with both env variable and file as volume
+# configs:
+#   ENV_VARIABLE_KEY: TEST_ENV_VARIABLE_VALUE # standard config that will be placed inside container as env variable
+#   /file-path-to-mount1/example.txt: "Some test content" # the path to file which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets
+#   /folder-path-to-mount1/: # the path to folder which going to be mounted, NOTE: the ones starting with "/" sign are treated as mountable folder/file secrets; do not set an existing app folder here, to not get the folder removed and replaced with this, can be set some non existing in container subfolder
+#     example-file11.txt: | # file name in folder and its content
+#       Some test content 11 here
+#     example-file12.txt: |
+#       Some test content 12 here
+#   /folder-path-to-mount2/:
+#     example-file21.txt: |
+#       Some test content 21 here
+#     example-file22.txt: |
+#       Some test content 22 here
 
 containerPort: 80
 ## allows to have extra ports on main container. generally there is no need for this in order to use it in service as target, but some tools, like prometheus podMonitor/serviceMonitor need port configs set on pod
@@ -298,6 +319,7 @@ storage:
   #       - gid=1000 # to allow mount volume with with this group id
 
 deployment: {} # option is deprecated and all underlying fields are now available as top level variables, so that `deployment.volumes` changed to `volumes`, `deployment.additionalvolumeMounts` to `additionalVolumeMounts` and `deployment.lifecycle` to `lifecycle`
+defaultModeOfConfigMapSecretVolumes: 420 # the permissions to set on `configs`/`secrets` configs based mounted files, 420 corresponds to unix octal value 0644(rw-r--r--)
 volumes: []
 # volumes:
 #   - emptyDir: # if no container field passed like this case it will be mounted to main container
