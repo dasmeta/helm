@@ -152,7 +152,11 @@ Returns config map volume configs object/dict as yaml
 {{- define "base.configMapVolumes" -}}
 {{- $configMapVolumes := list -}}
 {{- range $folder, $files := fromYaml (include "base.volumeConfigs" $) -}}
-  {{- $configMapVolumes = append $configMapVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "configMap" (dict "name" (printf "%s-%s" (include "base.fullname" $) (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))))) "mountPath" $folder ) -}}
+  {{- if ne (kindOf $files) "string" -}}
+    {{- $configMapVolumes = append $configMapVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "configMap" (dict "name" (printf "%s-%s" (include "base.fullname" $) (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))))) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder ) -}}
+  {{- else -}}
+    {{- $configMapVolumes = append $configMapVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "configMap" (dict "name" (printf "%s-%s" (include "base.fullname" $) (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))))) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder "subPath" (replace "/" "-" $folder) ) -}}
+  {{- end -}}
 {{- end -}}
 {{- (dict "data" $configMapVolumes) | toYaml -}}
 {{- end -}}
@@ -170,9 +174,11 @@ Returns secret volume configs object/dict as yaml
         {{- range $file := $files -}}
           {{- $secretItems = append $secretItems (dict "path" $file "key" (replace "/" "-" (printf "%s%s" $folder $file))) -}}
         {{- end -}}
-        {{- $secretVolumes = append $secretVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "secret" (dict "secretName" (include "base.fullname" $) "items" $secretItems ) "mountPath" $folder ) -}}
+        {{- $secretVolumes = append $secretVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "secret" (dict "secretName" (include "base.fullname" $) "items" $secretItems "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder ) -}}
       {{- end -}}
     {{- end -}}
+  {{- else if hasPrefix "/" $secret -}}
+    {{- $secretVolumes = append $secretVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $secret)))) "secret" (dict "secretName" (include "base.fullname" $) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $secret "subPath" (replace "/" "-" $secret) ) -}}
   {{- end -}}
 {{- end -}}
 {{- (dict "data" $secretVolumes) | toYaml -}}

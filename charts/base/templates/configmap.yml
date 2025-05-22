@@ -20,7 +20,11 @@ apiVersion: v1
 metadata:
   name: "{{ include "base.fullname" $ }}-{{ trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))) }}"
 data:
+  {{- if ne (kindOf $files) "string" }}
   {{- toYaml $files | nindent 2 }}
+  {{- else }}
+  {{ replace "/" "-" $folder -}}:  {{- toYaml $files | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}
 
