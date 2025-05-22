@@ -162,6 +162,27 @@ Returns config map volume configs object/dict as yaml
 {{- end -}}
 
 {{/*
+Returns external secret data configs
+*/}}
+{{- define "base.externalSecrets" -}}
+{{- $externalSecrets := list -}}
+{{- range $secret := $.Values.secrets -}}
+  {{- if eq (kindOf $secret) "string" }}
+    {{- $externalSecrets = append $externalSecrets (dict "secretKey" (ternary (replace "/" "-" $secret) $secret (hasPrefix "/" $secret)) "property" $secret) -}}
+  {{- else -}}
+    {{- range $folder, $files := $secret -}}
+      {{- if hasPrefix "/" $folder -}}
+        {{- range $file := $files }}
+          {{- $externalSecrets = append $externalSecrets (dict "secretKey" (replace "/" "-" (printf "%s/%s" (trimSuffix "/" $folder) (trimPrefix "/" $file))) "property" (printf "%s/%s" (trimSuffix "/" $folder) (trimPrefix "/" $file))) -}}
+        {{- end }}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- (dict "data" $externalSecrets) | toYaml -}}
+{{- end -}}
+
+{{/*
 Returns secret volume configs object/dict as yaml
 */}}
 {{- define "base.secretVolumes" -}}
@@ -172,7 +193,7 @@ Returns secret volume configs object/dict as yaml
       {{- if hasPrefix "/" $folder }}
         {{- $secretItems:= list -}}
         {{- range $file := $files -}}
-          {{- $secretItems = append $secretItems (dict "path" $file "key" (replace "/" "-" (printf "%s%s" $folder $file))) -}}
+          {{- $secretItems = append $secretItems (dict "path" $file "key" (replace "/" "-" (printf "%s/%s" (trimSuffix "/" $folder) (trimPrefix "/" $file)))) -}}
         {{- end -}}
         {{- $secretVolumes = append $secretVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder)))) "secret" (dict "secretName" (include "base.fullname" $) "items" $secretItems "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder ) -}}
       {{- end -}}
