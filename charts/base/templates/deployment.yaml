@@ -1,5 +1,5 @@
 {{ $baseFullName := (include "base.fullname" .) }}
-{{ $volumes := concat .Values.volumes ((.Values.deployment).volumes | default (list)) (fromYaml (include "base.configMapVolumes" $)).data (fromYaml (include "base.secretVolumes" $)).data }}
+{{ $volumes := concat .Values.volumes ((.Values.deployment).volumes | default (list)) (fromYaml (include "base.configMapVolumes" $)).data (fromYaml (include "base.secretVolumes" $)).data (fromYaml (include "base.extraContainersConfigMapVolumes" $)).data (fromYaml (include "base.extraContainersSecretVolumes" $)).data }}
 {{ $additionalVolumeMounts := (coalesce .Values.additionalVolumeMounts (.Values.deployment).additionalvolumeMounts) }}
 {{ $defaultLifecycle := ternary (unset (deepCopy .Values.defaultLifecycle) "enabled" ) (dict) .Values.defaultLifecycle.enabled }}
 {{ $lifecycle := merge (coalesce .Values.lifecycle (.Values.deployment).lifecycle) $defaultLifecycle }}
@@ -44,7 +44,7 @@ spec:
   template:
     metadata:
       annotations:
-        configmap: {{ include "base.configs" $ | sha256sum | trunc 8 | quote }}
+        checksum/configs-secrets: {{ (printf "%s-%s-%s-%s" (include "base.configs" $ | sha256sum) ($.Values.secrets | toYaml | sha256sum) (include "base.extraContainersConfigs" $ | sha256sum) (include "base.extraContainersExternalSecrets" $ | sha256sum)) | sha256sum | quote }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -151,6 +151,12 @@ spec:
                   name: {{ $map_value.from }}
             {{- end }}
             {{- end }}
+            {{- else if (and (not (hasPrefix "/" $secret)) $.Values.secretsEnvsBySecretKeyRef) }}
+            - name: {{ $secret }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ $secret }}
+                  name: {{ include "base.fullname" $ }}
             {{- end }}
             {{- end }}
           {{- end }}
@@ -186,7 +192,7 @@ spec:
             - configMapRef:
                 name:  {{ .Values.externalConfigmap.name }}
             {{- end }}
-            {{- if and (eq .Values.secretsDefaultEngine "ExternalSecrets") .Values.secrets }}
+            {{- if and (eq .Values.secretsDefaultEngine "ExternalSecrets") .Values.secrets (not $.Values.secretsEnvsBySecretKeyRef) }}
             - secretRef:
                 name: {{ include "base.fullname" . }}
                 optional: true
@@ -216,8 +222,8 @@ spec:
           lifecycle:
             {{- toYaml $lifecycle | nindent 12 }}
           {{- end }}
-        {{- if .Values.extraContainer }}
-        {{- range $extraContainer := (ternary .Values.extraContainer (list .Values.extraContainer) (kindIs "slice" .Values.extraContainer)) }}
+        {{- range $extraContainer := (fromYaml (include "base.extraContainers" $)).data }}
+        {{- if $extraContainer -}}
         {{- $extraContainerName := $extraContainer.name }}
         - name: {{ $extraContainerName }}
           image: "{{ $extraContainer.image.repository }}:{{ $extraContainer.image.tag | default $.Chart.AppVersion }}"
@@ -249,6 +255,7 @@ spec:
           {{- range $secret := $extraContainer.secrets }}
           {{- if ne (kindOf $secret) "string" }}
           {{- range $map_key,$map_value := $secret }}
+          {{- if not (hasPrefix "/" $map_key) }}
           - name: {{ $map_key }}
             valueFrom:
               secretKeyRef:
@@ -256,6 +263,13 @@ spec:
                 name: {{ $map_value.from }}
           {{- end }}
           {{- end }}
+          {{- else if (and (not (hasPrefix "/" $secret)) $extraContainer.secretsEnvsBySecretKeyRef) }}
+            - name: {{ $secret }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ printf "%s-%s" $extraContainerName (ternary (replace "/" "-" $secret) $secret (hasPrefix "/" $secret)) }}
+                  name: {{ include "base.fullname" $ }}
+            {{- end }}
           {{- end }}
         {{- end }}
           {{- if $extraContainer.livenessProbe }}
@@ -276,13 +290,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ $extraContainer.name }}
-            {{- if eq $extraContainer.secretsDefaultEngine "ExternalSecrets" -}}
+            {{- if and (eq $extraContainer.secretsDefaultEngine "ExternalSecrets") $extraContainer.secretRef -}}
             - secretRef:
                 name: {{ $extraContainer.secretRef }}
                 optional: true
             {{- end }}
           {{- end }}
-          {{- if eq $extraContainer.secretsDefaultEngine "ExternalSecrets" }}
+          {{- if and (eq $extraContainer.secretsDefaultEngine "ExternalSecrets") (not $extraContainer.secretsEnvsBySecretKeyRef) }}
           - secretRef:
               name: {{ include "base.fullname" . }}
               optional: true
