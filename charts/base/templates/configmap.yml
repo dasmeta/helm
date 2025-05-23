@@ -28,7 +28,7 @@ data:
 {{- end }}
 {{- end }}
 
-{{- range $extraContainer := (ternary .Values.extraContainer (list .Values.extraContainer) (kindIs "slice" .Values.extraContainer)) }}
+{{- range $extraContainer := (fromYaml (include "base.extraContainers" $)).data }}
 {{- if $extraContainer.configmap }}
 ---
 kind: ConfigMap
@@ -37,5 +37,23 @@ metadata:
   name: {{ $extraContainer.configmap.name }}
 data:
   {{- toYaml $extraContainer.configmap.config | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- range $container, $volumeConfigs := fromYaml (include "base.extraContainersVolumeConfigs" $) }}
+{{- if $volumeConfigs }}
+{{- range $folder, $files := $volumeConfigs }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "{{ include "base.fullname" $ }}-{{ $container }}-{{ trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))) }}"
+data:
+  {{- if ne (kindOf $files) "string" }}
+  {{- toYaml $files | nindent 2 }}
+  {{- else }}
+  {{ replace "/" "-" $folder -}}:  {{- toYaml $files | nindent 4 }}
+  {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

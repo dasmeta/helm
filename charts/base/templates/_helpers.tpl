@@ -110,6 +110,13 @@ Return the target/server Kubernetes version
 {{- end }}
 {{- end }}
 
+{{/*
+Returns extraContainers list as yaml
+*/}}
+{{- define "base.extraContainers" -}}
+{{- (dict "data" (concat (ternary $.Values.extraContainer (list $.Values.extraContainer) (kindIs "slice" $.Values.extraContainer)) (ternary $.Values.extraContainers (list $.Values.extraContainers) (kindIs "slice" $.Values.extraContainers)))) | toYaml -}}
+{{- end -}}
+
 
 {{/*
 Returns env/volume config maps object/dict as yaml
@@ -200,6 +207,121 @@ Returns secret volume configs object/dict as yaml
     {{- end -}}
   {{- else if hasPrefix "/" $secret -}}
     {{- $secretVolumes = append $secretVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $secret)))) "secret" (dict "secretName" (include "base.fullname" $) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $secret "subPath" (replace "/" "-" $secret) ) -}}
+  {{- end -}}
+{{- end -}}
+{{- (dict "data" $secretVolumes) | toYaml -}}
+{{- end -}}
+
+
+{{/*
+Returns extraContainers env/volume config maps object/dict as yaml
+*/}}
+{{- define "base.extraContainersConfigs" -}}
+{{- $extraContainersConfigs := dict -}}
+{{- range $extraContainer := (fromYaml (include "base.extraContainers" $)).data }}
+  {{- $extraContainersConfigs = merge $extraContainersConfigs (dict $extraContainer.name $extraContainer.configs) -}}
+{{- end -}}
+{{- $extraContainersConfigs | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns extraContainers env config maps object/dict as yaml
+*/}}
+{{- define "base.extraContainersEnvConfigs" -}}
+{{- $extraContainersConfigs := fromYaml (include "base.extraContainersConfigs" $) }}
+{{- $envConfigs := dict -}}
+{{- range $container, $configs := $extraContainersConfigs -}}
+  {{- $containerEnvConfigs := dict -}}
+  {{- range $key, $value := $configs -}}
+    {{- if not (hasPrefix "/" $key) -}}
+      {{- $containerEnvConfigs = merge $containerEnvConfigs (dict $key $value) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $envConfigs = merge $envConfigs (dict $container $containerEnvConfigs) -}}
+{{- end -}}
+{{- $envConfigs | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns extraContainers volume config maps object/dict as yaml
+*/}}
+{{- define "base.extraContainersVolumeConfigs" -}}
+{{- $extraContainersConfigs := fromYaml (include "base.extraContainersConfigs" $) }}
+{{- $volumeConfigs := dict -}}
+{{- range $container, $configs := $extraContainersConfigs -}}
+  {{- $containerVolumeConfigs := dict -}}
+  {{- range $key, $value := $configs -}}
+    {{- if hasPrefix "/" $key -}}
+      {{- $containerVolumeConfigs = merge $containerVolumeConfigs (dict $key $value) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $volumeConfigs = merge $volumeConfigs (dict $container $containerVolumeConfigs) -}}
+{{- end -}}
+{{- $volumeConfigs | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns extraContainers config map volume configs object/dict as yaml
+*/}}
+{{- define "base.extraContainersConfigMapVolumes" -}}
+{{- $configMapVolumes := list -}}
+{{- range $container, $configs := fromYaml (include "base.extraContainersVolumeConfigs" $) -}}
+  {{- range $folder, $files := $configs -}}
+    {{- if ne (kindOf $files) "string" -}}
+      {{- $configMapVolumes = append $configMapVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" (printf "%s%s" $container $folder))))) "configMap" (dict "name" (printf "%s-%s-%s" (include "base.fullname" $) $container (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))))) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder "container" $container ) -}}
+    {{- else -}}
+      {{- $configMapVolumes = append $configMapVolumes (dict "name" (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" (printf "%s%s" $container $folder))))) "configMap" (dict "name" (printf "%s-%s-%s" (include "base.fullname" $) $container (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))))) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder "subPath" (replace "/" "-" $folder) "container" $container ) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- (dict "data" $configMapVolumes) | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns extraContainers external secret data configs
+*/}}
+{{- define "base.extraContainersExternalSecrets" -}}
+{{- $externalSecrets := list -}}
+{{- range $extraContainer := (fromYaml (include "base.extraContainers" $)).data }}
+  {{- $container := $extraContainer.name -}}
+  {{- range $secret := $extraContainer.secrets -}}
+    {{- if eq (kindOf $secret) "string" }}
+      {{- $externalSecrets = append $externalSecrets (dict "secretKey" (printf "%s-%s" $container (ternary (replace "/" "-" $secret) $secret (hasPrefix "/" $secret))) "property" (printf "%s-%s" $container $secret)) -}}
+    {{- else -}}
+      {{- range $folder, $files := $secret -}}
+        {{- if hasPrefix "/" $folder -}}
+          {{- range $file := $files }}
+            {{- $externalSecrets = append $externalSecrets (dict "secretKey" (printf "%s-%s" $container (replace "/" "-" (printf "%s/%s" (trimSuffix "/" $folder) (trimPrefix "/" $file)))) "property" (printf "%s-%s/%s" $container (trimSuffix "/" $folder) (trimPrefix "/" $file))) -}}
+          {{- end }}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- (dict "data" $externalSecrets) | toYaml -}}
+{{- end -}}
+
+{{/*
+Returns extraContainers secret volume configs object/dict as yaml
+*/}}
+{{- define "base.extraContainersSecretVolumes" -}}
+{{- $secretVolumes := list -}}
+{{- range $extraContainer := (fromYaml (include "base.extraContainers" $)).data }}
+  {{- $container := $extraContainer.name -}}
+  {{- range $secret := $extraContainer.secrets -}}
+    {{- if ne (kindOf $secret) "string" }}
+      {{- range $folder, $files := $secret -}}
+        {{- if hasPrefix "/" $folder }}
+          {{- $secretItems:= list -}}
+          {{- range $file := $files -}}
+            {{- $secretItems = append $secretItems (dict "path" $file "key" (printf "%s-%s" $container (replace "/" "-" (printf "%s/%s" (trimSuffix "/" $folder) (trimPrefix "/" $file))))) -}}
+          {{- end -}}
+          {{- $secretVolumes = append $secretVolumes (dict "name" (printf "%s-%s" $container (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $folder))))) "secret" (dict "secretName" (include "base.fullname" $) "items" $secretItems "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $folder "container" $container ) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else if hasPrefix "/" $secret -}}
+      {{- $secretVolumes = append $secretVolumes (dict "name" (printf "%s-%s" $container (trimPrefix "-" (trimSuffix "-" (replace "/" "-"  (replace "." "-" $secret))))) "secret" (dict "secretName" (include "base.fullname" $) "defaultMode" $.Values.defaultModeOfConfigMapSecretVolumes) "mountPath" $secret "subPath" (replace "/" "-" $secret) "container" $container ) -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- (dict "data" $secretVolumes) | toYaml -}}

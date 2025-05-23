@@ -128,6 +128,7 @@ ingress:
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
 externalSecretsApiVersion: external-secrets.io/v1beta1 # the new version "external-secrets.io/v1beta1" is already available in external-secret operator(the new dasmeta eks module already uses the new one), the old/deprecated version was "external-secrets.io/v1alpha1" and it was deprecated
+secretsEnvsBySecretKeyRef: false # by default we point to secret using `envFrom.secretRef` option and pull all items under, by setting this option we force to use `env.*.valueFrom.secretKeyRef` construction to pull only env variable items(omit volume ones), setting this to true is useful for cases when we have volume secret items and don't want to have them in env variables(having file/volume items in env actually should not bring issues, but just pollute env space with unnecessary long items)
 # secrets:
 #   - external-secret-1
 #   - external-secret-2
@@ -156,7 +157,17 @@ externalSecretsApiVersion: external-secrets.io/v1beta1 # the new version "extern
 #         Some test content 12 here
 
 extraContainer: {} # allows to have additional containers along side to main one, both single object(if you have just one extra) and list of objects are supported
+extraContainers: [] # both `extraContainer` and `extraContainers` similarly can be used to create single or multiple extra containers by passing single object or list of object configs
+# example with single extra containers
 # extraContainer:
+#   name: extra-nginx
+#   image:
+#     repository: nginx
+#     tag: 1.19
+#   extraEnv:
+#     NGINX_PORT: 8081
+## example with multiple extra containers
+# extraContainers:
 #   - name: extra-nginx
 #     image:
 #       repository: nginx
