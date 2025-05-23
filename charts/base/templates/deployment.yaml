@@ -73,12 +73,11 @@ spec:
           {{- with $initContainer.workingDir }}
           workingDir: {{ . | quote }}
           {{- end }}
-          {{- if $initContainer.command }}
-          command:
-            {{  toYaml $initContainer.command | nindent 12 }}
+          {{- with $initContainer.command }}
+          command: {{ toYaml . | nindent 12 }}
           {{- end }}
-          {{- if $initContainer.args }}
-          args: {{  toYaml $initContainer.args | nindent 12 }}
+          {{- with $initContainer.args }}
+          args: {{ toYaml . | nindent 12 }}
           {{- end }}
           {{- if or $initContainer.extraEnv $initContainer.secrets}}
           env:
@@ -129,12 +128,11 @@ spec:
           {{- with $.Values.workingDir }}
           workingDir: {{ . | quote }}
           {{- end }}
-          {{- if $.Values.command }}
-          command:
-            {{  toYaml .Values.command | nindent 12 }}
+          {{- with $.Values.command }}
+          command: {{ toYaml . | nindent 12 }}
           {{- end }}
-          {{- if $.Values.args }}
-          args: {{  toYaml .Values.args | nindent 12 }}
+          {{- with $.Values.args }}
+          args: {{ toYaml . | nindent 12 }}
           {{- end }}
           {{- if or .Values.extraEnv .Values.secrets}}
           env:
@@ -145,7 +143,7 @@ spec:
             {{- range $secret := .Values.secrets }}
             {{- if ne (kindOf $secret) "string" }}
             {{- range $map_key,$map_value := $secret }}
-            {{- if not (hasPrefix "/" $map_key) -}}
+            {{- if not (hasPrefix "/" $map_key) }}
             - name: {{ $map_key }}
               valueFrom:
                 secretKeyRef:
@@ -227,9 +225,11 @@ spec:
           {{- with $extraContainer.workingDir }}
           workingDir: {{ . | quote }}
           {{- end }}
-          {{- if $extraContainer.command }}
-          command:
-            {{  toYaml $extraContainer.command | nindent 12 }}
+          {{- with $extraContainer.command }}
+          command: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $extraContainer.args }}
+          args: {{ toYaml . | nindent 12 }}
           {{- end }}
           {{- if ($extraContainer.service).enabled }}
           ports:
