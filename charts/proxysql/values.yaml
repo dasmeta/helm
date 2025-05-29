@@ -33,6 +33,10 @@ proxysql:
       #   protocol: TCP
       #   name: web
 
+    ##  enable "config.linkerd.io/opaque-ports" annotation for proxysql service in case you have linkerd enabled client apps having long lasting request/connection issues to proxysql service, this happens on connection to non-standard/extra ports like added proxysql service extra 3307 port or admins 6032 port
+    # annotations:
+    #   config.linkerd.io/opaque-ports: 3306,3307,6032 # this marks the proxysql service mysql ports opaque for linkerd enabled client apps, so that linkerd do not try to identify protocol of connections to proxysql that results to timeout(the connection takes >10s and there are log messages like "linkerd_detect: Continuing after timeout: linkerd_proxy_http::version::Version protocol detection timed out after 10s")
+
   setIngressClassByField: true
   ingress: # can be used to expose stats web ui, TODO: there seems issue to pass Authorization headers to backend service in nginx, so more checks need to make sure this works
     enabled: false
