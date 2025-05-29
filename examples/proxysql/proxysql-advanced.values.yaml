@@ -1,8 +1,8 @@
 # helm diff upgrade --install -n localhost proxysql-advanced ./charts/proxysql/ -f ./examples/proxysql/proxysql-advanced.values.yaml
-
+# helm diff upgrade --install -n localhost mysql  bitnami/mysql --set auth.rootPassword=root # install mysql
 proxysql:
   podAnnotations:
-    prometheus.io/scrape: "true" # we suppose that prometheus is configured to lookup this annotations, also there is possibility to enable metric scraping by. you need to set proxysql.mysql.monitor.enabled=true
+    prometheus.io/scrape: "true" # we suppose that prometheus is configured to lookup this annotations, also there is possibility to enable  metric scrapping by using proxysql.serviceMonitor or podMonitor configs. just one scrapping config is enough to be enabled. you need to set proxysql.mysql.monitor.enabled=true
     prometheus.io/port: "6070"
 
   # we expose second port for service, so that default 3306 will be used for write servers/replicas access and second 3307 will be used for read servers
@@ -20,7 +20,8 @@ proxysql:
         targetPort: 6080
         protocol: TCP
         name: web
-
+    annotations:
+      config.linkerd.io/opaque-ports: 3306,3307,6032 # this marks the proxysql service ports opaque for linkerd enabled client apps, so that linkerd do not try to identify protocol of connections to proxysql that results to timeout
   volumes:
     - name: proxysql-config
       mountPath: /etc/proxysql.cnf
@@ -47,7 +48,7 @@ proxysql:
 
     users:
       - username: root
-        password: snM2sBBFbG
+        password: root
 
     # query routing rules
     readWriteSplit: true # add general rule to route read queries to read replicas and write queries to write
