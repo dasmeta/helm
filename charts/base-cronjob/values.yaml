@@ -84,6 +84,8 @@ jobs:
     #     cpu: 500m
     #     memory: 5Gi
 
+    podAnnotations: {} # optional
+    lifecycle: {} # optional
     nodeSelector: {} # optional
     # nodeSelector:
     #   nodetype: "spot"

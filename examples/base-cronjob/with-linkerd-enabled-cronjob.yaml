@@ -1,0 +1,19 @@
+# helm diff upgrade --install -n localhost with-linkerd-enabled-cronjob ./charts/base-cronjob -f ./examples/base-cronjob/with-linkerd-enabled-cronjob.yaml
+
+jobs:
+  - name: with-linkerd-enabled-cronjob
+    schedule: "* * * * *"
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 60
+    restartPolicy: Never
+    image:
+      repository: nginx
+      tag: latest
+    command:
+      - /bin/sh
+      - -c
+      - echo "hi" && sleep 120 && curl -X POST http://localhost:4191/shutdown # NOTE: here we have to curl and ask linkerd to shutdown, we need this for cronjobs with linkerd enabled to get successfully complete at each run
+
+    podAnnotations:
+      linkerd.io/inject: enabled
+      config.linkerd.io/proxy-cpu-request: 50m
