@@ -45,6 +45,9 @@ spec:
           {{- end }}
           annotations:
             configmap: "{{ $job.config | toYaml | sha256sum | trunc 8 }}"
+            {{- with $job.podAnnotations }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
         spec:
           {{- with ($job.serviceAccount).name }}
           serviceAccountName: {{ . | quote }}
