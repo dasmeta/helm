@@ -122,6 +122,10 @@ spec:
                   subPath: {{ . }}
                   {{- end }}
             {{- end }}
+            {{- with $job.lifecycle }}
+              lifecycle:
+                {{- toYaml . | nindent 16 }}
+            {{- end }}
           {{- with $job.nodeSelector }}
           nodeSelector:
 {{ toYaml . | indent 12 }}
