@@ -237,7 +237,7 @@ tolerations: []
 affinity: {}
 
 secretStoreKind: SecretStore
-secretManagerName: ""
+externalSecretRemoteKey: ""
 
 topologySpreadConstraints: []
 spread: # this option creates a default topologySpreadConstraints rule to spread release pods across available nodes
