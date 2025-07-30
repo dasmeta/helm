@@ -1,6 +1,6 @@
 apiVersion: v2
 name: kubernetes-events-exporter-enriched
-description: A Helm chart for Kubernetes
+description: Enriches Kubernetes events with full resource data and forwards them to a webhook.
 
 # A chart can be either an 'application' or a 'library' chart.
 #

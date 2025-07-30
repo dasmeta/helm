@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: kubernetes-event-exporter-enricher
-  replicas: {{ .Values.enricher.replicaCount }}
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -20,14 +20,14 @@ spec:
       serviceAccountName: kubernetes-event-exporter-enricher
       containers:
       - name: kubernetes-event-exporter-enricher
-        image: {{ .Values.enricher.image }}
+        image: dasmeta/kubernetes-events-exporter-enricher:0.0.5
         env:
         - name: DOWNSTREAM_WEBHOOK
-          value: "{{ .Values.enricher.downstreamWebhook }}"
+          value: '{{ required "webhookEndpoint is required!" .Values.webhookEndpoint }}'
         - name: PORT
-          value: "{{ .Values.enricher.port }}"
+          value: "8080"
         ports:
-        - containerPort: {{ .Values.enricher.port }}
+        - containerPort: 8080
         lifecycle:
           preStop:
             exec:
@@ -35,6 +35,13 @@ spec:
         readinessProbe:
           httpGet:
             path: /healthz
-            port: {{ .Values.enricher.port }}
+            port: 8080
           initialDelaySeconds: 3
           periodSeconds: 5
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
