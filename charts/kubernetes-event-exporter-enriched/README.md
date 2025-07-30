@@ -21,5 +21,5 @@ helm repo add dasmeta https://dasmeta.github.io/helm
 helm install kubernetes-events-exporter-enriched dasmeta/kubernetes-events-exporter-enriched \
   --version 0.1.0 \
   --namespace kubernetes-event-exporter \
-  --set webhookEndpoint=https://n8n.example.com/webhook/k8s-events
+  --set webhookEndpoint="https://n8n.example.com/webhook/k8s-events"
 ```
