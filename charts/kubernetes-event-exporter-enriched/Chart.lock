@@ -1,0 +1,6 @@
+dependencies:
+- name: kubernetes-event-exporter
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 3.6.0
+digest: sha256:bd59915eaa303e6ede5c0b6abcccb2239ee7e38c86e6d495f545f3795492b64e
+generated: "2025-07-16T19:37:21.036206+04:00"

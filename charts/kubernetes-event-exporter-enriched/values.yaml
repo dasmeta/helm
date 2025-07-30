@@ -1,0 +1,12 @@
+kubernetes-event-exporter:
+  config:
+    receivers:
+      - name: "enricher"
+        webhook:
+          endpoint: "http://kubernetes-event-exporter-enricher:8080/events"
+    route:
+      routes:
+        - match:
+            - receiver: "enricher"
+
+webhookEndpoint: 
