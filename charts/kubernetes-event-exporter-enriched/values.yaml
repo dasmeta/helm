@@ -1,0 +1,21 @@
+kubernetes-event-exporter:
+  config:
+    receivers:
+      - name: "enricher"
+        webhook:
+          endpoint: "http://kubernetes-event-exporter-enricher:8080/events"
+    route:
+      routes:
+        - match:
+            - receiver: "enricher"
+
+enricher:
+  replicaCount: 4
+  port: 8080
+  image: dasmeta/kubernetes-events-exporter-enricher:0.0.5
+  # downstreamWebhook: "https://n8n.dasmeta.com/webhook/948db43e-3ea2-4c73-9132-3d1e557082d8"
+  # downstreamWebhook: "https://n8n.dasmeta.com/webhook/7682e494-1644-4577-a7c5-53c26157bea7?accountId=930985312118" # buycycle-prod
+  # downstreamWebhook: "https://n8n.dasmeta.com/webhook/7682e494-1644-4577-a7c5-53c26157bea7?accountId=047719614430" # spm-prod
+  downstreamWebhook: "https://n8n.dasmeta.com/webhook/7682e494-1644-4577-a7c5-53c26157bea7?accountId=cloudbrowser-hetzner" # cloudbrowser
+  
+# helm upgrade --install kubernetes-event-exporter . -n kubernetes-event-exporter
