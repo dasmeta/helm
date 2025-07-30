@@ -15,4 +15,3 @@ subjects:
 - kind: ServiceAccount
   name: kubernetes-event-exporter-enricher
   namespace: {{ .Release.Namespace }}
-  
