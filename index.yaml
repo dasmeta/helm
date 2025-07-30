@@ -1311,6 +1311,22 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/karpenter-nodes-0.1.0/karpenter-nodes-0.1.0.tgz
     version: 0.1.0
+  kubernetes-events-exporter-enriched:
+  - apiVersion: v2
+    appVersion: 0.0.5
+    created: "2025-07-30T12:21:32.047587406Z"
+    dependencies:
+    - name: kubernetes-event-exporter
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 3.6.0
+    description: Enriches Kubernetes events with full resource data and forwards them
+      to a webhook.
+    digest: e800c86d2f16e35df2730010d6582a27d08b705446bfd64a9f01c3d713bfea9f
+    name: kubernetes-events-exporter-enriched
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/kubernetes-events-exporter-enriched-0.1.0/kubernetes-events-exporter-enriched-0.1.0.tgz
+    version: 0.1.0
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
