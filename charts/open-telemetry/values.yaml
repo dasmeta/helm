@@ -1,0 +1,96 @@
+# Default values for open-telemetry. All 3 configs fields are maps of {name: spec} of corresponding CRDs. For more details on supported attributes check docs: https://github.com/open-telemetry/opentelemetry-operator
+
+collectors: {} # OpenTelemetryCollector instances/resource configs, generally one instance with `daemonset mode should be enough for a cluster, but is supports also `deployment`, `statefulset` and `sidecar` modes also
+## example of how to create OpenTelemetryCollector resources
+# collectors:
+#   otel:
+#     mode: daemonset
+#     config:
+#       receivers:
+#         otlp:
+#           protocols:
+#             grpc:
+#               endpoint: 0.0.0.0:4317
+#             http:
+#               endpoint: 0.0.0.0:4318
+#       processors:
+#         memory_limiter:
+#           check_interval: 1s
+#           limit_percentage: 75
+#           spike_limit_percentage: 15
+#         batch:
+#           send_batch_size: 10000
+#           timeout: 10s
+#         # k8sattributes: {}
+#         # resource:
+#         #   attributes:
+#         #     - key:  kubernetes.namespace_name
+#         #       from_attribute: k8s.namespace.name
+#         #       action: upsert
+#         #     - key:  kubernetes.pod_name
+#         #       from_attribute: k8s.pod.name
+#         #       action: upsert
+#         #     - key: kubernetes.container_name
+#         #       from_attribute: k8s.container.name
+#         #       action: upsert
+#         #     - key: log_type
+#         #       value: application
+#         #       action: upsert
+#       exporters:
+#         debug: {}
+#         # otlphttp/loki:
+#         #   endpoint: http://loki.monitoring/loki/api/v1/push
+#         #   encoding: json
+#         # prometheus:
+#         #   endpoint: 0.0.0.0:8889
+#         #   resource_to_telemetry_conversion:
+#         #     enabled: true # by default resource attributes are dropped
+#       service:
+#         pipelines:
+#           traces:
+#             receivers: [otlp]
+#             processors: [memory_limiter, batch]
+#             exporters: [debug]
+#           # logs/loki:
+#           #   receivers: [otlp]
+#           #   processors: [k8sattributes, resource]
+#           #   exporters: [otlphttp/loki]
+#           # metrics/prometheus:
+#           #   receivers: [otlp]
+#           #   exporters: [prometheus]
+
+instrumentations: {} # The operator can inject and configure OpenTelemetry auto-instrumentation libraries for tracing. Currently, Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported. When we have instrumentation objects we then can use `instrumentation.opentelemetry.io/inject-nodejs: "true"` podAnnotations to enable it for a app.
+## example of how to create instrumentation resources
+# instrumentations:
+#   otel-instrumentation:
+#     exporter:
+#       endpoint: http://otel-collector.meta-system:4317
+#     propagators:
+#       - tracecontext
+#       - baggage
+#       - b3
+#     sampler:
+#       type: parentbased_traceidratio
+#       argument: "0.25"
+#     python:
+#       env:
+#         # Required if endpoint is set to 4317.
+#         # Python autoinstrumentation uses http/proto by default
+#         # so data must be sent to 4318 instead of 4317.
+#         - name: OTEL_EXPORTER_OTLP_ENDPOINT
+#           value: http://otel-collector.meta-system:4318
+#     dotnet:
+#       env:
+#         # Required if endpoint is set to 4317.
+#         # Dotnet autoinstrumentation uses http/proto by default
+#         # See https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/888e2cd216c77d12e56b54ee91dafbc4e7452a52/docs/config.md#otlp
+#         - name: OTEL_EXPORTER_OTLP_ENDPOINT
+#           value: http://otel-collector.meta-system:4318
+#     go:
+#       env:
+#         # Required if endpoint is set to 4317.
+#         # Go autoinstrumentation uses http/proto by default
+#         # so data must be sent to 4318 instead of 4317.
+#         - name: OTEL_EXPORTER_OTLP_ENDPOINT
+#           value: http://otel-collector.meta-system:4318
+opampbridges: {} # OpAMP (Open Agent Management Protocol) resources configs, OpAMP is a network protocol defined by the OpenTelemetry project that aims to standardize the remote management of fleets of telemetry agents, such as: OpenTelemetry Collector, Fluent Bit/Fluentd, OpenTelemetry SDKs embedded in applications. We do not use this resource kind for now and do not have example for it.

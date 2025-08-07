@@ -1,0 +1,38 @@
+# apiVersion: opentelemetry.io/v1beta1
+# kind: OpenTelemetryCollector
+# metadata:
+#   name: {{ $name }}
+# spec:
+#   {{- toYaml $spec | nindent 2 }}
+
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: {{- .Release.Name -}}-otel-collector-clusterrole
+# rules:
+#   - apiGroups: [""] # Core API group
+#     resources: ["pods"]
+#     verbs: ["get", "list", "watch"]
+#   - apiGroups: ["apps"]
+#     resources: ["replicasets"]
+#     verbs: ["get", "list", "watch"]
+#   - apiGroups: [""]
+#     resources: ["nodes"] # Required by hostmetrics receiver
+#     verbs: ["get", "list", "watch"]
+#   - apiGroups: [""]
+#     resources: ["nodes/metrics", "nodes/stats", "nodes/proxy"] # Required by kubeletstats receiver
+#     verbs: ["get"]
+
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: {{- .Release.Name -}}-otel-collector-clusterrolebinding
+# subjects:
+#   - kind: ServiceAccount
+#     name: otel-collector # Matches the ServiceAccount name
+#     namespace: meta-system # Matches the ServiceAccount namespace
+# roleRef:
+#   kind: ClusterRole
+#   name: {{- .Release.Name -}}-otel-collector-clusterrole
+#   apiGroup: rbac.authorization.k8s.io

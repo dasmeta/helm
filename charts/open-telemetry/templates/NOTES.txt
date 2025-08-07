@@ -1,0 +1,4 @@
+To check/get created/updated resources run:
+kubectl get Instrumentation -n {{ .Release.Namespace }} 
+kubectl get OpAMPBridge -n {{ .Release.Namespace }} 
+kubectl get OpenTelemetryCollector -n {{ .Release.Namespace }} 

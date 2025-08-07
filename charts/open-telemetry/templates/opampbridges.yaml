@@ -1,0 +1,9 @@
+{{- range $name, $spec := .Values.opampbridges }}
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: opampbridges
+metadata:
+  name: {{ $name }}
+spec:
+  {{- toYaml $spec | nindent 2 }}
+{{- end }}
