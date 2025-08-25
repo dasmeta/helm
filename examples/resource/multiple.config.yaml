@@ -1,0 +1,21 @@
+# helm diff upgrade --install -n localhost multiple-config-map ./charts/resource/ -f ./examples/resource/multiple.config.yaml
+
+resource:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: multiple-config-map-1
+    data:
+      some-key: multiple-config-map-1-content
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: multiple-config-map-2
+    data:
+      some-key: multiple-config-map-2-content
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: multiple-config-map-3
+    data:
+      some-key: multiple-config-map-3-content

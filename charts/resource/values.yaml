@@ -1,0 +1,11 @@
+# one resource or multiple resources definitions, NOTE: no difference which one being used, both `resource` and `resources` configs are similar(we can say they are aliases) but if `resource` passed then `resources` will be ignored
+resource:
+resources:
+##  example how resource/resources field value can be in case we have just single object, for more examples check ../../examples/resource folder
+# resource:
+#   apiVersion: v1
+#   kind: ConfigMap
+#   metadata:
+#     name: single-config-map
+#   data:
+#     some-key: single-config-map-content
