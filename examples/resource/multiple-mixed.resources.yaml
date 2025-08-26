@@ -1,0 +1,43 @@
+# helm diff upgrade --install -n localhost multiple-mixed-resources ./charts/resource/ -f ./examples/resource/multiple-mixed.resources.yaml
+
+resources:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: multiple-mixed-config-map
+    data:
+      some-key: multiple-mixed-content
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: multiple-mixed-service
+    spec:
+      type: ClusterIP
+      selector:
+        app.kubernetes.io/component: multiple-mixed-deploy
+      ports:
+        - name: web
+          port: 80
+          protocol: TCP
+          targetPort: web
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: multiple-mixed-deploy
+    spec:
+      selector:
+        matchLabels:
+          app.kubernetes.io/component: multiple-mixed-deploy
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: multiple-mixed-deploy
+        spec:
+          containers:
+            - name: container1
+              image: nginx:latest
+              command:
+                - /bin/sh
+                - -c
+              args:
+                - tail -f /dev/null

@@ -1,0 +1,19 @@
+{{- range $key, $resource := (ternary (.Values.resource | default .Values.resources) (list (.Values.resource | default .Values.resources)) (kindIs "slice" (.Values.resource | default .Values.resources))) }}
+{{ $name:= required "resource metadata.name is required" ($resource.metadata).name }}
+---
+apiVersion: {{ required "resource apiVersion is required" $resource.apiVersion }}
+kind: {{ required "resource kind is required" $resource.kind }}
+metadata: {{- toYaml $resource.metadata | nindent 2 }}
+{{- if $resource.spec }}
+spec: {{- toYaml $resource.spec | nindent 2 }}
+{{- end }}
+{{- if $resource.data }}
+data: {{- toYaml $resource.data | nindent 2 }}
+{{- end }}
+{{- if $resource.stringData }}
+stringData: {{- toYaml $resource.stringData | nindent 2 }}
+{{- end }}
+{{- if $resource.binaryData }}
+binaryData: {{- toYaml $resource.binaryData | nindent 2 }}
+{{- end }}
+{{- end }}

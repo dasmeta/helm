@@ -1,0 +1,9 @@
+# helm diff upgrade --install -n localhost single-config-map ./charts/resource/ -f ./examples/resource/single.config.yaml
+
+resource:
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: single-config-map
+  data:
+    some-key: single-config-map-content
