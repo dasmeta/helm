@@ -1314,6 +1314,21 @@ entries:
   kubernetes-events-exporter-enriched:
   - apiVersion: v2
     appVersion: 0.0.5
+    created: "2025-08-26T11:01:20.846886506Z"
+    dependencies:
+    - name: kubernetes-event-exporter
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 3.6.0
+    description: Enriches Kubernetes events with full resource data and forwards them
+      to a webhook.
+    digest: a022e5758cb715b25c711a78f46c6701f519285a66b972f0dfe80715662f078d
+    name: kubernetes-events-exporter-enriched
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/kubernetes-events-exporter-enriched-0.1.1/kubernetes-events-exporter-enriched-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.0.5
     created: "2025-07-30T12:21:32.047587406Z"
     dependencies:
     - name: kubernetes-event-exporter
@@ -1495,6 +1510,19 @@ entries:
     type: application
     urls:
     - https://github.com/dasmeta/helm/releases/download/proxysql-0.1.0/proxysql-0.1.0.tgz
+    version: 0.1.0
+  resource:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2025-08-26T11:01:21.040455192Z"
+    description: A Helm chart for Kubernetes to create any type of k8s resources(or
+      CRDs) by passing the resources `apiVersion`, `kind`, `metadata` and `spec` standard
+      resource fields
+    digest: 0c40d9d9a1bcbf555ab4f18fe2a5f5476c21157b73ec02b60bbc86a580d5f510
+    name: resource
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/resource-0.1.0/resource-0.1.0.tgz
     version: 0.1.0
   sentry-relay:
   - apiVersion: v2
