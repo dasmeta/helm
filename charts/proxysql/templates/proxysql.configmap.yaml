@@ -82,13 +82,13 @@ data:
       {{- end }}
     )
     {{- end }}
-    {{- if .Values.proxysql.app.mysql_replication_hostgroups.enabled }}
+    {{- if .Values.proxysql.app.serverTypeCheck.enabled }}
     mysql_replication_hostgroups=
     (
       {
         writer_hostgroup={{ .Values.proxysql.app.writerHostgroup }}
         reader_hostgroup={{ .Values.proxysql.app.readerHostgroup }}
-        check_type="{{ .Values.proxysql.app.mysql_replication_hostgroups.check_type }}"
+        check_type="{{ .Values.proxysql.app.serverTypeCheck.check_type }}"
       }
     )
     {{- end }}

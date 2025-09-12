@@ -252,7 +252,8 @@ proxysql:
     # this can be handy in case if we have multi replica setups so that master can dynamically switched from one replica to another.
     # in general if we already know master and replica endpoint we can skip this option and do routing using servers isWriter option,
     # NOTE: this option works along side with proxysql.app.monitor
-    mysql_replication_hostgroups:
+    # NOTE: no need to enable this for aurora integration as it checks for server instances status dynamically
+    serverTypeCheck:
       enabled: false
       check_type: "read_only"
 
