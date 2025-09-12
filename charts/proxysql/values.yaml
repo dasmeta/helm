@@ -27,7 +27,7 @@ proxysql:
         protocol: TCP
         name: admin
 
-      ## web ui, to enable uncomment the block and set proxysql.web.enabled=true, ingress configs can be used to expose this endpoint
+      ## web ui, to enable uncomment the block and set proxysql.app.stats.webEnabled=true, ingress configs can be used to expose this endpoint
       # - port: 6080
       #   targetPort: 6080
       #   protocol: TCP
@@ -116,6 +116,12 @@ proxysql:
       readOnly: true
       configMap:
         name: proxysql # NOTE: set this value same as release name
+    - name: proxysql-cert
+      mountPath: /etc/proxysql/certs/ca-cert.pem
+      subPath: ca-cert.pem
+      readOnly: true
+      configMap:
+        name: proxysql-cert # NOTE: set this value based on release name by using pattern "{release-name}-cert"
 
   envFrom:
     secret: proxysql # NOTE: set this value same as release name
@@ -130,30 +136,80 @@ proxysql:
           - -c
           - touch /tmp/sigterm-signal-sent && sleep 100
 
-  # base chart configs end and proxysql specific configs start
-  admin:
-    user: "admin"
-    password: "admin"
-    port: 6032 # admin service port
+  # proxysql app specific configs
+  app:
+    # base chart configs end and proxysql specific configs start
+    admin:
+      user: "admin"
+      password: "admin"
+      port: 6032 # admin service port
 
-  stats: # create a separate user in admin mysql server for using to access only statistics data, the web ui also uses this user for auth
-    user: "sadmin"
-    password: "sadmin"
-    webEnabled: false # allows to enable admin web UI(auth by stats user/password), with port forward the endpoint will be(https schema is must): https://127.0.0.1:6080/
-    webPort: 6080
+    stats: # create a separate user in admin mysql server for using to access only statistics data, the web ui also uses this user for auth
+      user: "sadmin"
+      password: "sadmin"
+      webEnabled: false # allows to enable admin web UI(auth by stats user/password), with port forward the endpoint will be(https schema is must): https://127.0.0.1:6080/
+      webPort: 6080
 
-  mysql:
-    version: "8.4.4"
-    ports: # proxysql exposed mysql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query
-      - 3306
-    maxConnections: 2048
-    connectionMaxAgeMS: 0
-    queyCacheSizeMB: 226
-    queryRetriesOnFailure: 2
-    waitTimeout: 28800000
-    readWriteSplit: false # This field decides if there will be rules to route write traffic only to writer hostgroup/servers (hostgroup id is defined by writerHostgroup value and server belongs to this hostgroup when is_writer=true) and read traffic only to reads hostgroup (hostgroup id is defined by readerHostgroup value and server belongs to this hostgroup when is_writer=false). So if you have both read and write hostgroups make sure to set this to true.
+    # common configs for host groups identifier
     writerHostgroup: 0 # The id of writers hostgroup
     readerHostgroup: 1 # The id of reader hostgroup
+
+    mysql:
+      server_version: "8.4.4" # server_version ProxySQL reports to clients; match your Aurora/MySQL version—8.4 LTS is fine.
+      max_connections: 2048 # max concurrent client (frontend) connections ProxySQL accepts; OK if it fits your RAM/FD limits.
+      connect_timeout_server: 1500 # per-attempt backend connect timeout (ms); good default (1.0–1.5s is typical).
+      connect_timeout_server_max: 10000 # total time to obtain any backend (ms); OK, but 3000–5000ms reduces failover stalls.
+      connection_max_age_ms: 30000 # recycle idle backend conns older than this age; great “set-and-forget” value for Aurora.
+      connect_retries_delay: 1 # delay between backend connect retries (ms); default/OK.
+      connect_retries_on_failure: 10 # number of backend connect retries; a bit high—prefer 3–5 unless you’ve measured benefit.
+      default_query_timeout: 86400000 # how long the query can last in ms, the default 86400000 means 24h
+      default_max_latency_ms: 1500 # proxysql measures each server’s ping/latency and, if it’s above the threshold, it ignores that server for new work (it stays ONLINE but is not picked), preferring lower-latency servers, this is also configurable per server via mysql_servers.max_latency_ms
+      max_transaction_time: 14400000 # kills sessions with an active transaction longer than the threshold (default 4h). This affects long transactions, not autocommit reads
+      long_query_time: 5000 # monitoring threshold (in milliseconds) that marks queries as “slow” for ProxySQL’s own stats (counts can be found in stats_mysql_global table). It does not kill or throttle queries
+      max_allowed_packet: 1073741824 # sets the maximum size (in bytes) of a single MySQL protocol packet ProxySQL will send/receive to backends—match it to MySQL’s max_allowed_packet to avoid “Packet too large” errors
+      ping_interval_server_msec: 5000 # how often ProxySQL pings idle pooled backend connections to keep them alive (keep-alives for ConnFree)
+      ping_timeout_server: 500 # how long proxysql waits for those keep-alive pings to succeed before it drops that one backend connection (it does not mark the server down)
+      shun_on_failures: 5 # if a backend generates more than this many errors within 1 second, ProxySQL temporarily marks that server SHUNNED (taken out of rotation). “Errors” here means backend-side failures like connect/read/write timeouts, etc., while ProxySQL is sending traffic
+      shun_recovery_time_sec: 9 # how long a SHUNNED server stays out before ProxySQL automatically tries it again (brings it back ONLINE and probes it with new traffic). If it fails again, it’s re-shunned, repeating the cycle. Note this timer is best-effort; if ProxySQL is idle (no traffic), the exact recovery timing isn’t guaranteed
+      stacksize: 1048576 # thread stack size (bytes); default/OK.
+      threads: 4 # worker threads; OK if ≈ your vCPU count (otherwise set to #vCPUs).
+      threshold_query_length: 524288 # cap for query length tracked/cached (bytes); OK unless you see huge queries routinely.
+      threshold_resultset_size: 4194304 # cap for cached/tracked result size (bytes); OK, raise only if you cache big reads.
+      query_cache_size_MB: 226 # ProxySQL result cache size (MB); OK if memory headroom is ample (or trim if tight).
+      query_retries_on_failure: 3 # automatic query retries on backend failure; OK only for idempotent reads—safer set via per-rule.
+      wait_timeout: 28800000 # idle client (frontend) connection timeout (ms) ≈ 8h; fine if you want long-lived sessions.
+
+      # special custom named mysql variables that transform to proxysql native ones under the hood
+      ssl_p2s_ca: "" # here we set .pem certificate content (NOTE: the original variable supposes here to be path to ca file, we transfer content into k8s config map and mount to container)
+      ports: # proxysql exposed mysql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query
+        - 3306
+      # allows to enable proxysql monitor which monitors mysql backend servers for their availability and do automated master switch, replica disable or query routing switch to low lag having ones based on servers status
+      monitor:
+        enabled: false
+        username: "monitor" # The username for the backend health check
+        password: "monitor" # The password for the health check user. should be changed in production
+        connect_interval: 120000 # The interval (ms) for retrying connections to offline servers. Default is too slow for fast recovery.
+        connect_timeout: 1000 # The timeout (ms) for a connection attempt
+        ping_interval: 8000 # The interval (ms) for ping health checks. Default is too slow for fast failover.
+        ping_max_failures: 3 # Consecutive failed pings before a server is taken offline
+        ping_timeout: 1500 # The timeout (ms) for a single ping check
+        query_interval: 60000 # Interval (ms) for a custom monitoring query. OK; unused unless a query is set.
+        query_timeout: 1500 # The timeout (ms) for a custom monitoring query
+        read_only_interval: 1000 # Interval (ms) for checking read_only status. Default is okay, but can be lowered for faster Aurora writer role changes.
+        read_only_max_timeout_count: 3 # Consecutive read_only check failures before taking action
+        read_only_timeout: 1500 # The timeout (ms) for a read_only check
+        replication_lag_interval: 10000 # Interval (ms) for checking replication lag. Default is too slow for critical applications.
+        replication_lag_timeout: 1500 # The timeout (ms) for a replication lag check
+        slave_lag_when_null: 60 # The assumed lag (seconds) when replication status is null
+        threads_max: 128 # The maximum number of monitoring threads
+        threads_min: 8 # The minimum number of monitoring threads
+        threads_queue_maxsize: 128 # The max size of the monitoring task queue
+        timer_cached: true # Whether to cache monitor timer values
+        writer_is_also_reader: true # A writer server can also handle reads
+        local_dns_cache_ttl: 300000 # TTL (ms) for DNS cache entries. Default is too long for RDS failovers.
+        local_dns_cache_refresh_interval: 60000 # Interval (ms) to check for expired DNS entries
+        local_dns_resolver_queue_maxsize: 128 # The max size of the DNS resolver queue
+
     servers: # mysql origin servers, both read and write servers should be listed here, the writer ones are grouped into hostgroup with id=1 and reader ones into hostgroup with id=2
       []
       # - is_writer: true # you can have instead set hostgroup_id field also to have custom hostgroups, by default we have two hostgroups writes(with id 0) and reads(with id 1) managed by is_writer field
@@ -164,6 +220,7 @@ proxysql:
       #   weight: 1000
       #   max_replication_lag: 0
       #   use_ssl: 0
+      #   comment: ""
     users: # the mysql users, NOTE: you have to include here all users you need to use in you client app
       []
       # - username: name # required
@@ -173,6 +230,8 @@ proxysql:
       #   transaction_persistent: 1
       #   active: 1
       #   read_only: false
+
+    readWriteSplit: false # This field decides if there will be rules to route write traffic only to writer hostgroup/servers (hostgroup id is defined by writerHostgroup value and server belongs to this hostgroup when is_writer=true) and read traffic only to reads hostgroup (hostgroup id is defined by readerHostgroup value and server belongs to this hostgroup when is_writer=false). So if you have both read and write hostgroups make sure to set this to true.
     rules: # allows to create custom routing amd caching rules
       []
       # - match_digest: "^SELECT .* FROM test$" # regex to match
@@ -192,34 +251,26 @@ proxysql:
     # this config allows to dynamically control read and write hostgroup servers based on checkType, so that proxysql regularly do `SELECT @@global.read_only;` kind sql queries to server to identify if the server is read/write and routes read/write queries based on this
     # this can be handy in case if we have multi replica setups so that master can dynamically switched from one replica to another.
     # in general if we already know master and replica endpoint we can skip this option and do routing using servers isWriter option,
-    # NOTE: this option works along side with proxysql.monitor
-    slave:
+    # NOTE: this option works along side with proxysql.app.monitor
+    mysql_replication_hostgroups:
       enabled: false
-      checkType: "read_only"
+      check_type: "read_only"
 
-  # allows to enable proxysql monitor which monitors mysql backend servers for their availability and do automated master switch, replica disable or query routing switch to low lag having ones based on servers status
-  monitor:
-    enabled: false
-    user: "monitor"
-    password: "monitor"
-    writerAsReader: true
-    replicationLagInterval: 10000
-    replicationLagTimeout: 1500
-    slaveLagWhenNull: 60
-    connectInterval: 120000
-    connectTimeout: 1000
-    pingInterval: 8000
-    pingMaxFailures: 3
-    pingTimeout: 1500
-    queryInterval: 60000
-    queryTimeout: 1500
-    readOnlyInterval: 1000
-    readOnlyMaxTimeoutCount: 3
-    readOnlyTimeout: 1500
-    threadsMax: 128
-    threadsMin: 8
-    threadsQueueMaxsize: 128
-    timerCached: true
+    # proxysql aws aurora specific integration configs, NOTE: there is need to have seed item int mysql_servers list for aurora integration which will be used for discovering endpoints, this can be done by using aurora write cluster endpoint with "SHUNNED" status, check sample
+    awsAurora:
+      enabled: false # whether we activate aurora specific configs, by default we disable this
+      domain_name: # the aurora cluster domain name, for example '.abcde.us-east-1.rds.amazonaws.com', Note: that domain_name must start with a dot
+      active: 1 # whether the auto-discovery enabled
+      aurora_port: 3306 # the port to accept db connections, by default it is 3306
+      max_lag_ms: 600000 # replicas that have a replication greater or equal than max_lag_ms milliseconds are automatically disabled
+      check_interval_ms: 600 # the interval that proxysql monitor checks for cluster/servers status
+      check_timeout_ms: 500 # timeout for check
+      writer_is_also_reader: 1 # whether master writer instance will be included into readers hostgroup in runtime_mysql_servers table
+      new_reader_weight: 1 # weight to assign to new auto-discovered replicas
+      # because replication lag is pulled at regular intervals as defined in check_interval_ms and not in real time, the last measured replication lag could not be accurate. These 3 variables perform some tweaks on the last value of replication lag
+      add_lag_ms: 30 # if replication lag is less than min_lag_ms, assume a read of min_lag_ms
+      min_lag_ms: 30 # to any value read, add add_lag_ms.
+      lag_num_checks: 3 # if lag_num_checks is greater than 1, the current replication lag is computed as the highest of the last lag_num_checks reads.
 
   # allows to enable service monitor to scrape proxysql metrics, you have to set/enable also proxysql.extraPorts, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
   # NOTE: if you have no prometheus service monitor crds this enabling may fail to install helm
