@@ -15,7 +15,7 @@ proxysql:
   envFrom:
     secret: proxysql-basic
 
-  mysql:
+  app:
     servers:
       - hostname: mysql.localhost
     users:

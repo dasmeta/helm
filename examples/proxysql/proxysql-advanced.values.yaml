@@ -32,12 +32,11 @@ proxysql:
   envFrom:
     secret: proxysql-advanced
 
-  web:
-    enabled: true
-  mysql:
-    ports:
-      - 3306 # write/master endpoint
-      - 3307 # read/replica endpoint
+  app:
+    mysql:
+      ports:
+        - 3306 # write/master endpoint
+        - 3307 # read/replica endpoint
 
     servers:
       - is_writer: true

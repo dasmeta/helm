@@ -1,0 +1,37 @@
+# helm diff upgrade --install -n localhost proxysql-with-aws-aurora ./charts/proxysql/ -f ./examples/proxysql/proxysql-with-aws-aurora.values.yaml
+# NOTE: you have to provision aurora cluster
+proxysql:
+  podAnnotations:
+    app.config/checksum: v2
+  autoscaling:
+    minReplicas: 1
+  volumes:
+    - name: proxysql-config
+      mountPath: /etc/proxysql.cnf
+      subPath: proxysql.cnf
+      readOnly: true
+      configMap:
+        name: proxysql-with-aws-aurora
+  envFrom:
+    secret: proxysql-with-aws-aurora
+
+  app:
+    awsAurora: # aurora common config which includes instances domain suffix
+      domain_name: .xxxxxxxxxxxx.eu-central-1.rds.amazonaws.com
+      enabled: true
+    servers:
+      - hostname: rds-aurora-with-auto-scale.cluster-xxxxxxxxxxxx.eu-central-1.rds.amazonaws.com # seed server required for Aurora integration
+        is_writer: false
+        status: SHUNNED
+        comment: Aurora
+
+    users:
+      - username: testUser
+        password: <xxxxxxxxxxxxx>
+
+    mysql:
+      monitor: # we need to enable monitor as it will be used on aws aurora auto discovery and instance write/read type identification
+        enabled: true
+        password: <xxxxxxxxxxxxx>
+        username: testUser
+    readWriteSplit: true
