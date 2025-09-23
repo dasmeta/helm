@@ -1438,6 +1438,21 @@ entries:
   proxysql:
   - apiVersion: v2
     appVersion: 2.7.3
+    created: "2025-09-23T11:13:59.881363573Z"
+    dependencies:
+    - alias: proxysql
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.14
+    description: A Helm chart for Kubernetes to deploy proxysql
+    digest: 3015372af56684d5470e20f08f7945a5ac4531efae21cce7153cd1c9a8e281d1
+    name: proxysql
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/proxysql-0.2.1/proxysql-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
+    appVersion: 2.7.3
     created: "2025-09-15T10:55:20.811172682Z"
     dependencies:
     - alias: proxysql
