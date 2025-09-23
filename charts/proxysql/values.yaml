@@ -271,7 +271,7 @@ proxysql:
       # because replication lag is pulled at regular intervals as defined in check_interval_ms and not in real time, the last measured replication lag could not be accurate. These 3 variables perform some tweaks on the last value of replication lag
       add_lag_ms: 30 # if replication lag is less than min_lag_ms, assume a read of min_lag_ms
       min_lag_ms: 30 # to any value read, add add_lag_ms.
-      lag_num_checks: 3 # if lag_num_checks is greater than 1, the current replication lag is computed as the highest of the last lag_num_checks reads.
+      lag_num_checks: 5 # if lag_num_checks is greater than 1, the current replication lag is computed as the highest of the last lag_num_checks reads.
 
   # allows to enable service monitor to scrape proxysql metrics, you have to set/enable also proxysql.extraPorts, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
   # NOTE: if you have no prometheus service monitor crds this enabling may fail to install helm
