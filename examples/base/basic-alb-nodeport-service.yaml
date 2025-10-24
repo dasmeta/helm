@@ -1,0 +1,52 @@
+# helm diff upgrade --install -n default basic-alb-nodeport-service ./charts/base/ -f ./examples/base/basic-alb-nodeport-service.yaml
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "8"
+
+service:
+  enabled: true
+  type: NodePort # important to set for alb load balancer with default configs
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 99
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 300m
+
+setIngressClassByField: true
+ingress:
+  enabled: true
+  class: alb
+  annotations:
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+  hosts:
+    - host: http-echo-basic-alb-nodeport-service.devops.dasmeta.com
+      paths:
+        - path: "/ping"
+  tls: []
