@@ -1,0 +1,55 @@
+# helm diff upgrade --install -n localhost basic-nginx-tls ./charts/base/ -f ./examples/base/basic-nginx-tls.yaml
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "8"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 99
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http
+livenessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: http
+resources:
+  requests:
+    cpu: 300m
+
+setIngressClassByField: true
+ingress:
+  enabled: true
+  class: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod # NOTE: it is supposed that cert-manager helm chart and letsencrypt-prod cluster issues are installed
+  hosts:
+    - host: basic-nginx-tls.devops.dasmeta.com
+      paths:
+        - path: "/ping"
+  tls:
+    - hosts:
+        - basic-nginx-tls.devops.dasmeta.com
+      secretName: basic-nginx-tls-devops-tls
