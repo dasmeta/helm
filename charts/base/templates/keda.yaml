@@ -1,4 +1,6 @@
 {{- if and .Values.autoscaling.enabled .Values.autoscaling.trigger }}
+{{- $triggersRaw := (coalesce .Values.autoscaling.triggers .Values.autoscaling.trigger) }}
+{{- if $triggersRaw }}
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -11,7 +13,7 @@ spec:
   minReplicaCount:  {{ .Values.autoscaling.minReplicas }}
   maxReplicaCount: {{ .Values.autoscaling.maxReplicas }}
   triggers:
-    {{- range .Values.autoscaling.trigger }}
+    {{- range (ternary $triggersRaw (list $triggersRaw) (kindIs "slice" $triggersRaw)) }}
     - type: {{ .type }}
       {{- if or .authRef .kind }}
       authenticationRef:
@@ -23,4 +25,5 @@ spec:
         {{ $key }}: "{{ $value }}"
         {{- end }}
     {{- end }}
+{{- end }}
 {{- end }}
