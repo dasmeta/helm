@@ -243,9 +243,9 @@ spread: # this option creates a default topologySpreadConstraints rule to spread
   maxSkew: 1 # defines the maximum allowed difference in the number of matching pods between any two nodes
   whenUnsatisfiable: ScheduleAnyway # by default the spread rule is not strict, so that it will provision pod by breaking the rule if there is no other way, for having the strict rule just set the value to "DoNotSchedule"
 
-# directly sets extra environment variables on pod main container, the initContainers/extraContainers listing items also support this field
+# directly sets extra environment variables on pod main container, variable format is map in form {env-name}:{env-value}, the initContainers/extraContainers listing items also support this field
 # NOTE: there are predefined(set internally by default) POD_IP, HELM_CHART_NAME, HELM_CHART_VERSION, HELM_CHART_APP_VERSION and HELM_RELEASE_NAME env items, which are possible to override by passing extraEnv item for the item
-# extraEnv: {}
+extraEnv: {}
 ## example with some possible ways to use extraEnv
 # extraEnv:
 #   MY_CUSTOM_ENV_KEY1: MY_CUSTOM_ENV_VALUE1
