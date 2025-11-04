@@ -326,3 +326,17 @@ Returns extraContainers secret volume configs object/dict as yaml
 {{- end -}}
 {{- (dict "data" $secretVolumes) | toYaml -}}
 {{- end -}}
+
+{{/*
+Returns predefined list of env variables to pass to all containers
+*/}}
+{{- define "base.predefinedEnvVariables" -}}
+HELM_CHART_NAME: {{ .Chart.Name }}
+HELM_CHART_VERSION: {{ .Chart.Version }}
+HELM_CHART_APP_VERSION: {{ .Chart.AppVersion }}
+HELM_RELEASE_NAME: {{ .Release.Name }}
+POD_IP:
+  valueFrom:
+    fieldRef:
+      fieldPath: status.podIP
+{{- end -}}
