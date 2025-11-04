@@ -59,8 +59,7 @@ podAnnotations: {}
 podSecurityContext: {}
 # fsGroup: 2000
 
-securityContext:
-  {}
+securityContext: {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -198,8 +197,7 @@ extraContainers: [] # both `extraContainer` and `extraContainers` similarly can 
 #     extraEnv:
 #       NGINX_PORT: 8083
 
-resources:
-  {}
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -245,6 +243,30 @@ spread: # this option creates a default topologySpreadConstraints rule to spread
   maxSkew: 1 # defines the maximum allowed difference in the number of matching pods between any two nodes
   whenUnsatisfiable: ScheduleAnyway # by default the spread rule is not strict, so that it will provision pod by breaking the rule if there is no other way, for having the strict rule just set the value to "DoNotSchedule"
 
+# directly sets extra environment variables on pod main container, variable format is map in form {env-name}:{env-value}, the initContainers/extraContainers listing items also support this field
+# NOTE: there are predefined(set internally by default) POD_IP, HELM_CHART_NAME, HELM_CHART_VERSION, HELM_CHART_APP_VERSION and HELM_RELEASE_NAME env items, which are possible to override by passing extraEnv item for the item
+extraEnv: {}
+## example with some possible ways to use extraEnv
+# extraEnv:
+#   MY_CUSTOM_ENV_KEY1: MY_CUSTOM_ENV_VALUE1
+#   MY_CUSTOM_ENV_KEY2: MY_CUSTOM_ENV_VALUE2
+#   MY_CUSTOM_ENV_KEY3:
+#     valueFrom: # this middle field can be omitted and only nested part can be passed as shown in next env item
+#       configMapKeyRef:
+#         name: app-config-map
+#         key: MY_CUSTOM_ENV_KEY3_IN_CONFIG_MAP
+#   MY_CUSTOM_ENV_KEY4:
+#     configMapKeyRef:
+#       name: app-config-map
+#       key: MY_CUSTOM_ENV_KEY4_IN_CONFIG_MAP
+#   MY_CUSTOM_ENV_KEY5:
+#     secretKeyRef:
+#       name: app-secret
+#       key: MY_CUSTOM_ENV_KEY4_IN_SECRET
+#   MY_CUSTOM_ENV_KEY6:
+#       fieldRef:
+#         fieldPath: spec.nodeName
+
 # configs that will be placed into config maps and be used as env variable or mounted as file in container, NOTE: do not place secret values here, use instead secrets config
 config: {} # old/deprecated way to pass configs, still supported
 configs: {} # the new way to pass configs
@@ -270,8 +292,7 @@ containerPort: 80
 #     containerPort: 8080
 #     protocol: TCP
 
-livenessProbe:
-  {}
+livenessProbe: {}
   # failureThreshold: 3
   # httpGet:
   #   path: /
@@ -282,8 +303,7 @@ livenessProbe:
   # successThreshold: 1
 # timeoutSeconds: 1
 
-readinessProbe:
-  {}
+readinessProbe: {}
   # httpGet:
   #   path: /
   #   port: http
@@ -293,14 +313,12 @@ readinessProbe:
 envFrom:
   secret:
 
-startupProbe:
-  {}
+startupProbe: {}
   # httpGet:
   #   path: /
 #   port: http
 
-storage:
-  {}
+storage: {}
   # - persistentVolumeClaimName: "pvc-1"
   #   accessModes:
   #     - ReadWriteMany

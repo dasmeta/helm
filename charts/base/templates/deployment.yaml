@@ -79,11 +79,14 @@ spec:
           {{- with $initContainer.args }}
           args: {{ toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or $initContainer.extraEnv $initContainer.secrets}}
           env:
-          {{- range $key, $value := $initContainer.extraEnv }}
+          {{- range $key, $value := (merge (deepCopy ($initContainer.extraEnv | default dict)) (include "base.predefinedEnvVariables" $ | fromYaml)) }}
           - name: {{ $key | quote}}
+            {{- if kindIs "map" $value }}
+            valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 14 }}
+            {{- else }}
             value: {{ $value | quote }}
+            {{- end }}
           {{- end }}
           {{- range $secret := $initContainer.secrets }}
           {{- if ne (kindOf $secret) "string" }}
@@ -93,7 +96,6 @@ spec:
               secretKeyRef:
                 key: {{ $map_value.key }}
                 name: {{ $map_value.from }}
-          {{- end }}
           {{- end }}
           {{- end }}
           {{- end }}
@@ -134,11 +136,14 @@ spec:
           {{- with $.Values.args }}
           args: {{ toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or .Values.extraEnv .Values.secrets}}
           env:
-            {{- range $key, $value := .Values.extraEnv }}
+            {{- range $key, $value := (merge (deepCopy (.Values.extraEnv | default dict)) (include "base.predefinedEnvVariables" $ | fromYaml)) }}
             - name: {{ $key | quote}}
+              {{- if kindIs "map" $value }}
+              valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 16 }}
+              {{- else }}
               value: {{ $value | quote }}
+              {{- end }}
             {{- end }}
             {{- range $secret := .Values.secrets }}
             {{- if ne (kindOf $secret) "string" }}
@@ -159,7 +164,6 @@ spec:
                   name: {{ include "base.fullname" $ }}
             {{- end }}
             {{- end }}
-          {{- end }}
           {{- if .Values.service.enabled }}
           ports:
             - name: http
@@ -246,11 +250,14 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
-          {{- if or $extraContainer.extraEnv $extraContainer.secrets}}
           env:
-          {{- range $key, $value := $extraContainer.extraEnv }}
+          {{- range $key, $value := (merge ($extraContainer.extraEnv | default dict) (include "base.predefinedEnvVariables" $ | fromYaml)) }}
           - name: {{ $key | quote}}
+            {{- if kindIs "map" $value }}
+            valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 14 }}
+            {{- else }}
             value: {{ $value | quote }}
+            {{- end }}
           {{- end }}
           {{- range $secret := $extraContainer.secrets }}
           {{- if ne (kindOf $secret) "string" }}
@@ -271,7 +278,6 @@ spec:
                   name: {{ include "base.fullname" $ }}
             {{- end }}
           {{- end }}
-        {{- end }}
           {{- if $extraContainer.livenessProbe }}
           livenessProbe:
             {{- toYaml $extraContainer.livenessProbe | nindent 12 }}
