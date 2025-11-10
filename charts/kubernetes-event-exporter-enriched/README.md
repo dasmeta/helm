@@ -19,7 +19,7 @@ This Helm chart deploys a lightweight Node.js service that enriches Kubernetes `
 ```bash
 helm repo add dasmeta https://dasmeta.github.io/helm
 helm install kubernetes-events-exporter-enriched dasmeta/kubernetes-events-exporter-enriched \
-  --version 0.1.1 \
+  --version 0.1.2 \
   --namespace kubernetes-event-exporter \
   --set webhookEndpoint="https://n8n.example.com/webhook/k8s-events"
 ```
