@@ -1,0 +1,1 @@
+## example on how the dasmeta/base helm chart can be used in terraform/opentofu project
