@@ -1325,6 +1325,21 @@ entries:
   kubernetes-events-exporter-enriched:
   - apiVersion: v2
     appVersion: 0.0.5
+    created: "2025-11-10T06:50:42.403116601Z"
+    dependencies:
+    - name: kubernetes-event-exporter
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 3.6.0
+    description: Enriches Kubernetes events with full resource data and forwards them
+      to a webhook.
+    digest: e81a33383ad75511a3aaaee603bfe30870061f877aa97a2e7abd96cc723344fe
+    name: kubernetes-events-exporter-enriched
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/kubernetes-events-exporter-enriched-0.1.2/kubernetes-events-exporter-enriched-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 0.0.5
     created: "2025-08-26T11:01:20.846886506Z"
     dependencies:
     - name: kubernetes-event-exporter
