@@ -1,4 +1,4 @@
-# helm diff upgrade --install -n localhost with-extra-container ./charts/base/ -f ./examples/base/with-extra-container.yaml
+# helm diff upgrade --install -n localhost basic ./charts/base/ -f ./examples/base/with-keda-multiple-triggers.yaml
 
 image:
   repository: mendhak/http-https-echo
@@ -17,15 +17,7 @@ autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 5
-  triggers:
-    - type: cpu
-      metadata:
-        type: Utilization
-        value: "80"
-    - type: memory
-      metadata:
-        type: Utilization
-        value: "75"
+  targetCPUUtilizationPercentage: 99
 
 pdb:
   enabled: true
@@ -52,18 +44,6 @@ ingress:
   enabled: true
   class: nginx
   hosts:
-    - host: with-extra-container.localhost
+    - host: http-echo-basic.localhost
       paths:
         - path: "/ping"
-
-extraContainer:
-  - name: extra-http-echo
-    containerPort: 8081
-    service:
-      enabled: true
-    image:
-      repository: mendhak/http-https-echo
-      tag: 33
-    extraEnv:
-      HTTP_PORT: 8180
-      HTTPS_PORT: 8543
