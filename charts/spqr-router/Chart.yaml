@@ -12,5 +12,5 @@ appVersion: "2.8.0"
 dependencies:
   - name: base
     alias: spqr
-    version: 0.3.11
+    version: 0.3.15
     repository: https://dasmeta.github.io/helm
