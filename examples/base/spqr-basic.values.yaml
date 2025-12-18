@@ -1,0 +1,13 @@
+spqr:
+  replicaCount: 1
+
+  image:
+    repository: pgsharding/spqr-router
+    tag: "2.8.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 7432
+
+

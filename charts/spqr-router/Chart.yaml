@@ -1,0 +1,18 @@
+apiVersion: v2
+name: spqr-router
+description: Stateless Postgres Query Router (SPQR) Helm chart using dasmeta/base.
+type: application
+
+# Chart version – bump on any chart change
+version: 0.1.0
+
+# Upstream application version (SPQR router)
+appVersion: "2.8.0"
+
+dependencies:
+  - name: base
+    alias: spqr
+    version: 0.3.11
+    repository: https://dasmeta.github.io/helm
+
+

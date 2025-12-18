@@ -1,0 +1,21 @@
+spqr:
+  replicaCount: 2
+
+  image:
+    repository: pgsharding/spqr-router
+    tag: "2.8.0"
+
+  service:
+    type: ClusterIP
+    port: 7432
+
+routerConfig:
+  listen_addr: "0.0.0.0:7432"
+  admin_addr: "0.0.0.0:7433"
+  # shards:
+  #   - name: shard1
+  #     db:
+  #       host: "postgres-1"
+  #       port: 5432
+  #       user: "spqr"
+  #       password: "spqr"

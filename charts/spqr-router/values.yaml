@@ -1,0 +1,85 @@
+spqr:
+  # Base chart settings passed to the dependency chart `base` via alias "spqr"
+  replicaCount: 1
+
+  image:
+    repository: pgsharding/spqr-router
+    tag: "2.8.0"
+
+  containerPort: 7432
+
+  service:
+    port: 7432
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  podAnnotations: {}
+
+  # Liveness and readiness probes – basic TCP checks on Postgres protocol port
+  livenessProbe:
+    tcpSocket:
+      port: 7432
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    tcpSocket:
+      port: 7432
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    successThreshold: 1
+    failureThreshold: 3
+
+  # Attach generated configmap (see templates/configmap.yaml) to the router pod.
+  # NOTE: set configMap.name equal to release name (same pattern as proxysql chart).
+  volumes:
+    - name: spqr-router-config
+      mountPath: /config/router.yaml
+      subPath: router.yaml
+      readOnly: true
+      configMap:
+        name: spqr-router
+
+  # Environment variable pointing router to config file path above.
+  # If the image has a suitable default you can safely disable/remove this.
+  extraEnv:
+    - name: SPQR_ROUTER_CONFIG
+      value: /config/router.yaml
+
+##
+## SPQR router configuration (root-level, rendered into ConfigMap)
+## This is the full set of config values that end up in router.yaml.
+##
+
+routerConfig:
+  # Address where SPQR router listens for Postgres protocol connections
+  listen_addr: "0.0.0.0:7432"
+
+  # Example admin endpoint (uncomment and adjust if needed)
+  # admin_addr: "0.0.0.0:7433"
+
+  # Example shards configuration – replace with your real topology
+  # shards:
+  #   - name: shard1
+  #     db:
+  #       host: "postgres-1"
+  #       port: 5432
+  #       user: "spqr"
+  #       password: "spqr"
+  #   - name: shard2
+  #     db:
+  #       host: "postgres-2"
+  #       port: 5432
+  #       user: "spqr"
+  #       password: "spqr"
+
