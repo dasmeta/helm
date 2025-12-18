@@ -116,5 +116,3 @@ helm upgrade --install spqr-router dasmeta/spqr-router -f spqr-with-config.value
 ## Notes
 
 - This chart only provides the router component. You are expected to provision PostgreSQL instances / shards and SPQR coordinator/balancer components separately according to the official SPQR documentation at `https://github.com/pg-sharding/spqr`.
-
-

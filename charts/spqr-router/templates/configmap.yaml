@@ -5,5 +5,3 @@ metadata:
 data:
   router.yaml: |
     {{- toYaml .Values.routerConfig | nindent 4 }}
-
-

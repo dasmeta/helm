@@ -4,7 +4,7 @@ spqr:
 
   image:
     repository: pgsharding/spqr-router
-    tag: "2.8.0"
+    tag: "nightly-2.8.3-1839-f66048d8"
 
   containerPort: 7432
 
@@ -44,17 +44,16 @@ spqr:
   # NOTE: set configMap.name equal to release name (same pattern as proxysql chart).
   volumes:
     - name: spqr-router-config
-      mountPath: /config/router.yaml
+      mountPath: /etc/spqr/router.yaml
       subPath: router.yaml
       readOnly: true
       configMap:
         name: spqr-router
-
-  # Environment variable pointing router to config file path above.
-  # If the image has a suitable default you can safely disable/remove this.
-  extraEnv:
-    - name: SPQR_ROUTER_CONFIG
-      value: /config/router.yaml
+    # Memory-backed volume for Postgres/Unix socket directory
+    - name: spqr-run
+      mountPath: /var/run/postgresql
+      emptyDir:
+        medium: Memory
 
 ##
 ## SPQR router configuration (root-level, rendered into ConfigMap)
@@ -62,6 +61,10 @@ spqr:
 ##
 
 routerConfig:
+  router_mode: PROXY # PROXY, LOCAL, COORDINATOR
+  router_port: 7432
+  unix_socket_dir: "/tmp"
+
   # Address where SPQR router listens for Postgres protocol connections
   listen_addr: "0.0.0.0:7432"
 
@@ -82,4 +85,3 @@ routerConfig:
   #       port: 5432
   #       user: "spqr"
   #       password: "spqr"
-
