@@ -1,0 +1,87 @@
+spqr:
+  # Base chart settings passed to the dependency chart `base` via alias "spqr"
+  replicaCount: 1
+
+  image:
+    repository: pgsharding/spqr-router
+    tag: "nightly-2.8.3-1839-f66048d8"
+
+  containerPort: 7432
+
+  service:
+    port: 7432
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  podAnnotations: {}
+
+  # Liveness and readiness probes – basic TCP checks on Postgres protocol port
+  livenessProbe:
+    tcpSocket:
+      port: 7432
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    tcpSocket:
+      port: 7432
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    successThreshold: 1
+    failureThreshold: 3
+
+  # Attach generated configmap (see templates/configmap.yaml) to the router pod.
+  # NOTE: set configMap.name equal to release name (same pattern as proxysql chart).
+  volumes:
+    - name: spqr-router-config
+      mountPath: /etc/spqr/router.yaml
+      subPath: router.yaml
+      readOnly: true
+      configMap:
+        name: spqr-router
+    # Memory-backed volume for Postgres/Unix socket directory
+    - name: spqr-run
+      mountPath: /var/run/postgresql
+      emptyDir:
+        medium: Memory
+
+##
+## SPQR router configuration (root-level, rendered into ConfigMap)
+## This is the full set of config values that end up in router.yaml.
+##
+
+routerConfig:
+  router_mode: PROXY # PROXY, LOCAL, COORDINATOR
+  router_port: 7432
+  unix_socket_dir: "/tmp"
+
+  # Address where SPQR router listens for Postgres protocol connections
+  listen_addr: "0.0.0.0:7432"
+
+  # Example admin endpoint (uncomment and adjust if needed)
+  # admin_addr: "0.0.0.0:7433"
+
+  # Example shards configuration – replace with your real topology
+  # shards:
+  #   - name: shard1
+  #     db:
+  #       host: "postgres-1"
+  #       port: 5432
+  #       user: "spqr"
+  #       password: "spqr"
+  #   - name: shard2
+  #     db:
+  #       host: "postgres-2"
+  #       port: 5432
+  #       user: "spqr"
+  #       password: "spqr"
