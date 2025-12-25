@@ -1,0 +1,13 @@
+{{- /* Always create the TLS ConfigMap to avoid volume mount failures. It will be empty if TLS is not configured. */ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "base.fullname" . }}-tls
+data:
+  {{- if .Values.pgcat.app.tls.client_cert }}
+  client-cert.pem: {{ .Values.pgcat.app.tls.client_cert | quote }}
+  {{- end }}
+  {{- if .Values.pgcat.app.tls.client_key }}
+  client-key.pem: {{ .Values.pgcat.app.tls.client_key | quote }}
+  {{- end }}
+

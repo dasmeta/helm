@@ -1,0 +1,217 @@
+pgcat:
+  # base chart configs start
+  podAnnotations:
+    app.config/checksum: v1 # Use this value to apply config version update, so that each time you did a change in pgcat.* config to apply the change immediately you can increase version here(or overwise the change will not be applied and you need to restart deployment to apply)
+    # prometheus.io/scrape: "true" # enable in case you have prometheus which scrapes pods based to this annotations, it is possible also to enable metric scrapping by using pgcat.serviceMonitor or podMonitor configs. just one scrapping config is enough to be enabled
+    # prometheus.io/port: "9930"
+
+  image:
+    repository: ghcr.io/postgresml/pgcat
+    tag: v1.2.0
+    pullPolicy: IfNotPresent
+
+  replicaCount: 2
+  autoscaling: # we enable auto scaling for pgcat by default
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  service:
+    type: ClusterIP
+    port: 6432 # Default PgCat port (matches general.port default)
+    extraPorts:
+      - port: 9930 # metrics port
+        targetPort: 9930
+        protocol: TCP
+        name: metrics
+
+  setIngressClassByField: true
+  ingress:
+    enabled: false
+    class: nginx
+    annotations: {}
+    hosts:
+      - host: pgcat.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 5432
+    tls: []
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  startupProbe:
+    tcpSocket:
+      port: 6432
+    failureThreshold: 30
+    periodSeconds: 5
+  readinessProbe:
+    httpGet:
+      path: /metrics
+      port: 9930
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  livenessProbe:
+    tcpSocket:
+      port: 6432
+    periodSeconds: 10
+    failureThreshold: 3
+
+  secretsDefaultEngine: disabled
+
+  containerPort: 6432
+
+  podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: 999
+    runAsUser: 999
+    runAsGroup: 999
+
+  volumes:
+    - name: pgcat-config
+      mountPath: /etc/pgcat.toml
+      subPath: pgcat.toml
+      readOnly: true
+      configMap:
+        name: pgcat # NOTE: set this value same as release name
+    # TLS volume - uncomment when using TLS certificates (tls.client_cert and tls.client_key)
+    # The pgcat-tls ConfigMap is always created, so this volume mount is safe to enable
+    # - name: pgcat-tls
+    #   mountPath: /etc/pgcat/tls
+    #   readOnly: true
+    #   configMap:
+    #     name: pgcat-tls # NOTE: set this value based on release name by using pattern "{release-name}-tls"
+
+  envFrom:
+    secret: pgcat # NOTE: set this value same as release name
+
+  # Command to run pgcat with config file
+  command:
+    - pgcat
+  args:
+    - /etc/pgcat.toml
+
+  # have 2 minutes graceful termination time so that when pod termination starts(for example because of spot termination) we having enough time to get active connections closed
+  terminationGracePeriodSeconds: 120
+
+  # pgcat app specific configs
+  app:
+    # base chart configs end and pgcat specific configs start
+    # General pgcat configuration - see https://github.com/postgresml/pgcat/blob/main/CONFIG.md
+    general:
+      host: "0.0.0.0" # IP to run on, 0.0.0.0 means accessible from everywhere
+      port: 6432 # Port to run on (default: 6432, same as PgBouncer)
+      enable_prometheus_exporter: true # Whether to enable prometheus exporter
+      prometheus_exporter_port: 9930 # Port at which prometheus exporter listens
+      connect_timeout: 5000 # How long the client waits to obtain a server connection before aborting (ms)
+      idle_timeout: 30000 # How long an idle connection with a server is left open (ms)
+      server_lifetime: 86400000 # Max connection lifetime before it's closed, even if actively used (ms, default: 24 hours)
+      server_round_robin: false # Whether to use round robin for server selection
+      server_tls: false # Whether to use TLS for server connections
+      verify_server_certificate: false # Whether to verify server certificate
+      verify_config: true # Whether to verify config
+      idle_client_in_transaction_timeout: 0 # How long a client is allowed to be idle while in a transaction (ms, 0 = disabled)
+      healthcheck_timeout: 5000 # How much time to give the health check query to return with a result (ms)
+      healthcheck_delay: 30000 # How long to keep connection available for immediate re-use, without running a healthcheck query on it (ms)
+      shutdown_timeout: 60000 # How much time to give clients during shutdown before forcibly killing client connections (ms)
+      ban_time: 60 # How long to ban a server if it fails a health check (seconds)
+      log_client_connections: false # If we should log client connections
+      log_client_disconnections: false # If we should log client disconnections
+      autoreload: 15000 # When set, PgCat automatically reloads its configurations at the specified interval (ms, default: 15 seconds)
+      worker_threads: 5 # Number of worker threads the Runtime will use
+      tcp_keepalives_idle: 5 # Number of seconds of connection idleness to wait before sending a keepalive packet to the server
+      tcp_keepalives_count: 5 # Number of unacknowledged keepalive packets allowed before giving up and closing the connection
+      tcp_keepalives_interval: 5 # Interval between keepalive packets (seconds)
+      tcp_user_timeout: 10000 # Amount of time in milliseconds that transmitted data may remain unacknowledged before TCP will forcibly disconnect (Linux only)
+      tls_certificate: "" # Path to TLS Certificate file to use for TLS connections (e.g., "server.cert")
+      tls_private_key: "" # Path to TLS private key file to use for TLS connections (e.g., "server.key")
+      admin_username: "admin_user" # User name to access the virtual administrative database
+      admin_password: "admin_pass" # Password to access the virtual administrative database
+      auth_query: "" # Query to be sent to servers to obtain the hash used for md5 authentication (e.g., "SELECT $1")
+      auth_query_user: "" # User to be used for connecting to servers to obtain the hash used for md5 authentication
+      auth_query_password: "" # Password to be used for connecting to servers to obtain the hash used for md5 authentication
+      dns_cache_enabled: false # When enabled, ip resolutions for server connections specified using hostnames will be cached
+      dns_max_ttl: 30 # Specifies how often (in seconds) cached ip addresses for servers are rechecked
+      prepared_statements_cache_size: 0 # Size of the prepared statements cache. 0 means disabled
+
+    # Pools configuration - see https://github.com/postgresml/pgcat/blob/main/CONFIG.md
+    # Pools are defined as a map where keys are pool names
+    pools:
+      {}
+      # Example pool configuration:
+      # myapp:
+      #   pool_mode: "session" # Pool mode: session, transaction (default: "transaction")
+      #   load_balancing_mode: "random" # Load balancing mode: random, loc (default: "random")
+      #   checkout_failure_limit: 0 # Maximum number of checkout failures a client is allowed before it gets disconnected (0 = disabled)
+      #   default_role: "replica" # Default role: any, replica, primary (default: "any")
+      #   db_activity_based_routing: false # Route queries to primary if the queried table was recently written to (experimental)
+      #   db_activity_based_ms_init_delay: 100 # Delay in milliseconds before the first activity-based routing check
+      #   db_activity_ttl: 900 # Time in seconds after which a DB is considered inactive
+      #   table_mutation_cache_ms_ttl: 50 # Time in milliseconds after a write to a table that all queries to that table will be routed to the primary
+      #   query_parser_enabled: true # If Query Parser is enabled, we'll attempt to parse every incoming query to determine if it's a read or a write
+      #   primary_reads_enabled: false # If enabled, the primary will be part of the pool of databases used for load balancing of read queries
+      #   sharding_key_regex: "" # Allow sharding commands to be passed as statement comments (e.g., '/\* sharding_key: (\d+) \*/')
+      #   sharding_function: "pg_bigint_hash" # Sharding function: pg_bigint_hash, sha1
+      #   auth_query: "" # Query to be sent to servers to obtain the hash used for md5 authentication (inherits from general if not set)
+      #   auth_query_user: "" # User for auth query (inherits from general if not set)
+      #   auth_query_password: "" # Password for auth query (inherits from general if not set)
+      #   automatic_sharding_key: "" # Automatically parse this from queries and route queries to the right shard (e.g., "data.id")
+      #   idle_timeout: 40000 # Idle timeout can be overwritten in the pool (ms)
+      #   connect_timeout: 3000 # Connect timeout can be overwritten in the pool (ms)
+      #   
+      #   # Users for this pool - array of user configurations
+      #   users:
+      #     - username: "app_user" # PostgreSQL username used to authenticate the user
+      #       password: "app_password" # PostgreSQL password used to authenticate the user
+      #       server_username: "" # PostgreSQL username used to connect to the server (if different from username)
+      #       server_password: "" # PostgreSQL password used to connect to the server (if different from password)
+      #       pool_size: 9 # Maximum number of server connections that can be established for this user
+      #       min_pool_size: 0 # Minimum number of idle server connections to retain for this pool
+      #       statement_timeout: 0 # Maximum query duration (ms, 0 = disabled)
+      #       connect_timeout: "" # How long the client waits to obtain a server connection before aborting (ms, inherits from pool/general if unset)
+      #   
+      #   # Shards for this pool - array of shard configurations
+      #   shards:
+      #     - database: "myapp" # Database name (e.g., "postgres")
+      #       servers: # Array of servers in the shard, each server entry is [host, port, role]
+      #         - ["postgres-primary.example.com", 5432, "primary"]
+      #         - ["postgres-replica-1.example.com", 5432, "replica"]
+      #         - ["postgres-replica-2.example.com", 5432, "replica"]
+      #       mirrors: [] # Array of mirrors for the shard, each mirror entry is [host, port, index of server in servers array]
+
+    # TLS certificate content (for mounting as files)
+    # These are used when tls_certificate and tls_private_key are set in general section
+    tls:
+      client_cert: "" # TLS certificate content for client connections (will be mounted if tls_certificate is set)
+      client_key: "" # TLS private key content for client connections (will be mounted if tls_private_key is set)
+
+  # allows to enable service monitor to scrape pgcat metrics, you have to set/enable also pgcat.extraPorts, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
+  # NOTE: if you have no prometheus service monitor crds this enabling may fail to install helm
+  serviceMonitor:
+    enabled: false
+    targetPort: 9930
+
+  ## in case you use serviceMonitor or podMonitor for prometheus metric scrapping you have to also enable container metric port by uncommenting the following extraPorts configs
+  # extraPorts:
+  #   - name: metrics
+  #     containerPort: 9930
+  #     protocol: TCP
+
+# prometheus pod monitor configs to enable prometheus auto discovery find and scrape pgcat metrics, you have to set/enable also pgcat.extraPorts, there is also possibility to do the same by just using "prometheus.io/*" annotations or pgcat.serviceMonitor configs. just one scrapping config is enough to be enabled
+# NOTE: if you have no prometheus pod monitor crds this enabling may fail to install helm
+podMonitor:
+  enabled: false
+  targetPort: 9930
+
+# this ones are inherited from base chart, we need them just for not getting errors when using define templates from base chart
+nameOverride: ""
+fullnameOverride: ""
