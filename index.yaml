@@ -1461,6 +1461,22 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/nfs-provisioner-1.0.0/nfs-provisioner-1.0.0.tgz
     version: 1.0.0
+  pgcat:
+  - apiVersion: v2
+    appVersion: 1.2.0
+    created: "2025-12-26T13:51:57.258377263Z"
+    dependencies:
+    - alias: pgcat
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.14
+    description: A Helm chart for Kubernetes to deploy pgcat
+    digest: f1a104096559d34dcc1f4bea99fc25965706b9d128e6369610243b7dc9cbbbe8
+    name: pgcat
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/pgcat-0.1.0/pgcat-0.1.0.tgz
+    version: 0.1.0
   proxysql:
   - apiVersion: v2
     appVersion: 2.7.3
