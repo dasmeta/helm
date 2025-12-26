@@ -1,0 +1,44 @@
+# helm diff upgrade --install -n localhost pgcat-minimal ./charts/pgcat/ -f ./examples/pgcat/pgcat-minimal.values.yaml
+# Minimal PgCat configuration with read/write splitting
+# See https://github.com/postgresml/pgcat/blob/main/CONFIG.md for full documentation
+
+pgcat:
+  podAnnotations:
+    app.config/checksum: v1
+  volumes:
+    - name: pgcat-config
+      mountPath: /etc/pgcat.toml
+      subPath: pgcat.toml
+      readOnly: true
+      configMap:
+        name: pgcat-minimal
+  envFrom:
+    secret: pgcat-minimal
+
+  app:
+    general:
+      port: 6432 # PgCat default port (same as PgBouncer)
+      admin_username: "admin_user"
+      admin_password: "admin_pass"
+
+    pools:
+      myapp:
+        pool_mode: "session"
+        load_balancing_mode: "random"
+        default_role: "replica" # Routes to any server (primary or replica)
+        query_parser_enabled: true # Enable read/write splitting
+        primary_reads_enabled: false # Allow reads on primary
+        
+        users:
+          - username: "app_user"
+            password: "app_password"
+            pool_size: 9
+        
+        shards:
+          - database: "myapp"
+            servers:
+              # Primary server
+              - ["postgres-primary.example.com", 5432, "primary"]
+              # Replica servers
+              - ["postgres-replica-1.example.com", 5432, "replica"]
+              - ["postgres-replica-2.example.com", 5432, "replica"]
