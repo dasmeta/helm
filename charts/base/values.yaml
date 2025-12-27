@@ -216,17 +216,34 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
 
 # If you want scale deployment depends on AWS SQS queue size
+# Example: single trigger (deprecated but still supported)
+
 # autoscaling:
 #   enabled: true
 #   minReplicas: 1
 #   maxReplicas: 3
-#   targetCPUUtilizationPercentage: 80
 #   trigger:
 #     type: aws-sqs-queue
 #     metadata:
 #       queueURL: https://sqs.eu-central-1.amazonaws.com/<account-id>/<sqs-name>
 #       queueLength: 3
 #       awsRegion: "eu-central-1"
+
+# Example: multiple triggers
+# autoscaling:
+#   enabled: true
+#   minReplicas: 1
+#   maxReplicas: 3
+#   triggers:
+#     - type: aws-sqs-queue
+#       metadata:
+#         queueURL: https://sqs.eu-central-1.amazonaws.com/<account-id>/<sqs-name>
+#         queueLength: "3"
+#         awsRegion: "eu-central-1"
+#     - type: cpu
+#       metadata:
+#         type: Utilization
+#         value: "80"
 
 nodeSelector: {}
 
