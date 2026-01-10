@@ -157,11 +157,6 @@ pgcat:
     - pgcat
   args:
     - /etc/pgcat/pgcat.toml
-  # command:
-  #   - tail
-  # args:
-  #   - -f
-  #   - /dev/null
 
   # have 2 minutes graceful termination time so that when pod termination starts(for example because of spot termination) we having enough time to get active connections closed
   terminationGracePeriodSeconds: 120
