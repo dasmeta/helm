@@ -5,39 +5,41 @@
 pgcat:
   podAnnotations:
     app.config/checksum: v1
-  volumes:
-    - name: pgcat-config
-      mountPath: /etc/pgcat.toml
-      subPath: pgcat.toml
-      readOnly: true
-      configMap:
-        name: pgcat-minimal
-  envFrom:
-    secret: pgcat-minimal
+
+  # Provide environment variables for password substitution
+  # The init container will replace __VAR_NAME__ placeholders with $VAR_NAME env var values
+  secrets:
+    - MY_APP_PASSWORD  # This env var will substitute __MY_APP_PASSWORD__ in the config
+  # Alternative: use envFrom to load from an existing secret
+  # envFrom:
+  #   - secretRef:
+  #       name: my-existing-secret
 
   app:
     general:
       port: 6432 # PgCat default port (same as PgBouncer)
       admin_username: "admin_user"
-      admin_password: "admin_pass"
+      admin_password: "admin_pass"  # Provided as PGCAT_ADMIN_PASSWORD env var (managed by chart)
 
     pools:
       myapp:
-        pool_mode: "session"
+        pool_mode: "transaction"
         load_balancing_mode: "random"
-        default_role: "replica" # Routes to any server (primary or replica)
+        default_role: "any" # Routes to any server (primary or replica)
         query_parser_enabled: true # Enable read/write splitting
-        primary_reads_enabled: false # Allow reads on primary
+        primary_reads_enabled: true # Allow reads on primary
         
         users:
           - username: "app_user"
-            password: "app_password"
+            # Use __VAR_NAME__ format - init container will replace with $VAR_NAME env var
+            # Make sure MY_APP_PASSWORD is provided via secrets or envFrom above
+            password: "__MY_APP_PASSWORD__"
             pool_size: 9
         
         shards:
           - database: "myapp"
             servers:
-              # Primary server
+              # Primary server - format: [host, port, role]
               - ["postgres-primary.example.com", 5432, "primary"]
               # Replica servers
               - ["postgres-replica-1.example.com", 5432, "replica"]
