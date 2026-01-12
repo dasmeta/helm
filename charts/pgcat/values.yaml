@@ -77,12 +77,23 @@ pgcat:
     runAsGroup: 999
 
   volumes:
-    - name: pgcat-config
-      mountPath: /etc/pgcat.toml
-      subPath: pgcat.toml
+    # ConfigMap volume for config template - init container reads from this
+    - name: pgcat-config-template
+      mountPath: /tmp/config-template
       readOnly: true
       configMap:
-        name: pgcat # NOTE: set this value same as release name
+        name: pgcat-template
+    # ConfigMap volume for init script - init container uses this
+    - name: init-script
+      mountPath: /tmp/init-script
+      readOnly: true
+      configMap:
+        name: pgcat-init-script # NOTE: set this value based on release name by using pattern "{release-name}-init-script"
+    # Processed config volume (emptyDir) - init container writes processed config here, main container reads from here
+    - name: pgcat-config-processed
+      mountPath: /etc/pgcat
+      readOnly: true
+      emptyDir: {}
     # TLS volume - uncomment when using TLS certificates (tls.client_cert and tls.client_key)
     # The pgcat-tls ConfigMap is always created, so this volume mount is safe to enable
     # - name: pgcat-tls
@@ -91,6 +102,53 @@ pgcat:
     #   configMap:
     #     name: pgcat-tls # NOTE: set this value based on release name by using pattern "{release-name}-tls"
 
+  # Init container to process config template with secrets
+  # The init container script is generated in pgcat-init-container.yaml template
+  # It will interpolate ALL environment variables that match placeholders in the format {{VAR_NAME}}
+  # 
+  # How it works:
+  # 1. ConfigMap contains template with placeholders like {{ADMIN_PASSWORD}}, {{USER_PASSWORD_myapp_0}}, etc.
+  # 2. Secret contains environment variables (ADMIN_PASSWORD, USER_PASSWORD_myapp_0, etc.)
+  # 3. Init container reads template, replaces ALL {{VAR_NAME}} placeholders with $VAR_NAME values
+  # 4. Processed config is written to shared emptyDir volume for main container
+  #
+  # To add custom credentials:
+  # - Add them to the secret (they'll be available as environment variables)
+  # - Use {{VAR_NAME}} format in the ConfigMap template
+  # - The init container will automatically interpolate them
+  initContainers:
+    - name: pgcat-config-processor
+      image:
+        repository: busybox
+        tag: latest
+        pullPolicy: IfNotPresent
+      command:
+        - /bin/sh
+        - /scripts/process-config.sh
+        - /config-template/pgcat.toml
+        - /config-processed/pgcat.toml
+      envFrom:
+        - secretRef:
+            name: pgcat
+        - configMapRef:
+            name: pgcat
+      # Base chart will also make secrets available via its secret management
+      # All environment variables (from secrets or other sources) will be available to the init container
+      volumes:
+        - name: pgcat-config-template
+          mountPath: /config-template
+          readOnly: true
+          configMap:
+            name: pgcat-template # NOTE: set this value same as release name
+        - name: pgcat-config-processed
+          mountPath: /config-processed
+          # emptyDir is defined in main volumes section above
+        - name: init-script
+          mountPath: /scripts
+          readOnly: true
+          configMap:
+            name: pgcat-init-script # NOTE: set this value based on release name by using pattern "{release-name}-init-script"
+
   envFrom:
     secret: pgcat # NOTE: set this value same as release name
 
@@ -98,7 +156,7 @@ pgcat:
   command:
     - pgcat
   args:
-    - /etc/pgcat.toml
+    - /etc/pgcat/pgcat.toml
 
   # have 2 minutes graceful termination time so that when pod termination starts(for example because of spot termination) we having enough time to get active connections closed
   terminationGracePeriodSeconds: 120
@@ -171,9 +229,10 @@ pgcat:
       #   # Users for this pool - array of user configurations
       #   users:
       #     - username: "app_user" # PostgreSQL username used to authenticate the user
-      #       password: "app_password" # PostgreSQL password used to authenticate the user
+      #       password_env_var: "MY_APP_PASSWORD" # Environment variable name containing the password (will be substituted by init container)
+      #       # If password_env_var is not specified, defaults to USER_PASSWORD_<pool_name>_<index>
       #       server_username: "" # PostgreSQL username used to connect to the server (if different from username)
-      #       server_password: "" # PostgreSQL password used to connect to the server (if different from password)
+      #       server_password_env_var: "" # Environment variable name for server password (if different from password_env_var)
       #       pool_size: 9 # Maximum number of server connections that can be established for this user
       #       min_pool_size: 0 # Minimum number of idle server connections to retain for this pool
       #       statement_timeout: 0 # Maximum query duration (ms, 0 = disabled)

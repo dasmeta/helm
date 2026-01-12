@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "base.fullname" . }}
+  name: {{ include "base.fullname" . }}-template
 data:
   pgcat.toml: |
     # PgCat Configuration File
@@ -40,7 +40,7 @@ data:
     tls_private_key = {{ .Values.pgcat.app.general.tls_private_key | quote }}
     {{- end }}
     admin_username = {{ .Values.pgcat.app.general.admin_username | quote }}
-    admin_password = {{ .Values.pgcat.app.general.admin_password | quote }}
+    admin_password = "__PGCAT_ADMIN_PASSWORD__"
     {{- if and .Values.pgcat.app.general.auth_query (ne .Values.pgcat.app.general.auth_query "") }}
     auth_query = {{ .Values.pgcat.app.general.auth_query | quote }}
     {{- end }}
@@ -48,7 +48,7 @@ data:
     auth_query_user = {{ .Values.pgcat.app.general.auth_query_user | quote }}
     {{- end }}
     {{- if and .Values.pgcat.app.general.auth_query_password (ne .Values.pgcat.app.general.auth_query_password "") }}
-    auth_query_password = {{ .Values.pgcat.app.general.auth_query_password | quote }}
+    auth_query_password = "__PGCAT_AUTH_QUERY_PASSWORD__"
     {{- end }}
     dns_cache_enabled = {{ .Values.pgcat.app.general.dns_cache_enabled }}
     dns_max_ttl = {{ printf "%d" (int64 .Values.pgcat.app.general.dns_max_ttl) }}

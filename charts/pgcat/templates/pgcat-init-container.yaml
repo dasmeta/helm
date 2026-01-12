@@ -1,0 +1,58 @@
+{{- /* This template generates the init container script for processing the config template with secrets */ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "base.fullname" . }}-init-script
+data:
+  process-config.sh: |
+    #!/bin/sh
+    set -e
+
+    TEMPLATE="$1"
+    OUTPUT="$2"
+
+    echo "[pgcat-config] Rendering config"
+    echo "[pgcat-config] Template: $TEMPLATE"
+    echo "[pgcat-config] Output:   $OUTPUT"
+
+    cp "$TEMPLATE" "$OUTPUT"
+
+    # Find all placeholders like __VAR__
+    placeholders=$(grep -o '__[A-Z0-9_]\+__' "$TEMPLATE" | sort -u || true)
+
+    if [ -z "$placeholders" ]; then
+      echo "[pgcat-config] No placeholders found"
+    else
+      echo "[pgcat-config] Placeholders found:"
+      for ph in $placeholders; do
+        echo "  - $ph"
+      done
+    fi
+
+    missing=0
+    replaced=0
+
+    for ph in $placeholders; do
+      var=$(echo "$ph" | sed 's/^__//;s/__$//')
+      val=$(printenv "$var" || true)
+
+      if [ -z "$val" ]; then
+        echo "[pgcat-config] MISSING env var: $var"
+        missing=1
+        continue
+      fi
+
+      echo "[pgcat-config] Replacing: $ph <- $var"
+      sed -i "s|$ph|$val|g" "$OUTPUT"
+      replaced=$((replaced + 1))
+    done
+
+    if [ "$missing" -ne 0 ]; then
+      echo "[pgcat-config] ERROR: one or more placeholders had no value"
+      echo "[pgcat-config] Aborting startup"
+      exit 1
+    fi
+
+    echo "[pgcat-config] Successfully replaced $replaced placeholders"
+    chmod 0444 "$OUTPUT"
+    echo "[pgcat-config] Config rendering complete"
