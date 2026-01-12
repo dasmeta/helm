@@ -139,7 +139,7 @@ pgcat:
           mountPath: /config-template
           readOnly: true
           configMap:
-            name: pgcat # NOTE: set this value same as release name
+            name: pgcat-template # NOTE: set this value same as release name
         - name: pgcat-config-processed
           mountPath: /config-processed
           # emptyDir is defined in main volumes section above

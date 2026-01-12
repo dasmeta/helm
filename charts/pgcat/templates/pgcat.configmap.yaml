@@ -99,8 +99,8 @@ data:
     {{- if and $pool.auth_query_user (ne $pool.auth_query_user "") }}
     auth_query_user = {{ $pool.auth_query_user | quote }}
     {{- end }}
-    {{- if and $pool.auth_query_password_env_var (ne $pool.auth_query_password_env_var "") }}
-    auth_query_password = {{ $pool.auth_query_password_env_var | quote }}
+    {{- if and $pool.auth_query_password (ne $pool.auth_query_password "") }}
+    auth_query_password = {{ $pool.auth_query_password | quote }}
     {{- end }}
     {{- if and $pool.automatic_sharding_key (ne $pool.automatic_sharding_key "") }}
     automatic_sharding_key = {{ $pool.automatic_sharding_key | quote }}
