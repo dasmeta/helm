@@ -1464,6 +1464,21 @@ entries:
   pgcat:
   - apiVersion: v2
     appVersion: 1.2.0
+    created: "2026-01-12T08:36:19.13902071Z"
+    dependencies:
+    - alias: pgcat
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.14
+    description: A Helm chart for Kubernetes to deploy pgcat
+    digest: 4ed64357965f2a9f500d37bb00fa365ed4d0234ff72d29363bfbae2b7310b658
+    name: pgcat
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/pgcat-0.1.1/pgcat-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.2.0
     created: "2025-12-26T13:51:57.258377263Z"
     dependencies:
     - alias: pgcat
