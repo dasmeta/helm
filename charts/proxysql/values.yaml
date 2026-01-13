@@ -7,7 +7,7 @@ proxysql:
 
   image:
     repository: proxysql/proxysql
-    tag: 2.7.3
+    tag: 3.0.4
     pullPolicy: IfNotPresent
 
   replicaCount: 2
@@ -20,22 +20,26 @@ proxysql:
 
   service:
     type: ClusterIP
-    port: 3306
+    port: 6133 # main port - not admin
     extraPorts:
-      - port: 6032 # admin port
+      - port: 6032
         targetPort: 6032
         protocol: TCP
         name: admin
 
-      ## web ui, to enable uncomment the block and set proxysql.app.stats.webEnabled=true, ingress configs can be used to expose this endpoint
-      # - port: 6080
-      #   targetPort: 6080
-      #   protocol: TCP
-      #   name: web
+      # web ui, to enable uncomment the block and set proxysql.app.stats.webEnabled=true, ingress configs can be used to expose this endpoint
+      - port: 6080
+        targetPort: 6080
+        protocol: TCP
+        name: web
 
     ##  enable "config.linkerd.io/opaque-ports" annotation for proxysql service in case you have linkerd enabled client apps having long lasting request/connection issues to proxysql service, this happens on connection to non-standard/extra ports like added proxysql service extra 3307 port or admins 6032 port
     # annotations:
     #   config.linkerd.io/opaque-ports: 3306,3307,6032 # this marks the proxysql service mysql ports opaque for linkerd enabled client apps, so that linkerd do not try to identify protocol of connections to proxysql that results to timeout(the connection takes >10s and there are log messages like "linkerd_detect: Continuing after timeout: linkerd_proxy_http::version::Version protocol detection timed out after 10s")
+
+  # NOTE: For PostgreSQL, set containerPort to 5432. For MySQL, set containerPort to 3306 (default)
+  # This should match the first port in proxysql.app.mysql.ports or proxysql.app.pgsql.ports
+  containerPort: 6133
 
   setIngressClassByField: true
   ingress: # can be used to expose stats web ui, TODO: there seems issue to pass Authorization headers to backend service in nginx, so more checks need to make sure this works
@@ -72,8 +76,11 @@ proxysql:
       command:
         - /bin/bash
         - -ec
-        - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
-        # - mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive" # can be used in case if we should make sure exposed mysql api available
+        # NOTE: Admin interface always uses MySQL protocol regardless of backend database type (MySQL or PostgreSQL)
+        # - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
+        # For MySQL: mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive"
+        # For PostgreSQL:
+        - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
   readinessProbe:
     initialDelaySeconds: 5
     periodSeconds: 10
@@ -84,8 +91,11 @@ proxysql:
       command:
         - /bin/bash
         - -ec
-        - (mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive") && ! test -f /tmp/sigterm-signal-sent
-        # - mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive" # can be used in case if we should make sure exposed mysql api available
+        # NOTE: Admin interface always uses MySQL protocol regardless of backend database type (MySQL or PostgreSQL)
+        # - (mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive") && ! test -f /tmp/sigterm-signal-sent
+        # For MySQL: mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive"
+        # For PostgreSQL:
+        - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
   livenessProbe:
     initialDelaySeconds: 5
     periodSeconds: 10
@@ -96,12 +106,13 @@ proxysql:
       command:
         - /bin/bash
         - -ec
-        - "mysqladmin status -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT"
-        # - "mysqladmin status -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT" # can be used in case if we should make sure exposed mysql api available
+        # NOTE: Admin interface always uses MySQL protocol regardless of backend database type (MySQL or PostgreSQL)
+        # - "mysqladmin status -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT"
+        # For MySQL: mysqladmin status -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT
+        # For PostgreSQL:
+        - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
 
   secretsDefaultEngine: disabled
-
-  containerPort: 3306
 
   podSecurityContext:
     runAsNonRoot: true
@@ -139,10 +150,13 @@ proxysql:
   # proxysql app specific configs
   app:
     # base chart configs end and proxysql specific configs start
+    # database type: "mysql" or "pgsql"
+    databaseType: "mysql" # Select database type: "mysql" or "pgsql"
+
     admin:
       user: "admin"
       password: "admin"
-      port: 6032 # admin service port
+      port: 6032
 
     stats: # create a separate user in admin mysql server for using to access only statistics data, the web ui also uses this user for auth
       user: "sadmin"
@@ -182,7 +196,7 @@ proxysql:
       # special custom named mysql variables that transform to proxysql native ones under the hood
       ssl_p2s_ca: "" # here we set .pem certificate content (NOTE: the original variable supposes here to be path to ca file, we transfer content into k8s config map and mount to container)
       ports: # proxysql exposed mysql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query
-        - 3306
+        - 6030
       # allows to enable proxysql monitor which monitors mysql backend servers for their availability and do automated master switch, replica disable or query routing switch to low lag having ones based on servers status
       monitor:
         enabled: false
@@ -210,7 +224,27 @@ proxysql:
         local_dns_cache_refresh_interval: 60000 # Interval (ms) to check for expired DNS entries
         local_dns_resolver_queue_maxsize: 128 # The max size of the DNS resolver queue
 
-    servers: # mysql origin servers, both read and write servers should be listed here, the writer ones are grouped into hostgroup with id=1 and reader ones into hostgroup with id=2
+    pgsql: # PostgreSQL specific configuration (used when databaseType is "pgsql")
+      # PostgreSQL variables as per ProxySQL 3.0 documentation: https://proxysql.com/documentation/global-variables/pgsql-variables/
+      max_connections: 2048 # max concurrent client (frontend) connections ProxySQL accepts (default: 2048)
+      connect_timeout_client: 10000 # timeout (ms) for client connections during PostgreSQL protocol handshake (default: 10000)
+      connect_timeout_server: 1000 # default timeout (ms) for establishing connections to PostgreSQL backend servers (default: 1000)
+      connect_timeout_server_max: 10000 # maximum timeout (ms) for connecting to PostgreSQL backend servers (default: 10000)
+      ssl_p2s_ca: "" # here we set .pem certificate content (NOTE: the original variable supposes here to be path to ca file, we transfer content into k8s config map and mount to container)
+      ports: # proxysql exposed pgsql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query (default: 6132)
+        - 6133
+      # allows to enable proxysql monitor which monitors pgsql backend servers for their availability
+      # PostgreSQL monitor variables as per ProxySQL 3.0 documentation: https://proxysql.com/documentation/global-variables/pgsql-monitor-variables/
+      monitor:
+        enabled: false
+        username: "monitor" # The username for the backend health check (default: "monitor")
+        password: "monitor" # The password for the health check user. should be changed in production
+        connect_interval: 120000 # The interval (ms) for retrying connections to offline servers (default: 120000)
+        connect_timeout: 600 # The timeout (ms) for a connection attempt (default: 600)
+        ping_interval: 8000 # The interval (ms) for ping health checks (default: 8000)
+        ping_timeout: 1000 # The timeout (ms) for a single ping check (default: 1000)
+
+    servers: # database origin servers (mysql or pgsql), both read and write servers should be listed here, the writer ones are grouped into hostgroup with id=1 and reader ones into hostgroup with id=2
       []
       # - is_writer: true # you can have instead set hostgroup_id field also to have custom hostgroups, by default we have two hostgroups writes(with id 0) and reads(with id 1) managed by is_writer field
       #   hostname: localhost # required
