@@ -99,7 +99,7 @@ proxysql:
 
     pgsql:
       ports:
-        - 5432  # ProxySQL listening port for PostgreSQL clients
+        - 6133  # ProxySQL listening port for PostgreSQL clients (default: 6132, example uses 6133)
 
     servers:
       - is_writer: true
@@ -140,16 +140,24 @@ proxysql:
 
 ### Service Ports
 
-The service port should match your database type:
+The service port should match your database type and the first port in the `ports` array:
 
 - **MySQL**: Default port `3306`
-- **PostgreSQL**: Default port `5432` (or `6132` for ProxySQL default)
+- **PostgreSQL**: Default port `6132` (ProxySQL default) or `5432` (standard PostgreSQL port)
 
 ```yaml
 proxysql:
   service:
-    port: 3306  # For MySQL, use 5432 for PostgreSQL
-  containerPort: 3306  # For MySQL, use 5432 for PostgreSQL
+    port: 3306  # For MySQL, use 5432 or 6132 for PostgreSQL
+  containerPort: 3306  # For MySQL, use 5432 or 6132 for PostgreSQL
+  app:
+    mysql:
+      ports:
+        - 3306  # Must match service.port
+    # OR for PostgreSQL:
+    pgsql:
+      ports:
+        - 6133  # Must match service.port (default ProxySQL pgsql port is 6132)
 ```
 
 ### Backend Servers
@@ -269,12 +277,18 @@ module "proxysql" {
 
 - Requires ProxySQL 3.0.4+
 - Some features may have limitations
-- Monitor variables are simplified compared to MySQL
+- Monitor variables are simplified compared to MySQL (only basic monitoring variables are supported)
+- Configuration uses `pgsql` (not `postgresql`) as the database type value
+- Default ProxySQL listening port for PostgreSQL is `6132` (configurable via `pgsql.ports`)
 - Test thoroughly in non-production environments first
+
+### Admin Interface
+
+The admin interface uses a unified `admin_interfaces` configuration (default port 6032) and supports both MySQL and PostgreSQL protocols. The admin interface is accessible via MySQL protocol regardless of the backend database type.
 
 ### Health Checks
 
-The admin interface always uses MySQL protocol (port 6032) regardless of backend database type. Health check probes use the admin interface for both MySQL and PostgreSQL configurations.
+Health check probes use the admin interface (port 6032) for both MySQL and PostgreSQL configurations. The admin interface always uses MySQL protocol for administrative access.
 
 ### SSL/TLS Support
 
@@ -289,6 +303,8 @@ proxysql:
         ...
         -----END CERTIFICATE-----
 ```
+
+**Note for PostgreSQL**: When SSL is enabled for PostgreSQL, ProxySQL automatically enables event logging to stdout for better debugging and monitoring.
 
 ## Examples
 
