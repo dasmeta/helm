@@ -77,10 +77,10 @@ proxysql:
         - /bin/bash
         - -ec
         # NOTE: Admin interface always uses MySQL protocol regardless of backend database type (MySQL or PostgreSQL)
-        # - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
+        - mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive"
         # For MySQL: mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive"
         # For PostgreSQL:
-        - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
+        # - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
   readinessProbe:
     initialDelaySeconds: 5
     periodSeconds: 10
@@ -92,10 +92,10 @@ proxysql:
         - /bin/bash
         - -ec
         # NOTE: Admin interface always uses MySQL protocol regardless of backend database type (MySQL or PostgreSQL)
-        # - (mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive") && ! test -f /tmp/sigterm-signal-sent
+        - (mysqladmin ping -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT | grep "mysqld is alive") && ! test -f /tmp/sigterm-signal-sent
         # For MySQL: mysqladmin ping -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT | grep "mysqld is alive"
         # For PostgreSQL:
-        - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
+        # - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
   livenessProbe:
     initialDelaySeconds: 5
     periodSeconds: 10
@@ -107,10 +107,10 @@ proxysql:
         - /bin/bash
         - -ec
         # NOTE: Admin interface always uses MySQL protocol regardless of backend database type (MySQL or PostgreSQL)
-        # - "mysqladmin status -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT"
+        - "mysqladmin status -u$PROXYSQL_ADMIN_USER -p$PROXYSQL_ADMIN_PASSWORD -P$PROXYSQL_ADMIN_PORT"
         # For MySQL: mysqladmin status -u$MYSQL_FIRST_USER -p$MYSQL_FIRST_PASSWORD -P$MYSQL_FIRST_PORT
         # For PostgreSQL:
-        - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
+        # - psql -h 127.0.0.1 -p $POSTGRESQL_FIRST_PORT -U $POSTGRESQL_FIRST_USER -c "SELECT 1" > /dev/null
 
   secretsDefaultEngine: disabled
 
