@@ -8,11 +8,12 @@ data:
     {
       admin_credentials="{{ .Values.proxysql.app.admin.user }}:{{ .Values.proxysql.app.admin.password }}"
       stats_credentials="{{ .Values.proxysql.app.stats.user }}:{{ .Values.proxysql.app.stats.password }}"
-      mysql_ifaces="0.0.0.0:{{ .Values.proxysql.app.admin.port }}"
+      admin_interfaces="0.0.0.0:{{ .Values.proxysql.app.admin.port | default 6032 }}"
       restapi_enabled=true
       web_enabled={{ .Values.proxysql.app.stats.webEnabled }}
       web_port={{ .Values.proxysql.app.stats.webPort }}
     }
+    {{- if eq .Values.proxysql.app.databaseType "mysql" }}
     mysql_variables=
     {
       {{- range $index, $value := .Values.proxysql.app.mysql }}
@@ -58,7 +59,43 @@ data:
       have_ssl=true
       {{- end }}
     }
+    {{- else if eq .Values.proxysql.app.databaseType "pgsql" }}
+    pgsql_variables=
+    {
+      {{- range $index, $value := .Values.proxysql.app.pgsql }}
+        {{- if not (has $index (list "ssl_p2s_ca" "ports" "monitor" )) }}
+          {{- if kindIs "int" $value | or (kindIs "float64" $value) }}
+      pgsql-{{ $index }}={{ printf "%d" (int64 $value) }}
+          {{- else if kindIs "string" $value }}
+      pgsql-{{ $index }}={{ $value | quote }}
+          {{- else }}
+      pgsql-{{ $index }}={{ $value }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      interfaces="{{- range $index, $port := .Values.proxysql.app.pgsql.ports }}{{ printf "0.0.0.0:%s%s" ($port | toString) (ternary ";" "" (lt (add1 $index) (len $.Values.proxysql.app.pgsql.ports))) }}{{ end }}"
+      {{- if .Values.proxysql.app.pgsql.ssl_p2s_ca }}
+      pgsql-ssl_p2s_ca="/etc/proxysql/certs/ca-cert.pem"
+      pgsql-have_ssl=true
+      eventslog_enabled=true
+      eventslog_default_log=1
+      eventslog_filename='/dev/stdout'
+      {{- end }}
+    }
+    {{- if .Values.proxysql.app.pgsql.monitor.enabled }}
+    pgsql_monitor=
+    {
+      monitor_username="{{ required "monitor username is required!" .Values.proxysql.app.pgsql.monitor.username }}"
+      monitor_password="{{ required "monitor password is required!" .Values.proxysql.app.pgsql.monitor.password }}"
+      monitor_connect_interval={{ .Values.proxysql.app.pgsql.monitor.connect_interval }}
+      monitor_connect_timeout={{ .Values.proxysql.app.pgsql.monitor.connect_timeout }}
+      monitor_ping_interval={{ .Values.proxysql.app.pgsql.monitor.ping_interval }}
+      monitor_ping_timeout={{ .Values.proxysql.app.pgsql.monitor.ping_timeout }}
+    }
+    {{- end }}
+    {{- end }}
     {{- if .Values.proxysql.app.servers }}
+    {{- if eq .Values.proxysql.app.databaseType "mysql" }}
     mysql_servers=
     (
       {{- $totalServers := (len .Values.proxysql.app.servers) -}}
@@ -81,8 +118,32 @@ data:
       }{{- if lt (add1 $index) $totalServers -}},{{- end -}}
       {{- end }}
     )
+    {{- else if eq .Values.proxysql.app.databaseType "pgsql" }}
+    pgsql_servers=
+    (
+      {{- $totalServers := (len .Values.proxysql.app.servers) -}}
+      {{- range $index, $element := .Values.proxysql.app.servers }}
+      {
+        {{- if $element.hostgroup_id }}
+        hostgroup_id={{ $element.hostgroup_id }}
+        {{- else }}
+        hostgroup_id={{- if or $element.is_writer (kindIs "invalid" $element.is_writer) }}{{ $.Values.proxysql.app.writerHostgroup }}{{- else }}{{ $.Values.proxysql.app.readerHostgroup }}{{- end }}
+        {{- end }}
+        hostname="{{ required "database server's hostname is required!" $element.hostname }}"
+        port={{ $element.port | default 5432 }}
+        weight={{ $element.weight | default 1000 }}
+        compression={{ (int $element.compression) | default 0 }}
+        max_connections={{ $element.max_connections | default 1000 }}
+        max_replication_lag={{ $element.max_replication_lag | default 0 }}
+        use_ssl={{ $element.use_ssl | default 0 }}
+        comment={{ $element.comment | default "" | quote }}
+        status={{ $element.status | default "ONLINE" | quote }}
+      }{{- if lt (add1 $index) $totalServers -}},{{- end -}}
+      {{- end }}
+    )
     {{- end }}
-    {{- if .Values.proxysql.app.serverTypeCheck.enabled }}
+    {{- end }}
+    {{- if and .Values.proxysql.app.serverTypeCheck.enabled (eq .Values.proxysql.app.databaseType "mysql") }}
     mysql_replication_hostgroups=
     (
       {
@@ -92,7 +153,7 @@ data:
       }
     )
     {{- end }}
-    {{- if .Values.proxysql.app.awsAurora.enabled }}
+    {{- if and .Values.proxysql.app.awsAurora.enabled (eq .Values.proxysql.app.databaseType "mysql") }}
     mysql_aws_aurora_hostgroups=
     (
       {
@@ -113,13 +174,30 @@ data:
     )
     {{- end }}
     {{- if .Values.proxysql.app.users }}
+    {{- if eq .Values.proxysql.app.databaseType "mysql" }}
     mysql_users=
     (
       {{- $totalUsers := (len .Values.proxysql.app.users) -}}
       {{- range $index, $element := .Values.proxysql.app.users }}
       {
-        username="{{ required "mysql username is required!" $element.username }}"
-        password="{{ required "mysql password is required!" $element.password }}"
+        username="{{ required "database username is required!" $element.username }}"
+        password="{{ required "database password is required!" $element.password }}"
+        use_ssl={{ $element.use_ssl | default 0 }}
+        default_hostgroup={{ ternary $.Values.proxysql.app.readerHostgroup $.Values.proxysql.app.writerHostgroup ($element.read_only | default false) }}
+        transaction_persistent={{ ternary 1 $element.transaction_persistent (kindIs "invalid" $element.transaction_persistent) }}
+        active={{ ternary 1 $element.active (kindIs "invalid" $element.active) }}
+        max_connections={{ $element.max_connections | default 1000 }}
+      }{{- if lt (add1 $index) $totalUsers -}},{{- end -}}
+      {{- end }}
+    )
+    {{- else if eq .Values.proxysql.app.databaseType "pgsql" }}
+    pgsql_users=
+    (
+      {{- $totalUsers := (len .Values.proxysql.app.users) -}}
+      {{- range $index, $element := .Values.proxysql.app.users }}
+      {
+        username="{{ required "database username is required!" $element.username }}"
+        password="{{ required "database password is required!" $element.password }}"
         use_ssl={{ $element.use_ssl | default 0 }}
         default_hostgroup={{ ternary $.Values.proxysql.app.readerHostgroup $.Values.proxysql.app.writerHostgroup ($element.read_only | default false) }}
         transaction_persistent={{ ternary 1 $element.transaction_persistent (kindIs "invalid" $element.transaction_persistent) }}
@@ -129,6 +207,8 @@ data:
       {{- end }}
     )
     {{- end }}
+    {{- end }}
+    {{- if eq .Values.proxysql.app.databaseType "mysql" }}
     mysql_query_rules=
     (
       {{- $queryRules := list }}
@@ -172,3 +252,48 @@ data:
       }{{- if lt (add1 $index) $totalRules -}},{{- end -}}
       {{- end }}
     )
+    {{- else if eq .Values.proxysql.app.databaseType "pgsql" }}
+    pgsql_query_rules=
+    (
+      {{- $queryRules := list }}
+      {{- if .Values.proxysql.app.readWriteSplit }}
+        {{- $queryRules = append $queryRules (dict "active" 1 "match_digest" "^SELECT .* FOR UPDATE$" "destination_hostgroup" .Values.proxysql.app.writerHostgroup "apply" 1 ) }}
+      {{- end }}
+      {{- $queryRules = concat $queryRules .Values.proxysql.app.rules }}
+      {{- if .Values.proxysql.app.readWriteSplit }}
+        {{- $queryRules = append $queryRules (dict "active" 1 "match_digest" "^SELECT" "destination_hostgroup" .Values.proxysql.app.readerHostgroup "apply" 1 ) }}
+      {{- end }}
+      {{- $totalRules := (len $queryRules) }}
+      {{- range $index, $element :=  $queryRules }}
+      {
+        rule_id={{ add1 $index }}
+        active={{ ternary 1 $element.active (kindIs "invalid" $element.active) }}
+        {{- if or $element.digest $element.match_digest $element.match_pattern }}
+        {{- if $element.digest }}
+        digest="{{ $element.digest }}"
+        {{- if $element.match_digest }}
+        # match_digest="{{ $element.match_digest }}"
+        {{- end }}
+        {{- if $element.match_pattern }}
+        # match_pattern="{{ $element.match_pattern }}"
+        {{- end }}
+        {{- else if $element.match_digest }}
+        match_digest="{{ $element.match_digest }}"
+        {{- else }}
+        match_pattern="{{ $element.match_pattern }}"
+        {{- end }}
+        {{- else }}
+        {{ fail "Either digest, match_digest or match_pattern must be provided in query rules items" }}
+        {{- end }}
+        destination_hostgroup={{ $element.destination_hostgroup | default $.Values.proxysql.app.writerHostgroup }}
+        {{- if $element.cache_ttl}}
+        cache_ttl={{ $element.cache_ttl }}
+        {{- end }}
+        apply={{ ternary 1 $element.apply (kindIs "invalid" $element.apply) }}
+        {{- if $element.proxy_port}}
+        proxy_port={{ $element.proxy_port }}
+        {{- end }}
+      }{{- if lt (add1 $index) $totalRules -}},{{- end -}}
+      {{- end }}
+    )
+    {{- end }}
