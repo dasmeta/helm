@@ -106,8 +106,8 @@ data:
         {{- else }}
         hostgroup_id={{- if or $element.is_writer (kindIs "invalid" $element.is_writer) }}{{ $.Values.proxysql.app.writerHostgroup }}{{- else }}{{ $.Values.proxysql.app.readerHostgroup }}{{- end }}
         {{- end }}
-        hostname="{{ required "database server's hostname is required!" $element.hostname }}"
-        port={{ $element.port | default (ternary 3306 5432 (eq $.Values.proxysql.app.databaseType "mysql")) }}
+        hostname="{{ required "mysql server's hostname is required!" $element.hostname }}"
+        port={{ $element.port | default 3306 }}
         weight={{ $element.weight | default 1000 }}
         compression={{ (int $element.compression) | default 0 }}
         max_connections={{ $element.max_connections | default 1000 }}

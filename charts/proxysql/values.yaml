@@ -20,7 +20,7 @@ proxysql:
 
   service:
     type: ClusterIP
-    port: 6133 # main port - not admin
+    port: 3306 # main port - not admin
     extraPorts:
       - port: 6032
         targetPort: 6032
@@ -196,7 +196,7 @@ proxysql:
       # special custom named mysql variables that transform to proxysql native ones under the hood
       ssl_p2s_ca: "" # here we set .pem certificate content (NOTE: the original variable supposes here to be path to ca file, we transfer content into k8s config map and mount to container)
       ports: # proxysql exposed mysql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query
-        - 6030
+        - 3306
       # allows to enable proxysql monitor which monitors mysql backend servers for their availability and do automated master switch, replica disable or query routing switch to low lag having ones based on servers status
       monitor:
         enabled: false
