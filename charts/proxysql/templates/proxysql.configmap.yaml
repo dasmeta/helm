@@ -8,7 +8,7 @@ data:
     {
       admin_credentials="{{ .Values.proxysql.app.admin.user }}:{{ .Values.proxysql.app.admin.password }}"
       stats_credentials="{{ .Values.proxysql.app.stats.user }}:{{ .Values.proxysql.app.stats.password }}"
-      admin_interfaces="0.0.0.0:{{ .Values.proxysql.app.admin.port | default 6032 }}"
+      mysql_ifaces="0.0.0.0:{{ .Values.proxysql.app.admin.port | default 6032 }}"
       restapi_enabled=true
       web_enabled={{ .Values.proxysql.app.stats.webEnabled }}
       web_port={{ .Values.proxysql.app.stats.webPort }}
