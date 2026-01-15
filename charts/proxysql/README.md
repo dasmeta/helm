@@ -12,7 +12,7 @@ ProxySQL is a high-performance proxy for MySQL and PostgreSQL that provides:
 - **Load balancing** - Distribute load across multiple backend servers
 - **Health checks and failover** - Automatic detection and failover of unhealthy servers
 - **Query caching** - Cache frequently executed queries
-- **AWS Aurora integration** - Native support for Aurora cluster discovery and management
+- **AWS Aurora integration** - Native support for Aurora cluster discovery and management(with cron based workaround of issue https://github.com/sysown/proxysql/issues/3883#issuecomment-3753200770 )
 
 ### Database Support
 

@@ -1,4 +1,4 @@
-# Weave Scope
+# Weave Scope helm chart
 
 ## About this chart
 
