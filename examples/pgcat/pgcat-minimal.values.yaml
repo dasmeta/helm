@@ -28,14 +28,14 @@ pgcat:
         default_role: "any" # Routes to any server (primary or replica)
         query_parser_enabled: true # Enable read/write splitting
         primary_reads_enabled: true # Allow reads on primary
-        
+
         users:
           - username: "app_user"
             # Use __VAR_NAME__ format - init container will replace with $VAR_NAME env var
             # Make sure MY_APP_PASSWORD is provided via secrets or envFrom above
             password: "__MY_APP_PASSWORD__"
             pool_size: 9
-        
+
         shards:
           - database: "myapp"
             servers:

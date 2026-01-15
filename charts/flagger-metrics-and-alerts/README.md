@@ -1,4 +1,4 @@
-# This helm chart allows to create flagger custom metric templates and alert providers to use in canary rollout, docs can found here https://docs.flagger.app/usage/metrics https://docs.flagger.app/usage/alerting 
+# This helm chart allows to create flagger custom metric templates and alert providers to use in canary rollout, docs can found here https://docs.flagger.app/usage/metrics https://docs.flagger.app/usage/alerting
 
 ## There is option named `createNginxCustomMetricTemplates`(false by default) which allows to create nginx custom metrics named `request-success-rate-nginx-custom` and `request-duration-nginx-custom`, this ones are handy to use for nginx flagger provider canaries in case when the default `request-success-rate` and `request-duration` one not work because of the filter `namespace` should be renamed to `exported_namespace` in query
 

@@ -1,4 +1,6 @@
 To get the resources created by this helm chart release run:
 {{- range $key, $resource := (ternary (.Values.resource | default .Values.resources) (list (.Values.resource | default .Values.resources)) (kindIs "slice" (.Values.resource | default .Values.resources))) }}
+{{- if $resource }}
 kubectl get {{ $resource.kind }} {{ $resource.metadata.name }} --namespace {{ $.Release.Namespace }}
+{{- end }}
 {{- end }}

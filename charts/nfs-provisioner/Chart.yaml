@@ -1,7 +1,7 @@
 apiVersion: v1
 name: nfs-provisioner
 home: https://github.com/dasmeta/helm/blob/main/charts/nfs-provisioner
-version: 1.0.1
+version: 1.0.2
 description: nfs-provisioner Chart for Kubernetes.
 sources:
   - https://github.com/kubernetes-incubator/nfs-provisioner # the original/base repo/chart

@@ -10,4 +10,3 @@ data:
   {{- if .Values.pgcat.app.tls.client_key }}
   client-key.pem: {{ .Values.pgcat.app.tls.client_key | quote }}
   {{- end }}
-

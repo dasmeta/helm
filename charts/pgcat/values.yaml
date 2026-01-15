@@ -105,7 +105,7 @@ pgcat:
   # Init container to process config template with secrets
   # The init container script is generated in pgcat-init-container.yaml template
   # It will interpolate ALL environment variables that match placeholders in the format {{VAR_NAME}}
-  # 
+  #
   # How it works:
   # 1. ConfigMap contains template with placeholders like {{ADMIN_PASSWORD}}, {{USER_PASSWORD_myapp_0}}, etc.
   # 2. Secret contains environment variables (ADMIN_PASSWORD, USER_PASSWORD_myapp_0, etc.)
@@ -225,7 +225,7 @@ pgcat:
       #   automatic_sharding_key: "" # Automatically parse this from queries and route queries to the right shard (e.g., "data.id")
       #   idle_timeout: 40000 # Idle timeout can be overwritten in the pool (ms)
       #   connect_timeout: 3000 # Connect timeout can be overwritten in the pool (ms)
-      #   
+      #
       #   # Users for this pool - array of user configurations
       #   users:
       #     - username: "app_user" # PostgreSQL username used to authenticate the user
@@ -237,7 +237,7 @@ pgcat:
       #       min_pool_size: 0 # Minimum number of idle server connections to retain for this pool
       #       statement_timeout: 0 # Maximum query duration (ms, 0 = disabled)
       #       connect_timeout: "" # How long the client waits to obtain a server connection before aborting (ms, inherits from pool/general if unset)
-      #   
+      #
       #   # Shards for this pool - array of shard configurations
       #   shards:
       #     - database: "myapp" # Database name (e.g., "postgres")
