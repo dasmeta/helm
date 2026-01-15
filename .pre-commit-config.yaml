@@ -19,7 +19,7 @@ repos:
       - id: detect-aws-credentials
         args: ["--allow-missing-credentials"]
       - id: detect-private-key
-        exclude: charts/mongodb-bi-connector/certs/*|charts/pgcat/README.md # TODO: check if this keys really needed there or they are some dummy or publishable ones
+        exclude: charts/mongodb-bi-connector/certs/.*|charts/pgcat/README.md # TODO: check if this keys really needed there or they are some dummy or publishable ones
   - repo: https://github.com/qoomon/git-conventional-commits
     rev: v2.4.0
     hooks:
