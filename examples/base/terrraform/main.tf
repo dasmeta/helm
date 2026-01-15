@@ -11,4 +11,3 @@ resource "helm_release" "this" {
 
   values = [file("${path.module}/../basic.yaml")] # /examples/base/basic.yaml
 }
-

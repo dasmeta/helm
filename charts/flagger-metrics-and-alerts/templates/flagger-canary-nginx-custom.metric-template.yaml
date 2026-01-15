@@ -16,8 +16,8 @@ spec:
           status!~"5.*"
         }[{{ "{{" }} interval {{ "}}" }}]
       )
-    ) 
-    / 
+    )
+    /
     sum(
       rate(
         nginx_ingress_controller_requests{
@@ -26,7 +26,7 @@ spec:
           canary!=""
         }[{{ "{{" }} interval {{ "}}" }}]
       )
-    ) 
+    )
     * 100
 ---
 apiVersion: flagger.app/v1beta1
@@ -45,8 +45,8 @@ spec:
           canary!=""
         }[{{ "{{" }} interval {{ "}}" }}]
       )
-    ) 
-    / 
+    )
+    /
     sum(
       rate(
         nginx_ingress_controller_response_duration_seconds_count{
@@ -55,6 +55,6 @@ spec:
           canary!=""
         }[{{ "{{" }} interval {{ "}}" }}]
       )
-    ) 
+    )
     * 1000
 {{- end }}

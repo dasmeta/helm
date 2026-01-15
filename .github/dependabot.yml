@@ -1,0 +1,12 @@
+version: 2
+enable-beta-ecosystems: true
+updates:
+  - package-ecosystem: "helm"
+    directories:
+      - "/charts/*"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

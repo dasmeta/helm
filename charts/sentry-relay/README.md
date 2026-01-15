@@ -1,7 +1,7 @@
 ## This helm chart allows to create sentry relay app in kubernetes cluster https://docs.sentry.io/product/relay/
 
 ### Here are values.yaml file structures for creation relay with sentry cloud by supported proxy, managed or static modes by using minimum configs
-### NOTE: 
+### NOTE:
  - By default it creates relay on proxy mode with DaemonSet workload
  - In case you created sentry cloud on europe region the upstream value is in form https://<ORGANIZATION-ID>.ingest.de.sentry.io
  - It should be possible to use this chart also for non sentry cloud setups, but this is not tested yet
@@ -55,4 +55,3 @@ projects:
         - organizations:indexed-spans-extraction
         - organizations:performance-queries-mongodb-extraction
 ```
-

@@ -14,4 +14,4 @@ kubernetes-event-exporter:
         - match:
             - receiver: "enricher"
 
-webhookEndpoint: 
+webhookEndpoint:

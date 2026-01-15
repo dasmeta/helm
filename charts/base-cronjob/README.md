@@ -41,7 +41,7 @@ For example, set this to escape from creating an empty ConfigMap resource:
 ```yaml
 config:
   enabled: false
-  data: 
+  data:
     <data>
 ```
 Specify this to create ServiceAccount resource:

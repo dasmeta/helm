@@ -35,3 +35,6 @@ proxysql:
         password: <xxxxxxxxxxxxx>
         username: testUser
     readWriteSplit: true
+# if auto-scale enabled on aws rds aurora then uncomment the following block to have proxysql rollout restarted once a day to get aurora scaled down instances endpoints cleaned up from proxysql
+# scheduledRestart:
+#   enabled: true

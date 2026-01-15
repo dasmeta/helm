@@ -1,4 +1,4 @@
 To check/get created/updated resources run:
-kubectl get FlowSchema -n {{ .Release.Namespace }} 
+kubectl get FlowSchema -n {{ .Release.Namespace }}
 kubectl get EC2NodeClass
 kubectl get NodePool

@@ -10,7 +10,7 @@ data:
       "agent": {
         "region": "{{ .Values.region }}",
         "debug": {{ .Values.debug }}
-      },      
+      },
       "logs": {
         "metrics_collected": {
           "prometheus": {

@@ -13,4 +13,3 @@ spec:
     matchLabels:
       {{- include "base.selectorLabels" . | nindent 6 }}
 {{- end }}
-

@@ -35,4 +35,3 @@ spec:
       storage: 1Gi
   storageClassName: cluster-local-nfs
 ```
-

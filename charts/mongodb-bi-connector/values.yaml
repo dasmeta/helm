@@ -20,7 +20,7 @@ base:
           name: mongosqld-config
         readOnly: true
 
-mongosqldConfig:
+mongosqldConfig: {}
 
 mongosqldConfigDefault:
   net:

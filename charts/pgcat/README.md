@@ -59,13 +59,13 @@ pgcat:
         default_role: "any" # Routes to any server (primary or replica)
         query_parser_enabled: true # Enable read/write splitting
         primary_reads_enabled: true # Allow reads on primary
-        
+
         users:
           - username: "app_user"
             # Use __VAR_NAME__ format - will be replaced by init container with $VAR_NAME env var
             password: "__MY_APP_PASSWORD__"
             pool_size: 9
-        
+
         shards:
           - database: "myapp"
             servers:
@@ -116,7 +116,7 @@ pgcat:
         query_parser_enabled: true
         primary_reads_enabled: true
         checkout_failure_limit: 3
-        
+
         users:
           - username: "app_user"
             # Placeholder will be replaced with $MY_APP_PASSWORD env var
@@ -126,26 +126,26 @@ pgcat:
             pool_size: 25
             min_pool_size: 5
             statement_timeout: 30000
-        
+
         shards:
           - database: "myapp"
             servers:
               - ["postgres-primary.example.com", 5432, "primary"]
               - ["postgres-replica-1.example.com", 5432, "replica"]
               - ["postgres-replica-2.example.com", 5432, "replica"]
-      
+
       analytics:
         pool_mode: "session"
         load_balancing_mode: "random"
         default_role: "replica" # Only use replicas by default
         query_parser_enabled: true
-        
+
         users:
           - username: "analytics_user"
             # Placeholder will be replaced with $ANALYTICS_PASSWORD env var
             password: "__ANALYTICS_PASSWORD__"
             pool_size: 15
-        
+
         shards:
           - database: "analytics"
             servers:
