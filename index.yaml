@@ -1464,6 +1464,21 @@ entries:
   pgcat:
   - apiVersion: v2
     appVersion: 1.2.0
+    created: "2026-01-15T13:01:55.962603128Z"
+    dependencies:
+    - alias: pgcat
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.14
+    description: A Helm chart for Kubernetes to deploy pgcat
+    digest: 4ee18ee8967a6ab0c87e0dcf3d72a0df1b238f590f04c5dde9241419fb8ba343
+    name: pgcat
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/pgcat-0.1.2/pgcat-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.2.0
     created: "2026-01-12T08:36:19.13902071Z"
     dependencies:
     - alias: pgcat
@@ -1493,6 +1508,26 @@ entries:
     - https://github.com/dasmeta/helm/releases/download/pgcat-0.1.0/pgcat-0.1.0.tgz
     version: 0.1.0
   proxysql:
+  - apiVersion: v2
+    appVersion: 3.0.4
+    created: "2026-01-15T13:01:56.146730558Z"
+    dependencies:
+    - alias: proxysql
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.14
+    - alias: scheduledRestart
+      condition: scheduledRestart.enabled
+      name: base-cronjob
+      repository: https://dasmeta.github.io/helm
+      version: 0.1.34
+    description: A Helm chart for Kubernetes to deploy proxysql
+    digest: 3edd6bd41efc413d82d8b4f4d98ffa99c9a4748e95e3931ba3dcd642113bed88
+    name: proxysql
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/proxysql-1.1.1/proxysql-1.1.1.tgz
+    version: 1.1.1
   - apiVersion: v2
     appVersion: 3.0.4
     created: "2026-01-13T15:38:22.976027353Z"
@@ -1616,6 +1651,18 @@ entries:
   resource:
   - apiVersion: v2
     appVersion: 0.1.0
+    created: "2026-01-15T13:01:56.30054553Z"
+    description: A Helm chart for Kubernetes to create any type of k8s resources(or
+      CRDs) by passing the resources `apiVersion`, `kind`, `metadata` and `spec` standard
+      resource fields
+    digest: 8140d4c260c3de58ecb405b5413e637d6355c7f880ee06893c5fa5ddb2985471
+    name: resource
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/resource-0.1.1/resource-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.1.0
     created: "2025-08-26T11:01:21.040455192Z"
     description: A Helm chart for Kubernetes to create any type of k8s resources(or
       CRDs) by passing the resources `apiVersion`, `kind`, `metadata` and `spec` standard
@@ -1627,6 +1674,17 @@ entries:
     - https://github.com/dasmeta/helm/releases/download/resource-0.1.0/resource-0.1.0.tgz
     version: 0.1.0
   sentry-relay:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-01-15T13:01:56.443556321Z"
+    description: A Helm chart for Kubernetes to create sentry relay with proxy, managed
+      or static mode
+    digest: 63f4c1cf913d4e8633d5e040869ee9505ac2831de3ea7f63a9ed79a951bf9c9b
+    name: sentry-relay
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/sentry-relay-0.1.1/sentry-relay-0.1.1.tgz
+    version: 0.1.1
   - apiVersion: v2
     appVersion: 0.1.0
     created: "2024-10-29T09:16:19.212153807Z"
@@ -1655,6 +1713,33 @@ entries:
     - https://github.com/dasmeta/helm/releases/download/spqr-router-0.1.0/spqr-router-0.1.0.tgz
     version: 0.1.0
   weave-scope:
+  - apiVersion: v2
+    appVersion: 1.10.2
+    created: "2026-01-15T13:01:56.593959922Z"
+    dependencies:
+    - name: weave-scope-agent
+      repository: file://charts/weave-scope-agent
+      version: 0.10.1
+    - name: weave-scope-frontend
+      repository: file://charts/weave-scope-frontend
+      version: 0.10.0
+    description: A Helm chart for the Weave Scope cluster visualizer.
+    digest: 0949dc575431bac1abdb1d202271d027eef84e2db7e0b6660876fb9d4fb107b6
+    home: https://www.weave.works/oss/scope/
+    icon: https://avatars1.githubusercontent.com/u/9976052?s=64
+    keywords:
+    - containers
+    - dashboard
+    - monitoring
+    maintainers:
+    - email: github@orion-com.com
+      name: omkensey
+    name: weave-scope
+    sources:
+    - https://github.com/weaveworks/scope
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/weave-scope-1.0.3/weave-scope-1.0.3.tgz
+    version: 1.0.3
   - apiVersion: v1
     appVersion: 1.10.2
     created: "2022-12-07T13:51:48.814204031Z"
