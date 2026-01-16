@@ -101,8 +101,7 @@ spec:
                 {{- end }}
                 {{- end }}
               envFrom:
-              {{- $config := (default dict $job.config) }}
-              {{- if and (kindIs "map" $config) (hasKey $config "enabled") (eq $config.enabled true) }}
+              {{- if and (hasKey $job "config") (kindIs "map" $job.config) (default false $job.config.enabled) }}
                 - configMapRef:
                     name: {{ $job.name | quote }}
               {{- with $job.envFrom }}
