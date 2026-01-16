@@ -1,0 +1,23 @@
+# helm diff upgrade --install -n localhost proxysql-basic-mysql ./charts/proxysql/ -f ./examples/proxysql/proxysql-basic-mysql.values.yaml
+# helm diff upgrade --install -n localhost mysql bitnami/mysql --version 14.0.3 --set auth.rootPassword=root --set global.security.allowInsecureImages=true --set image.repository="bitnamilegacy/mysql" # install mysql with  user/pass=root/root
+proxysql:
+  podAnnotations:
+    app.config/checksum: v2
+  autoscaling:
+    minReplicas: 1
+  volumes:
+    - name: proxysql-config
+      mountPath: /etc/proxysql.cnf
+      subPath: proxysql.cnf
+      readOnly: true
+      configMap:
+        name: proxysql-basic-mysql
+  envFrom:
+    secret: proxysql-basic-mysql
+
+  app:
+    servers:
+      - hostname: mysql.localhost
+    users:
+      - username: root
+        password: root
