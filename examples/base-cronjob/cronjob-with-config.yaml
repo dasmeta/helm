@@ -1,0 +1,19 @@
+# helm diff upgrade --install -n default cronjob-with-config ./charts/base-cronjob -f ./examples/base-cronjob/cronjob-with-config.yaml
+
+jobs:
+  - name: cronjob-with-config
+    schedule: "* * * * *"
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 60
+    restartPolicy: Never
+    image:
+      repository: nginx
+      tag: latest
+    command:
+      - /bin/sh
+      - -c
+      - echo $MY_CRON_ENV_VARIABLE_KEY && sleep 120
+    config:
+      enabled: true
+      data:
+        MY_CRON_ENV_VARIABLE_KEY: my_cron_env_variable_value
