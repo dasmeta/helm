@@ -4,6 +4,6 @@ dependencies:
   version: 0.3.14
 - name: base-cronjob
   repository: https://dasmeta.github.io/helm
-  version: 0.1.34
-digest: sha256:d83b7c9c47cf7c7405be01c47402cf5cb9f09c5abcd36406174928799e554183
-generated: "2026-01-15T11:51:27.314267+04:00"
+  version: 0.1.37
+digest: sha256:22fffe1037cd99c5a81b6db96f83b652962bb766a2c8873d83091f4a7299b312
+generated: "2026-01-16T19:11:07.854355+04:00"

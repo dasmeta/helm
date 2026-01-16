@@ -12,7 +12,7 @@ ProxySQL is a high-performance proxy for MySQL and PostgreSQL that provides:
 - **Load balancing** - Distribute load across multiple backend servers
 - **Health checks and failover** - Automatic detection and failover of unhealthy servers
 - **Query caching** - Cache frequently executed queries
-- **AWS Aurora integration** - Native support for Aurora cluster discovery and management(with cron based workaround of issue https://github.com/sysown/proxysql/issues/3883#issuecomment-3753200770 )
+- **AWS Aurora integration** - Native support for Aurora cluster discovery and management(with cron based workaround (by setting scheduledRestart.enabled=true) of issue https://github.com/sysown/proxysql/issues/3883#issuecomment-3753200770 )
 
 ### Database Support
 
@@ -40,19 +40,19 @@ helm repo update
 ### Install with default values
 
 ```bash
-helm install my-proxysql dasmeta/proxysql --version 1.0.1
+helm install my-proxysql dasmeta/proxysql --version 1.2.0
 ```
 
 ### Install with custom values
 
 ```bash
-helm install my-proxysql dasmeta/proxysql --version 1.0.1 -f my-values.yaml
+helm install my-proxysql dasmeta/proxysql --version 1.2.0 -f my-values.yaml
 ```
 
 ### Upgrade an existing release
 
 ```bash
-helm upgrade my-proxysql dasmeta/proxysql --version 1.0.1 -f my-values.yaml
+helm upgrade my-proxysql dasmeta/proxysql --version 1.2.0 -f my-values.yaml
 ```
 
 ## Configuration
@@ -94,12 +94,15 @@ proxysql:
   podAnnotations:
     app.config/checksum: v1
 
+  containerPort: 5432
+  service:
+    port: 5432
   app:
-    databaseType: "pgsql"  # Select database type: "mysql" or "pgsql"
+    databaseType: "pgsql"
 
     pgsql:
       ports:
-        - 6133  # ProxySQL listening port for PostgreSQL clients (default: 6132, example uses 6133)
+        - 5432  # ProxySQL listening port for PostgreSQL clients
 
     servers:
       - is_writer: true
@@ -143,13 +146,13 @@ proxysql:
 The service port should match your database type and the first port in the `ports` array:
 
 - **MySQL**: Default port `3306`
-- **PostgreSQL**: Default port `6132` (ProxySQL default) or `5432` (standard PostgreSQL port)
+- **PostgreSQL**: Default port `5432`
 
 ```yaml
 proxysql:
   service:
-    port: 3306  # For MySQL, use 5432 or 6132 for PostgreSQL
-  containerPort: 3306  # For MySQL, use 5432 or 6132 for PostgreSQL
+    port: 3306  # For MySQL, use 5432 for PostgreSQL
+  containerPort: 3306  # For MySQL, use 5432 for PostgreSQL
   app:
     mysql:
       ports:
@@ -157,7 +160,7 @@ proxysql:
     # OR for PostgreSQL:
     pgsql:
       ports:
-        - 6133  # Must match service.port (default ProxySQL pgsql port is 6132)
+        - 5432  # Must match service.port
 ```
 
 ### Backend Servers
@@ -246,7 +249,7 @@ proxysql:
 
 ### Version Compatibility
 
-- **Chart version 1.0.1** uses **ProxySQL 3.0.4**
+- **Chart version >1.0.1** uses **ProxySQL 3.0.4**
 - PostgreSQL support requires ProxySQL 3.0+
 - Breaking changes were introduced in chart version 0.2.0
 
@@ -279,7 +282,7 @@ module "proxysql" {
 - Some features may have limitations
 - Monitor variables are simplified compared to MySQL (only basic monitoring variables are supported)
 - Configuration uses `pgsql` (not `postgresql`) as the database type value
-- Default ProxySQL listening port for PostgreSQL is `6132` (configurable via `pgsql.ports`)
+- Default ProxySQL listening port for PostgreSQL is `5432` (configurable via `pgsql.ports`)
 - Test thoroughly in non-production environments first
 
 ### Admin Interface
@@ -310,10 +313,9 @@ proxysql:
 
 Comprehensive examples are available in the `/examples/proxysql/` directory:
 
-- `proxysql-basic.values.yaml` - Minimal setup
-- `proxysql-three-backends.values.yaml` - Multiple backends with read/write splitting
-- `proxysql-advanced.values.yaml` - Advanced routing and caching
-- `proxysql-minimal-three-backends.values.yaml` - Minimal multi-backend setup
+- `proxysql-basic-mysql.values.yaml` - Minimal mysql setup
+- `proxysql-basic-pgsql.values.yaml` - Multiple backends with read/write splitting
+- `proxysql-advanced-mysql.values.yaml` - Advanced routing and caching
 - `proxysql-with-aws-aurora.values.yaml` - AWS Aurora cluster integration
 
 ## Troubleshooting

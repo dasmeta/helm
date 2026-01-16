@@ -1,5 +1,5 @@
-# helm diff upgrade --install -n localhost proxysql-advanced ./charts/proxysql/ -f ./examples/proxysql/proxysql-advanced.values.yaml
-# helm diff upgrade --install -n localhost mysql  bitnami/mysql --set auth.rootPassword=root # install mysql
+# helm diff upgrade --install -n localhost proxysql-advanced-mysql ./charts/proxysql/ -f ./examples/proxysql/proxysql-advanced-mysql.values.yaml
+# helm diff upgrade --install -n localhost mysql bitnami/mysql --version 14.0.3 --set auth.rootPassword=root --set global.security.allowInsecureImages=true --set image.repository="bitnamilegacy/mysql" # install mysql with  user/pass=root/root
 proxysql:
   podAnnotations:
     prometheus.io/scrape: "true" # we suppose that prometheus is configured to lookup this annotations, also there is possibility to enable  metric scrapping by using proxysql.serviceMonitor or podMonitor configs. just one scrapping config is enough to be enabled. you need to set proxysql.mysql.monitor.enabled=true
@@ -28,9 +28,9 @@ proxysql:
       subPath: proxysql.cnf
       readOnly: true
       configMap:
-        name: proxysql-advanced
+        name: proxysql-advanced-mysql
   envFrom:
-    secret: proxysql-advanced
+    secret: proxysql-advanced-mysql
 
   app:
     mysql:
