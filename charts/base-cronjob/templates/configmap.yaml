@@ -1,5 +1,5 @@
 {{- range $job := .Values.jobs }}
-{{- if and (hasKey $job "config") (kindIs "map" $job.config) (default false $job.config.enabled) }}
+{{- if and (hasKey $job "config") (kindIs "map" $job.config) (default false ($job.config).enabled) }}
 ---
 kind: ConfigMap
 apiVersion: v1
