@@ -63,36 +63,37 @@ data:
     pgsql_variables=
     {
       {{- range $index, $value := .Values.proxysql.app.pgsql }}
-        {{- if not (has $index (list "ssl_p2s_ca" "ports" "monitor" )) }}
+        {{- if not (has $index (list "interfaces" "ports" "monitor" )) }}
           {{- if kindIs "int" $value | or (kindIs "float64" $value) }}
-      pgsql-{{ $index }}={{ printf "%d" (int64 $value) }}
+      {{ $index }}={{ printf "%d" (int64 $value) }}
           {{- else if kindIs "string" $value }}
-      pgsql-{{ $index }}={{ $value | quote }}
+      {{ $index }}={{ $value | quote }}
           {{- else }}
-      pgsql-{{ $index }}={{ $value }}
+      {{ $index }}={{ $value }}
           {{- end }}
         {{- end }}
       {{- end }}
       interfaces="{{- range $index, $port := .Values.proxysql.app.pgsql.ports }}{{ printf "0.0.0.0:%s%s" ($port | toString) (ternary ";" "" (lt (add1 $index) (len $.Values.proxysql.app.pgsql.ports))) }}{{ end }}"
-      {{- if .Values.proxysql.app.pgsql.ssl_p2s_ca }}
-      pgsql-ssl_p2s_ca="/etc/proxysql/certs/ca-cert.pem"
-      pgsql-have_ssl=true
-      eventslog_enabled=true
-      eventslog_default_log=1
-      eventslog_filename='/dev/stdout'
-      {{- end }}
-    }
-    {{- if .Values.proxysql.app.pgsql.monitor.enabled }}
-    pgsql_monitor=
-    {
+      monitor_enabled={{ .Values.proxysql.app.pgsql.monitor.enabled }}
+      {{- if .Values.proxysql.app.pgsql.monitor.enabled }}
       monitor_username="{{ required "monitor username is required!" .Values.proxysql.app.pgsql.monitor.username }}"
       monitor_password="{{ required "monitor password is required!" .Values.proxysql.app.pgsql.monitor.password }}"
       monitor_connect_interval={{ .Values.proxysql.app.pgsql.monitor.connect_interval }}
+      monitor_connect_interval_window={{ .Values.proxysql.app.pgsql.monitor.connect_interval_window }}
       monitor_connect_timeout={{ .Values.proxysql.app.pgsql.monitor.connect_timeout }}
+      monitor_history={{ .Values.proxysql.app.pgsql.monitor.history }}
       monitor_ping_interval={{ .Values.proxysql.app.pgsql.monitor.ping_interval }}
+      monitor_ping_interval_window={{ .Values.proxysql.app.pgsql.monitor.ping_interval_window }}
+      monitor_ping_max_failures={{ .Values.proxysql.app.pgsql.monitor.ping_max_failures }}
       monitor_ping_timeout={{ .Values.proxysql.app.pgsql.monitor.ping_timeout }}
+      monitor_read_only_interval={{ .Values.proxysql.app.pgsql.monitor.read_only_interval }}
+      monitor_read_only_interval_window={{ .Values.proxysql.app.pgsql.monitor.read_only_interval_window }}
+      monitor_read_only_max_timeout_count={{ .Values.proxysql.app.pgsql.monitor.read_only_max_timeout_count }}
+      monitor_read_read_only_timeout={{ .Values.proxysql.app.pgsql.monitor.read_read_only_timeout }}
+      monitor_threads={{ .Values.proxysql.app.pgsql.monitor.threads }}
+      monitor_writer_is_also_reader={{ .Values.proxysql.app.pgsql.monitor.writer_is_also_reader }}
+      {{- end }}
     }
-    {{- end }}
     {{- end }}
     {{- if .Values.proxysql.app.servers }}
     {{- if eq .Values.proxysql.app.databaseType "mysql" }}
@@ -143,8 +144,11 @@ data:
     )
     {{- end }}
     {{- end }}
-    {{- if and .Values.proxysql.app.serverTypeCheck.enabled (eq .Values.proxysql.app.databaseType "mysql") }}
+    {{- if .Values.proxysql.app.serverTypeCheck.enabled }}
+    {{- if (eq .Values.proxysql.app.databaseType "mysql") }}
     mysql_replication_hostgroups=
+    {{- else if eq .Values.proxysql.app.databaseType "pgsql" }}
+    pgsql_replication_hostgroups=
     (
       {
         writer_hostgroup={{ .Values.proxysql.app.writerHostgroup }}
@@ -152,6 +156,7 @@ data:
         check_type="{{ .Values.proxysql.app.serverTypeCheck.check_type }}"
       }
     )
+    {{- end }}
     {{- end }}
     {{- if and .Values.proxysql.app.awsAurora.enabled (eq .Values.proxysql.app.databaseType "mysql") }}
     mysql_aws_aurora_hostgroups=

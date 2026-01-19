@@ -27,11 +27,11 @@ proxysql:
         protocol: TCP
         name: admin
 
-      # web ui, to enable uncomment the block and set proxysql.app.stats.webEnabled=true, ingress configs can be used to expose this endpoint
-      - port: 6080
-        targetPort: 6080
-        protocol: TCP
-        name: web
+      # # web ui, to enable uncomment the block and set proxysql.app.stats.webEnabled=true, ingress configs can be used to expose this endpoint
+      # - port: 6080
+      #   targetPort: 6080
+      #   protocol: TCP
+      #   name: web
 
     ##  enable "config.linkerd.io/opaque-ports" annotation for proxysql service in case you have linkerd enabled client apps having long lasting request/connection issues to proxysql service, this happens on connection to non-standard/extra ports like added proxysql service extra 3307 port or admins 6032 port
     # annotations:
@@ -39,7 +39,7 @@ proxysql:
 
   # NOTE: For PostgreSQL, set containerPort to 5432. For MySQL, set containerPort to 3306 (default)
   # This should match the first port in proxysql.app.mysql.ports or proxysql.app.pgsql.ports
-  containerPort: 6133
+  containerPort: 3306
 
   setIngressClassByField: true
   ingress: # can be used to expose stats web ui, TODO: there seems issue to pass Authorization headers to backend service in nginx, so more checks need to make sure this works
@@ -226,23 +226,41 @@ proxysql:
 
     pgsql: # PostgreSQL specific configuration (used when databaseType is "pgsql")
       # PostgreSQL variables as per ProxySQL 3.0 documentation: https://proxysql.com/documentation/global-variables/pgsql-variables/
-      max_connections: 2048 # max concurrent client (frontend) connections ProxySQL accepts (default: 2048)
-      connect_timeout_client: 10000 # timeout (ms) for client connections during PostgreSQL protocol handshake (default: 10000)
-      connect_timeout_server: 1000 # default timeout (ms) for establishing connections to PostgreSQL backend servers (default: 1000)
-      connect_timeout_server_max: 10000 # maximum timeout (ms) for connecting to PostgreSQL backend servers (default: 10000)
-      ssl_p2s_ca: "" # here we set .pem certificate content (NOTE: the original variable supposes here to be path to ca file, we transfer content into k8s config map and mount to container)
-      ports: # proxysql exposed pgsql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query (default: 6132)
-        - 6133
-      # allows to enable proxysql monitor which monitors pgsql backend servers for their availability
+      server_version: "17.7" # The proxysql middleware postgressql server version
+      threads: 3 # The number of postgres threads
+      have_ssl: true # Indicates PostgreSQL SSL support availability and configuration status.
+      max_connections: 2048 # The max concurrent client (frontend) connections ProxySQL accepts (default: 2048)
+      connect_timeout_client: 10000 # The timeout (ms) for client connections during PostgreSQL protocol handshake (default: 10000)
+      connect_timeout_server: 1000 # The default timeout (ms) for establishing connections to PostgreSQL backend servers (default: 1000)
+      connect_timeout_server_max: 10000 # The maximum timeout (ms) for connecting to PostgreSQL backend servers (default: 10000)
+      default_query_delay: 0 # A default imposed query delay
+      default_query_timeout: 36000000 # The default query timeout for backend queries
+      connect_retries_on_failure: 10 # The number of backend connect retries; a bit high—prefer 3–5 unless you’ve measured benefit.
+      poll_timeout: 2000 # Minimal timeout used to detect incoming/outgoing traffic via the `poll` syscall
+      ping_timeout_server: 500 # How long proxysql waits for those keep-alive pings to succeed before it drops that one backend connection (it does not mark the server down)
+      commands_stats: true # Create stats about the received commands
+      ports: # The proxysql exposed pgsql ports, there can be additional/multiple exposed ports and we can have custom rules to route traffic based on sql query (default: 6132)
+        - 5432
+      # Allows to enable proxysql monitor which monitors pgsql backend servers for their availability
       # PostgreSQL monitor variables as per ProxySQL 3.0 documentation: https://proxysql.com/documentation/global-variables/pgsql-monitor-variables/
       monitor:
         enabled: false
         username: "monitor" # The username for the backend health check (default: "monitor")
         password: "monitor" # The password for the health check user. should be changed in production
         connect_interval: 120000 # The interval (ms) for retrying connections to offline servers (default: 120000)
+        connect_interval_window: 50 # Sets the target completion window, expressed as a percentage of the interval, in which the checks should be completed
         connect_timeout: 600 # The timeout (ms) for a connection attempt (default: 600)
+        history: 7200000 # The duration for which the events for the checks made by the Monitor module are kept
         ping_interval: 8000 # The interval (ms) for ping health checks (default: 8000)
+        ping_interval_window: 10 # Sets the target completion window, expressed as a percentage of the interval, in which the checks should be completed
+        ping_max_failures: 3 # The maximum number of ping failures the Monitor module should tolerate before sending a signal to PgSQL_Hostgroups_Manager to kill all connections to the backend server
         ping_timeout: 1000 # The timeout (ms) for a single ping check (default: 1000)
+        read_only_interval: 1000 # Defines the frequency to perform the read_only check of a backend server (in milliseconds).
+        read_only_interval_window: 10 # Sets the target completion window, expressed as a percentage of the interval, in which the checks should be completed
+        read_only_max_timeout_count: 3 # If the number of consecutive read_only checks timeouts (each exceeding pgsql-monitor_read_only_timeout) surpasses this value, the server is assumed to be read_only=1
+        read_read_only_timeout: 800 # The timeout for a single attempt at performing the read_only check on a backend server
+        threads: 2 # Controls the number of threads within the Monitor Module thread pool
+        writer_is_also_reader: true # When a node changes its read_only value from 1 to 0, this variable determines if the node should be present in both hostgroups or not
 
     servers: [] # database origin servers (mysql or pgsql), both read and write servers should be listed here, the writer ones are grouped into hostgroup with id=1 and reader ones into hostgroup with id=2
       # - is_writer: true # you can have instead set hostgroup_id field also to have custom hostgroups, by default we have two hostgroups writes(with id 0) and reads(with id 1) managed by is_writer field
@@ -331,7 +349,7 @@ scheduledRestart:
   enabled: false
   jobs:
     - name: proxysql-scheduled-restart
-      schedule: "00 02 * * *" # ar 02:00 am UTC every day
+      schedule: "00 02 * * *" # at 02:00 am UTC every day
       timeZone: "Etc/UTC"
       concurrencyPolicy: Forbid
       startingDeadlineSeconds: 60
