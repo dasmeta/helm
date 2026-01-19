@@ -1,5 +1,5 @@
 # helm diff upgrade --install -n localhost proxysql-basic-pgsql ./charts/proxysql/ -f ./examples/proxysql/proxysql-basic-pgsql.values.yaml
-# helm diff upgrade --install -n localhost postgresql bitnami/postgresql --version 18.2.0 --set auth.postgresPassword=postgres # install postgres with user/pass postgres/postgres
+# helm diff upgrade --install -n localhost postgresql bitnami/postgresql --version 18.2.0 --set auth.postgresPassword=<postgres> # install postgres with user/pass postgres/<postgres>
 proxysql:
   podAnnotations:
     app.config/checksum: v2
@@ -24,4 +24,4 @@ proxysql:
       - hostname: postgresql.localhost
     users:
       - username: postgres
-        password: postgres
+        password: <postgres>
