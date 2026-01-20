@@ -27,12 +27,12 @@ proxysql:
 
     users:
       - username: testUser
-        password: <xxxxxxxxxxxxx>
+        password: test
 
     mysql:
       monitor: # we need to enable monitor as it will be used on aws aurora auto discovery and instance write/read type identification
         enabled: true
-        password: <xxxxxxxxxxxxx>
+        password: test
         username: testUser
     readWriteSplit: true
 # if auto-scale enabled on aws rds aurora then uncomment the following block to have proxysql rollout restarted once a day to get aurora scaled down instances endpoints cleaned up from proxysql
