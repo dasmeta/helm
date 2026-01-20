@@ -7,7 +7,7 @@ proxysql:
 
   image:
     repository: proxysql/proxysql
-    tag: 3.0.4
+    tag: 3.0.5
     pullPolicy: IfNotPresent
 
   replicaCount: 2
