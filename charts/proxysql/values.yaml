@@ -17,6 +17,9 @@ proxysql:
     maxReplicas: 10
     targetCPUUtilizationPercentage: 80
     # targetMemoryUtilizationPercentage: 80
+  pdb: # enable pdb with min available=1 default by as this is critical app
+    enabled: true
+    minAvailable: 1
 
   service:
     type: ClusterIP
