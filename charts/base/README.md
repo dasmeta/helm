@@ -594,6 +594,7 @@ autoscaling:
       queueLength: <aws-queue-length>
       awsRegion: <aws-region>
 ```
+
 ### custom rollout strategy(canary,blue/gree) configs by using flagger
 ```yaml
 # This config allows to enable custom rollout strategies by using different providers/operators
