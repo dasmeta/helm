@@ -1,0 +1,20 @@
+
+workloadType: disabled-to-have-only-job
+
+service:
+  enabled: false
+
+job:
+  name: db-migration-backend
+  image:
+    repository: repo
+    tag: latest
+    pullPolicy: Always
+  envFrom:
+    secret: secret
+    configMap: configMap
+  command:
+    - "sh"
+    - "-c"
+    - |
+      set -e
