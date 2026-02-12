@@ -1,0 +1,49 @@
+{{- if and .Values.enabled .Values.gateways }}
+{{- $outer := . -}}
+{{- $gateways := .Values.gateways -}}
+{{- if $gateways }}
+{{- range $idx, $gateway := (ternary $gateways (list $gateways) (kindIs "slice" $gateways)) }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ default (include "gateway-api.fullname" $outer) $gateway.name }}{{ coalesce $gateway.nameSuffix $idx "" }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $gateway.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $gateway.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ default "istio" $gateway.gatewayClassName }}
+  {{- with $gateway.addresses }}
+  addresses:
+    {{- range . }}
+    - {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- with $gateway.listeners }}
+  listeners:
+    {{- range . }}
+    - name: {{ .name }}
+      {{- if .hostname }}
+      hostname: {{ .hostname | quote }}
+      {{- end }}
+      port: {{ .port }}
+      protocol: {{ .protocol }}
+      {{- with .tls }}
+      tls:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .allowedRoutes }}
+      allowedRoutes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

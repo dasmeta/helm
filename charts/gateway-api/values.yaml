@@ -1,0 +1,137 @@
+enabled: false
+
+# You can pass either a single object or a list of objects for both
+# gateways and routes, similar to how "ingress" works in the base chart.
+
+# List (or single object) of Gateway resources to create.
+#
+# Example:
+# gateways:
+#   - name: main
+#     nameSuffix: -gw
+#     labels: {}
+#     annotations: {}
+#     gatewayClassName: istio
+#     addresses: []
+#     listeners:
+#       - name: http
+#         hostname: example.com
+#         port: 80
+#         protocol: HTTP
+#         tls: {}
+#         allowedRoutes: {}
+gateways: []
+
+# Default parentRefs for HTTPRoute/GRPCRoute objects. These are used when a route
+# does not define its own "parentRefs" field.
+#
+# Example:
+# defaultParentRefs:
+#   - name: main
+#     namespace: ""
+#     sectionName: http
+#     kind: Gateway
+#     group: gateway.networking.k8s.io
+defaultParentRefs: []
+
+# List (or single object) of HTTPRoute resources to create.
+#
+# Example:
+# httpRoutes:
+#   - name: main
+#     nameSuffix: -route
+#     labels: {}
+#     annotations: {}
+#     # Optional, otherwise defaultParentRefs are used
+#     parentRefs:
+#       - name: main
+#         sectionName: http
+#         kind: Gateway
+#         group: gateway.networking.k8s.io
+#     hostnames:
+#       - example.com
+#     rules:
+#       - matches:
+#           - path:
+#               type: PathPrefix
+#               value: /
+#         backendRefs:
+#           - name: base
+#             port: 80
+httpRoutes: []
+
+# List (or single object) of GRPCRoute resources to create.
+#
+# Example:
+# grpcRoutes:
+#   - name: main
+#     nameSuffix: -grpc
+#     labels: {}
+#     annotations: {}
+#     parentRefs: [] # optional, otherwise defaultParentRefs can be reused if desired
+#     hostnames:
+#       - grpc.example.com
+#     rules:
+#       - matches:
+#           - method:
+#               type: Exact
+#               service: my.Service
+#               method: Get
+#         backendRefs:
+#           - name: base
+#             port: 50051
+grpcRoutes: []
+
+# List (or single object) of TCPRoute resources to create.
+#
+# Example:
+# tcpRoutes:
+#   - name: main
+#     nameSuffix: -tcp
+#     labels: {}
+#     annotations: {}
+#     parentRefs: [] # optional, otherwise set explicit parentRefs
+#     rules:
+#       - matches:
+#           - port: 5432
+#         backendRefs:
+#           - name: postgres
+#             port: 5432
+tcpRoutes: []
+
+# List (or single object) of TLSRoute resources to create.
+#
+# Example:
+# tlsRoutes:
+#   - name: main
+#     nameSuffix: -tls
+#     labels: {}
+#     annotations: {}
+#     parentRefs: []
+#     hostnames:
+#       - tls.example.com
+#     rules:
+#       - matches:
+#           - sniHosts:
+#               - tls.example.com
+#         backendRefs:
+#           - name: base
+#             port: 443
+tlsRoutes: []
+
+# List (or single object) of UDPRoute resources to create.
+#
+# Example:
+# udpRoutes:
+#   - name: main
+#     nameSuffix: -udp
+#     labels: {}
+#     annotations: {}
+#     parentRefs: []
+#     rules:
+#       - matches:
+#           - port: 8125
+#         backendRefs:
+#           - name: statsd
+#             port: 8125
+udpRoutes: []

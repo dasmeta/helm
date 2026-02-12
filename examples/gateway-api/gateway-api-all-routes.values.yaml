@@ -1,0 +1,135 @@
+# helm diff upgrade --install -n localhost gateway-api-all-routes ./charts/gateway-api/ -f ./examples/gateway-api/gateway-api-all-routes.values.yaml
+
+enabled: true
+
+# Single Gateway exposing multiple listeners for different protocols.
+gateways:
+  - name: main
+    gatewayClassName: istio
+    listeners:
+      - name: http
+        hostname: http-echo-gw.localhost
+        port: 80
+        protocol: HTTP
+        allowedRoutes:
+          namespaces:
+            from: Same
+      - name: grpc
+        hostname: grpc-echo-gw.localhost
+        port: 8080
+        protocol: HTTP
+        allowedRoutes:
+          namespaces:
+            from: Same
+      - name: tcp
+        port: 5432
+        protocol: TCP
+        allowedRoutes:
+          namespaces:
+            from: Same
+      - name: tls
+        hostname: tls-echo-gw.localhost
+        port: 443
+        protocol: TLS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: tls-echo-cert
+        allowedRoutes:
+          namespaces:
+            from: Same
+      - name: udp
+        port: 8125
+        protocol: UDP
+        allowedRoutes:
+          namespaces:
+            from: Same
+
+# Default parentRefs used for HTTPRoute/GRPCRoute when route.parentRefs is not set.
+defaultParentRefs:
+  - name: main
+    sectionName: http
+    kind: Gateway
+    group: gateway.networking.k8s.io
+
+# Basic HTTPRoute example that routes /ping to a backend service.
+httpRoutes:
+  - name: http-echo
+    hostnames:
+      - http-echo-gw.localhost
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /ping
+        backendRefs:
+          - name: http-echo
+            port: 8080
+
+# GRPCRoute example routing a single gRPC method.
+grpcRoutes:
+  - name: grpc-echo
+    parentRefs:
+      - name: main
+        sectionName: grpc
+        kind: Gateway
+        group: gateway.networking.k8s.io
+    hostnames:
+      - grpc-echo-gw.localhost
+    rules:
+      - matches:
+          - method:
+              type: Exact
+              service: echo.EchoService
+              method: Ping
+        backendRefs:
+          - name: grpc-echo
+            port: 8080
+
+# TCPRoute example for a PostgreSQL-like backend.
+tcpRoutes:
+  - name: tcp-db
+    parentRefs:
+      - name: main
+        sectionName: tcp
+        kind: Gateway
+        group: gateway.networking.k8s.io
+    rules:
+      - matches:
+          - port: 5432
+        backendRefs:
+          - name: postgres
+            port: 5432
+
+# TLSRoute example using SNI to route HTTPS traffic.
+tlsRoutes:
+  - name: tls-echo
+    parentRefs:
+      - name: main
+        sectionName: tls
+        kind: Gateway
+        group: gateway.networking.k8s.io
+    hostnames:
+      - tls-echo-gw.localhost
+    rules:
+      - matches:
+          - sniHosts:
+              - tls-echo-gw.localhost
+        backendRefs:
+          - name: tls-echo
+            port: 8443
+
+# UDPRoute example for something like StatsD.
+udpRoutes:
+  - name: statsd
+    parentRefs:
+      - name: main
+        sectionName: udp
+        kind: Gateway
+        group: gateway.networking.k8s.io
+    rules:
+      - matches:
+          - port: 8125
+        backendRefs:
+          - name: statsd
+            port: 8125

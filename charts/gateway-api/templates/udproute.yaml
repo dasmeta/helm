@@ -1,0 +1,69 @@
+{{- if and .Values.enabled .Values.udpRoutes }}
+{{- $outer := . -}}
+{{- $routes := .Values.udpRoutes -}}
+{{- if $routes }}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: UDPRoute
+metadata:
+  name: {{ default (include "gateway-api.fullname" $outer) $route.name }}{{ coalesce $route.nameSuffix $idx "" }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $route.parentRefs }}
+  parentRefs:
+    {{- range . }}
+    - name: {{ .name }}
+      {{- if .namespace }}
+      namespace: {{ .namespace }}
+      {{- end }}
+      {{- if .sectionName }}
+      sectionName: {{ .sectionName }}
+      {{- end }}
+      {{- if .kind }}
+      kind: {{ .kind }}
+      {{- end }}
+      {{- if .group }}
+      group: {{ .group }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- with $route.rules }}
+  rules:
+    {{- range . }}
+    - {{- with .matches }}
+      matches:
+        {{- range . }}
+        - {{- if .port }}
+          port: {{ .port }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- with .backendRefs }}
+      backendRefs:
+        {{- range . }}
+        - name: {{ .name }}
+          {{- if .namespace }}
+          namespace: {{ .namespace }}
+          {{- end }}
+          {{- if .port }}
+          port: {{ .port }}
+          {{- end }}
+          {{- if .weight }}
+          weight: {{ .weight }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

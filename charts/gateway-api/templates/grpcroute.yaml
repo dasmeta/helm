@@ -1,0 +1,86 @@
+{{- if and .Values.enabled .Values.grpcRoutes }}
+{{- $outer := . -}}
+{{- $routes := .Values.grpcRoutes -}}
+{{- if $routes }}
+{{- $defaultParentRefs := .Values.defaultParentRefs | default (list) -}}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: {{ default (include "gateway-api.fullname" $outer) $route.name }}{{ coalesce $route.nameSuffix $idx "" }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- $parentRefs := (or $route.parentRefs $defaultParentRefs) -}}
+  {{- with $parentRefs }}
+  parentRefs:
+    {{- range . }}
+    - name: {{ .name }}
+      {{- if .namespace }}
+      namespace: {{ .namespace }}
+      {{- end }}
+      {{- if .sectionName }}
+      sectionName: {{ .sectionName }}
+      {{- end }}
+      {{- if .kind }}
+      kind: {{ .kind }}
+      {{- end }}
+      {{- if .group }}
+      group: {{ .group }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- with $route.hostnames }}
+  hostnames:
+    {{- range . }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  {{- with $route.rules }}
+  rules:
+    {{- range . }}
+    - {{- with .matches }}
+      matches:
+        {{- range . }}
+        - {{- with .method }}
+          method:
+            {{- if .type }}
+            type: {{ .type }}
+            {{- end }}
+            {{- if .service }}
+            service: {{ .service | quote }}
+            {{- end }}
+            {{- if .method }}
+            method: {{ .method | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- with .backendRefs }}
+      backendRefs:
+        {{- range . }}
+        - name: {{ .name }}
+          {{- if .namespace }}
+          namespace: {{ .namespace }}
+          {{- end }}
+          {{- if .port }}
+          port: {{ .port }}
+          {{- end }}
+          {{- if .weight }}
+          weight: {{ .weight }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
