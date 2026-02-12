@@ -595,6 +595,29 @@ autoscaling:
       awsRegion: <aws-region>
 ```
 
+### Deploy only job 
+```yaml
+
+kind: Job
+service:
+  enabled: false
+
+job:
+  name: db-migration-backend
+  image:
+    repository: repo
+    tag: latest
+    pullPolicy: Always
+  envFrom:
+    secret: secret
+    configMap: configMap
+  command:
+    - "sh"
+    - "-c"
+    - |
+      set -e
+```
+
 ### custom rollout strategy(canary,blue/gree) configs by using flagger
 ```yaml
 # This config allows to enable custom rollout strategies by using different providers/operators
