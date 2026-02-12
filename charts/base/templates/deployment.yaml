@@ -1,5 +1,4 @@
-{{- $kind := .Values.kind | default "Deployment" -}}
-{{- if eq $kind "Deployment" -}}
+{{- if eq .Values.workloadType "Deployment" -}}
 {{ $baseFullName := (include "base.fullname" .) }}
 {{ $volumes := concat .Values.volumes ((.Values.deployment).volumes | default (list)) (fromYaml (include "base.configMapVolumes" $)).data (fromYaml (include "base.secretVolumes" $)).data (fromYaml (include "base.extraContainersConfigMapVolumes" $)).data (fromYaml (include "base.extraContainersSecretVolumes" $)).data }}
 {{ $additionalVolumeMounts := (coalesce .Values.additionalVolumeMounts (.Values.deployment).additionalvolumeMounts) }}
