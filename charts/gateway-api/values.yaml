@@ -36,7 +36,7 @@ defaultParentRefs: []
 
 # List (or single object) of HTTPRoute resources to create.
 #
-# Example:
+# Example with backend routing:
 # httpRoutes:
 #   - name: main
 #     nameSuffix: -route
@@ -58,6 +58,80 @@ defaultParentRefs: []
 #         backendRefs:
 #           - name: base
 #             port: 80
+#
+# Example with HTTP to HTTPS redirect:
+# httpRoutes:
+#   - name: https-redirect
+#     parentRefs:
+#       - name: main
+#         sectionName: http
+#         kind: Gateway
+#         group: gateway.networking.k8s.io
+#     hostnames:
+#       - example.com
+#     rules:
+#       - matches:
+#           - path:
+#               type: PathPrefix
+#               value: /
+#         filters:
+#           - type: RequestRedirect
+#             requestRedirect:
+#               scheme: https
+#               statusCode: 301
+#               port: 443
+#
+# Example with path-based redirect:
+# httpRoutes:
+#   - name: path-redirect
+#     parentRefs:
+#       - name: main
+#         sectionName: http
+#         kind: Gateway
+#         group: gateway.networking.k8s.io
+#     hostnames:
+#       - example.com
+#     rules:
+#       - matches:
+#           - path:
+#               type: PathPrefix
+#               value: /old-path
+#         filters:
+#           - type: RequestRedirect
+#             requestRedirect:
+#               path:
+#                 type: ReplaceFullPath
+#                 replaceFullPath: /new-path
+#               statusCode: 301
+#
+# Example with custom 403 response (using RequestRedirect with 403 status):
+# Note: For a true static 403 response, you may need a backend service that returns 403,
+# or use Istio-specific Envoy filters. This example shows redirect to a 403 page.
+# httpRoutes:
+#   - name: forbidden-route
+#     parentRefs:
+#       - name: main
+#         sectionName: http
+#         kind: Gateway
+#         group: gateway.networking.k8s.io
+#     hostnames:
+#       - example.com
+#     rules:
+#       - matches:
+#           - path:
+#               type: PathPrefix
+#               value: /restricted
+#         filters:
+#           - type: RequestRedirect
+#             requestRedirect:
+#               path:
+#                 type: ReplaceFullPath
+#                 replaceFullPath: /403.html
+#               statusCode: 403
+#         # Alternative: Use a backend service that returns 403
+#         # backendRefs:
+#         #   - name: forbidden-service
+#         #     port: 80
 httpRoutes: []
 
 # List (or single object) of GRPCRoute resources to create.

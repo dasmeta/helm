@@ -65,6 +65,95 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
+      {{- with .filters }}
+      filters:
+        {{- range . }}
+        - {{- if .type }}
+          type: {{ .type }}
+          {{- end }}
+          {{- if eq .type "RequestRedirect" }}
+          {{- with .requestRedirect }}
+          requestRedirect:
+            {{- if .scheme }}
+            scheme: {{ .scheme | quote }}
+            {{- end }}
+            {{- if .hostname }}
+            hostname: {{ .hostname | quote }}
+            {{- end }}
+            {{- if .path }}
+            {{- with .path }}
+            path:
+              {{- if .type }}
+              type: {{ .type }}
+              {{- end }}
+              {{- if .replaceFullPath }}
+              replaceFullPath: {{ .replaceFullPath | quote }}
+              {{- end }}
+              {{- if .replacePrefixMatch }}
+              replacePrefixMatch: {{ .replacePrefixMatch | quote }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if .port }}
+            port: {{ .port }}
+            {{- end }}
+            {{- if .statusCode }}
+            statusCode: {{ .statusCode }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if eq .type "ResponseHeaderModifier" }}
+          {{- with .responseHeaderModifier }}
+          responseHeaderModifier:
+            {{- with .add }}
+            add:
+              {{- range . }}
+              - name: {{ .name | quote }}
+                value: {{ .value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- with .set }}
+            set:
+              {{- range . }}
+              - name: {{ .name | quote }}
+                value: {{ .value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- with .remove }}
+            remove:
+              {{- range . }}
+              - {{ . | quote }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if eq .type "RequestHeaderModifier" }}
+          {{- with .requestHeaderModifier }}
+          requestHeaderModifier:
+            {{- with .add }}
+            add:
+              {{- range . }}
+              - name: {{ .name | quote }}
+                value: {{ .value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- with .set }}
+            set:
+              {{- range . }}
+              - name: {{ .name | quote }}
+                value: {{ .value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- with .remove }}
+            remove:
+              {{- range . }}
+              - {{ . | quote }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
       {{- with .backendRefs }}
       backendRefs:
         {{- range . }}
