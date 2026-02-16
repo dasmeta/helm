@@ -1,3 +1,9 @@
+{{- /*
+  UDPRoute is an EXPERIMENTAL Gateway API resource.
+  It is NOT included in the standard Gateway API CRD installation.
+  To use UDPRoute, you must install the experimental CRDs:
+  https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+*/ -}}
 {{- if and .Values.enabled .Values.udpRoutes }}
 {{- $outer := . -}}
 {{- $routes := .Values.udpRoutes -}}

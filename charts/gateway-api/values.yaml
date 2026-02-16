@@ -83,6 +83,9 @@ httpRoutes: []
 grpcRoutes: []
 
 # List (or single object) of TCPRoute resources to create.
+# NOTE: TCPRoute is an EXPERIMENTAL Gateway API resource and is NOT included in
+# the standard Gateway API CRD installation. To use TCPRoute, you must install
+# the experimental CRDs: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 #
 # Example:
 # tcpRoutes:
@@ -100,6 +103,9 @@ grpcRoutes: []
 tcpRoutes: []
 
 # List (or single object) of TLSRoute resources to create.
+# NOTE: TLSRoute is an EXPERIMENTAL Gateway API resource and is NOT included in
+# the standard Gateway API CRD installation. To use TLSRoute, you must install
+# the experimental CRDs: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 #
 # Example:
 # tlsRoutes:
@@ -120,6 +126,9 @@ tcpRoutes: []
 tlsRoutes: []
 
 # List (or single object) of UDPRoute resources to create.
+# NOTE: UDPRoute is an EXPERIMENTAL Gateway API resource and is NOT included in
+# the standard Gateway API CRD installation. To use UDPRoute, you must install
+# the experimental CRDs: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 #
 # Example:
 # udpRoutes:
