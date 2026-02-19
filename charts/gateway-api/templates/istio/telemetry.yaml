@@ -1,0 +1,37 @@
+{{- if .Values.istio.telemetries }}
+{{- $outer := . -}}
+{{- $telemetries := .Values.istio.telemetries -}}
+{{- if $telemetries }}
+{{- range $idx, $telemetry := (ternary $telemetries (list $telemetries) (kindIs "slice" $telemetries)) }}
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: {{ default (printf "%s-telemetry-%d" (include "gateway-api.fullname" $outer) $idx) $telemetry.name }}
+  namespace: {{ default $outer.Release.Namespace $telemetry.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $telemetry.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $telemetry.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $telemetry.selector }}
+  selector:
+    {{- toYaml $telemetry.selector | nindent 4 }}
+  {{- end }}
+  {{- if $telemetry.tracing }}
+  tracing: {{- toYaml $telemetry.tracing | nindent 2 }}
+  {{- end }}
+  {{- if $telemetry.metrics }}
+  metrics: {{- toYaml $telemetry.metrics | nindent 2 }}
+  {{- end }}
+  {{- if $telemetry.accessLogging }}
+  accessLogging: {{- toYaml $telemetry.accessLogging | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

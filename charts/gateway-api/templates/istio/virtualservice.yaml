@@ -1,0 +1,47 @@
+{{- if .Values.istio.virtualServices }}
+{{- $outer := . -}}
+{{- $virtualServices := .Values.istio.virtualServices -}}
+{{- if $virtualServices }}
+{{- range $idx, $vs := (ternary $virtualServices (list $virtualServices) (kindIs "slice" $virtualServices)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ default (printf "%s-vs-%d" (include "gateway-api.fullname" $outer) $idx) $vs.name }}
+  {{- with $vs.namespace }}
+  namespace: {{ . | quote }}
+  {{- end }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $vs.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $vs.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $vs.hosts }}
+  hosts:
+    {{- range $vs.hosts }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  {{- if $vs.gateways }}
+  gateways:
+    {{- range $vs.gateways }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  {{- with $vs.http }}
+  http: {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- with $vs.tcp }}
+  tcp: {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- with $vs.tls }}
+  tls: {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

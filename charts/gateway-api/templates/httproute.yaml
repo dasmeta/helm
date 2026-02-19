@@ -1,0 +1,148 @@
+{{- if .Values.httpRoutes }}
+{{- $outer := . -}}
+{{- $routes := .Values.httpRoutes -}}
+{{- if $routes }}
+{{- /* Group routes by hostname to combine into single HTTPRoute */ -}}
+{{- $groupedRoutes := dict -}}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) -}}
+  {{- $hostnames := $route.hostnames | default (list) -}}
+  {{- $hostnamesKey := (join "-" $hostnames) | default "default" -}}
+  {{- if not (hasKey $groupedRoutes $hostnamesKey) -}}
+    {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
+    {{- $_ := set $groupedRoutes $hostnamesKey (dict "routes" (list) "hostnames" $hostnames "parentRefs" $parentRefs "firstRoute" $route) -}}
+  {{- end -}}
+  {{- $group := get $groupedRoutes $hostnamesKey -}}
+  {{- $routesList := $group.routes -}}
+  {{- $routesList = append $routesList $route -}}
+  {{- $_ := set $group "routes" $routesList -}}
+{{- end -}}
+{{- /* Generate HTTPRoute for each group */ -}}
+{{- $firstGroup := true -}}
+{{- range $groupKey, $group := $groupedRoutes -}}
+  {{- if not $firstGroup }}
+---
+  {{- end }}
+  {{- $firstGroup = false -}}
+  {{- $firstRoute := $group.firstRoute -}}
+  {{- $allRules := list -}}
+  {{- /* Collect and filter rules from all routes in this group */ -}}
+  {{- range $group.routes -}}
+    {{- range $ruleIdx, $rule := (default (list) .rules) -}}
+      {{- $shouldFilter := false -}}
+      {{- if and .directResponse .directResponse.status -}}
+        {{- $status := .directResponse.status | toString -}}
+        {{- if eq $status "403" -}}
+          {{- $shouldFilter = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if not $shouldFilter -}}
+        {{- $allRules = append $allRules $rule -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ default (include "gateway-api.fullname" $outer) $firstRoute.name }}{{ coalesce $firstRoute.nameSuffix "" }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $firstRoute.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $firstRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $group.parentRefs }}
+  parentRefs:
+    {{- range $group.parentRefs }}
+    - name: {{ .name | quote }}
+      kind: {{ default "Gateway" .kind | quote }}
+      group: {{ default "gateway.networking.k8s.io" .group | quote }}
+      namespace: {{ default "istio-system" .namespace | quote }}
+      {{- if .sectionName }}
+      sectionName: {{ .sectionName | quote }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if $group.hostnames }}
+  hostnames: {{- toYaml $group.hostnames | nindent 2 }}
+  {{- end }}
+  {{- if $allRules }}
+  rules:
+    {{- range $allRules }}
+      {{- $rule := dict }}
+      {{- if .matches }}
+        {{- $processedMatches := list }}
+        {{- range .matches }}
+          {{- $match := dict }}
+          {{- if .path }}
+            {{- $path := dict "value" .path.value }}
+            {{- $_ := set $path "type" (default "PathPrefix" .path.type) }}
+            {{- $_ := set $match "path" $path }}
+          {{- end }}
+          {{- if .headers }}
+            {{- $_ := set $match "headers" .headers }}
+          {{- end }}
+          {{- $processedMatches = append $processedMatches $match }}
+        {{- end }}
+        {{- $_ := set $rule "matches" $processedMatches }}
+      {{- end }}
+      {{- /* Handle simplified redirect format */ -}}
+      {{- if .redirect -}}
+        {{- $redirectFilter := dict "type" "RequestRedirect" -}}
+        {{- $requestRedirect := dict -}}
+        {{- if .redirect.uri -}}
+          {{- /* Path-based redirect: /old-path -> /new-path */ -}}
+          {{- $_ := set $requestRedirect "path" (dict "type" "ReplaceFullPath" "replaceFullPath" .redirect.uri) -}}
+        {{- end -}}
+        {{- if .redirect.scheme -}}
+          {{- /* Scheme redirect: http -> https */ -}}
+          {{- $_ := set $requestRedirect "scheme" .redirect.scheme -}}
+          {{- if eq .redirect.scheme "https" -}}
+            {{- $_ := set $requestRedirect "port" 443 -}}
+          {{- end -}}
+        {{- end -}}
+        {{- if .redirect.redirectCode -}}
+          {{- $_ := set $requestRedirect "statusCode" .redirect.redirectCode -}}
+        {{- else if .redirect.statusCode -}}
+          {{- $_ := set $requestRedirect "statusCode" .redirect.statusCode -}}
+        {{- end -}}
+        {{- if .redirect.authority -}}
+          {{- $_ := set $requestRedirect "hostname" .redirect.authority -}}
+        {{- end -}}
+        {{- $_ := set $redirectFilter "requestRedirect" $requestRedirect -}}
+        {{- $_ := set $rule "filters" (list $redirectFilter) -}}
+      {{- else if .filters }}
+        {{- $_ := set $rule "filters" .filters }}
+      {{- end }}
+      {{- $backendRefs := .backendRefs }}
+      {{- if not $backendRefs }}
+        {{- /* Don't auto-create backendRefs if filters (including redirect) are present */ -}}
+        {{- if not (or .filters .redirect $rule.filters) }}
+          {{- $backendRefs = list (dict) }}
+        {{- end }}
+      {{- end }}
+      {{- if $backendRefs }}
+        {{- $processedBackendRefs := list }}
+        {{- range $backendRefs }}
+          {{- $backendRef := dict "name" (default $outer.Release.Name .name) "port" (default 80 .port) }}
+          {{- if .namespace }}
+            {{- $_ := set $backendRef "namespace" .namespace }}
+          {{- end }}
+          {{- if .weight }}
+            {{- $_ := set $backendRef "weight" .weight }}
+          {{- end }}
+          {{- $processedBackendRefs = append $processedBackendRefs $backendRef }}
+        {{- end }}
+        {{- $_ := set $rule "backendRefs" $processedBackendRefs }}
+      {{- end }}
+      {{- if or $rule.matches $rule.filters $rule.backendRefs }}
+        {{- toYaml (list $rule) | nindent 4 | trimPrefix "- " }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

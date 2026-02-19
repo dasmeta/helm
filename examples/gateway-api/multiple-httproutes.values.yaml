@@ -1,0 +1,141 @@
+# helm diff upgrade --install -n localhost multiple-routes-example ./charts/gateway-api/ -f ./examples/gateway-api/multiple-httproutes.values.yaml
+#
+# This example demonstrates multiple HTTPRoute resources with different hostnames.
+# Routes with the same hostname are automatically combined into a single HTTPRoute.
+
+enabled: true
+
+# Single Gateway with multiple listeners for different hostnames
+gateways:
+  - name: main
+    gatewayClassName: istio
+    listeners:
+      - hostname: api.example.com
+        port: 80
+        protocol: HTTP
+      - hostname: web.example.com
+        port: 80
+        protocol: HTTP
+      - hostname: admin.example.com
+        port: 80
+        protocol: HTTP
+
+# Default parentRefs used for HTTPRoute when route.parentRefs is not set
+defaultParentRefs:
+  - name: main
+    # namespace defaults to "istio-system"
+    # kind and group have defaults (Gateway, gateway.networking.k8s.io)
+
+# Multiple HTTPRoutes for different hostnames
+# Routes with the same hostname will be combined into a single HTTPRoute
+httpRoutes:
+  # HTTPRoute 1: API service (api.example.com)
+  - name: api-service
+    hostnames:
+      - api.example.com
+    rules:
+      # Rule 1: Route /v1/* to v1 backend
+      - matches:
+          - path:
+              value: /v1
+        backendRefs:
+          - name: api-v1
+            port: 80
+      # Rule 2: Route /v2/* to v2 backend
+      - matches:
+          - path:
+              value: /v2
+        backendRefs:
+          - name: api-v2
+            port: 80
+      # Rule 3: Redirect /docs to /v2/docs
+      - matches:
+          - path:
+              value: /docs
+        redirect:
+          uri: /v2/docs
+          redirectCode: 301
+
+  # HTTPRoute 2: Web service (web.example.com)
+  - name: web-service
+    hostnames:
+      - web.example.com
+    rules:
+      # Rule 1: HTTP to HTTPS redirect for all paths
+      - matches:
+          - path:
+              value: /
+        redirect:
+          scheme: https
+          statusCode: 301
+      # Rule 2: Route /static/* to static service
+      - matches:
+          - path:
+              value: /static
+        backendRefs:
+          - name: static-service
+            port: 80
+
+  # HTTPRoute 3: Admin service (admin.example.com) with multiple rules
+  - name: admin-service
+    hostnames:
+      - admin.example.com
+    rules:
+      # Rule 1: Block /restricted path (returns 403 via AuthorizationPolicy)
+      - matches:
+          - path:
+              value: /restricted
+        directResponse:
+          status: 403
+      # Rule 2: Route /dashboard to dashboard service
+      - matches:
+          - path:
+              value: /dashboard
+        backendRefs:
+          - name: dashboard-service
+            port: 80
+      # Rule 3: Route all other traffic to admin service
+      - matches:
+          - path:
+              value: /
+        # backendRefs defaults to release name and port 80
+
+  # HTTPRoute 4: Another route for api.example.com (will be combined with api-service)
+  - name: api-health
+    hostnames:
+      - api.example.com
+    rules:
+      # Health check endpoint
+      - matches:
+          - path:
+              value: /health
+        backendRefs:
+          - name: api-health
+            port: 8080
+
+  # HTTPRoute 5: Example with 403 response (admin.example.com)
+  # This will be combined with admin-service since they share the same hostname
+  - name: admin-restricted
+    hostnames:
+      - admin.example.com
+    rules:
+      # Block /admin/secret path (returns 403 via auto-generated AuthorizationPolicy)
+      - matches:
+          - path:
+              value: /admin/secret
+        directResponse:
+          status: 403
+
+  # HTTPRoute 6: Example with redirect (web.example.com)
+  # This will be combined with web-service since they share the same hostname
+  - name: web-redirects
+    hostnames:
+      - web.example.com
+    rules:
+      # Redirect /old-page to /new-page
+      - matches:
+          - path:
+              value: /old-page
+        redirect:
+          uri: /new-page
+          redirectCode: 301

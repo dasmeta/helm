@@ -1,0 +1,37 @@
+# helm diff upgrade --install -n localhost gateway-api-standard-routes ./charts/gateway-api/ -f ./examples/gateway-api/gateway-api-all-routes.values.yaml
+
+enabled: true
+
+# Single Gateway exposing HTTP and gRPC listeners (standard Gateway API routes only).
+gateways:
+  - name: main
+    gatewayClassName: istio
+    listeners:
+      - name: http
+        hostname: http-echo-gw.localhost
+        port: 8080
+        protocol: HTTP
+        allowedRoutes:
+          namespaces:
+            from: Same
+
+# Default parentRefs used for HTTPRoute/GRPCRoute when route.parentRefs is not set.
+defaultParentRefs:
+  - name: main
+    sectionName: http
+    kind: Gateway
+    group: gateway.networking.k8s.io
+
+# Basic HTTPRoute example that routes /ping to a backend service.
+httpRoutes:
+  - name: http-echo
+    hostnames:
+      - http-echo-gw.localhost
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /ping
+        backendRefs:
+          - name: http-echo
+            port: 80

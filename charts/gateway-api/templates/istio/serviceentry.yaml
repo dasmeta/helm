@@ -1,0 +1,52 @@
+{{- if .Values.istio.serviceEntries }}
+{{- $outer := . -}}
+{{- $entries := .Values.istio.serviceEntries -}}
+{{- if $entries }}
+{{- range $idx, $entry := (ternary $entries (list $entries) (kindIs "slice" $entries)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: {{ default (printf "%s-se-%d" (include "gateway-api.fullname" $outer) $idx) $entry.name }}
+  namespace: {{ default $outer.Release.Namespace $entry.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $entry.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $entry.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $entry.hosts }}
+  hosts: {{- toYaml $entry.hosts | nindent 2 }}
+  {{- end }}
+  {{- if $entry.addresses }}
+  addresses: {{- toYaml $entry.addresses | nindent 2 }}
+  {{- end }}
+  {{- if $entry.ports }}
+  ports: {{- toYaml $entry.ports | nindent 2 }}
+  {{- end }}
+  {{- if $entry.location }}
+  location: {{ $entry.location | quote }}
+  {{- end }}
+  {{- if $entry.resolution }}
+  resolution: {{ $entry.resolution | quote }}
+  {{- end }}
+  {{- if $entry.endpoints }}
+  endpoints: {{- toYaml $entry.endpoints | nindent 2 }}
+  {{- end }}
+  {{- if $entry.exportTo }}
+  exportTo: {{- toYaml $entry.exportTo | nindent 2 }}
+  {{- end }}
+  {{- if $entry.subjectAltNames }}
+  subjectAltNames: {{- toYaml $entry.subjectAltNames | nindent 2 }}
+  {{- end }}
+  {{- if $entry.workloadSelector }}
+  workloadSelector:
+    {{- toYaml $entry.workloadSelector | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,45 @@
+{{- if .Values.istio.workloadEntries }}
+{{- $outer := . -}}
+{{- $entries := .Values.istio.workloadEntries -}}
+{{- if $entries }}
+{{- range $idx, $entry := (ternary $entries (list $entries) (kindIs "slice" $entries)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: WorkloadEntry
+metadata:
+  name: {{ default (printf "%s-we-%d" (include "gateway-api.fullname" $outer) $idx) $entry.name }}
+  namespace: {{ default $outer.Release.Namespace $entry.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $entry.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $entry.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $entry.address }}
+  address: {{ $entry.address | quote }}
+  {{- end }}
+  {{- if $entry.ports }}
+  ports: {{- toYaml $entry.ports | nindent 2 }}
+  {{- end }}
+  {{- if $entry.labels }}
+  labels: {{- toYaml $entry.labels | nindent 2 }}
+  {{- end }}
+  {{- if $entry.network }}
+  network: {{ $entry.network | quote }}
+  {{- end }}
+  {{- if $entry.locality }}
+  locality: {{ $entry.locality | quote }}
+  {{- end }}
+  {{- if $entry.weight }}
+  weight: {{ $entry.weight }}
+  {{- end }}
+  {{- if $entry.serviceAccount }}
+  serviceAccount: {{ $entry.serviceAccount | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

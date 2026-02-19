@@ -1,0 +1,69 @@
+{{- /*
+  UDPRoute is an EXPERIMENTAL Gateway API resource.
+  It is NOT included in the standard Gateway API CRD installation.
+  To use UDPRoute, you must install the experimental CRDs:
+  https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+*/ -}}
+{{- if .Values.udpRoutes }}
+{{- $outer := . -}}
+{{- $routes := .Values.udpRoutes -}}
+{{- if $routes }}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: UDPRoute
+metadata:
+  name: {{ default (include "gateway-api.fullname" $outer) $route.name }}{{ coalesce $route.nameSuffix $idx "" }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
+  {{- if $parentRefs }}
+  parentRefs:
+    {{- range $parentRefs }}
+    - name: {{ .name | quote }}
+      kind: {{ default "Gateway" .kind | quote }}
+      group: {{ default "gateway.networking.k8s.io" .group | quote }}
+      namespace: {{ default "istio-system" .namespace | quote }}
+      {{- if .sectionName }}
+      sectionName: {{ .sectionName | quote }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- with $route.rules }}
+  rules:
+    {{- range . }}
+      {{- $rule := dict }}
+      {{- if .matches }}
+        {{- $_ := set $rule "matches" .matches }}
+      {{- end }}
+      {{- $backendRefs := .backendRefs | default (list (dict)) }}
+      {{- if $backendRefs }}
+        {{- $processedBackendRefs := list }}
+        {{- range $backendRefs }}
+          {{- $backendRef := dict "name" (default $outer.Release.Name .name) "port" (default 80 .port) }}
+          {{- if .namespace }}
+            {{- $_ := set $backendRef "namespace" .namespace }}
+          {{- end }}
+          {{- if .weight }}
+            {{- $_ := set $backendRef "weight" .weight }}
+          {{- end }}
+          {{- $processedBackendRefs = append $processedBackendRefs $backendRef }}
+        {{- end }}
+        {{- $_ := set $rule "backendRefs" $processedBackendRefs }}
+      {{- end }}
+      {{- if or $rule.matches $rule.backendRefs }}
+        {{- toYaml (list $rule) | nindent 4 | trimPrefix "- " }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

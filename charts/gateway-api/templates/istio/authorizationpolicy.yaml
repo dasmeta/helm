@@ -1,0 +1,98 @@
+{{- $outer := . -}}
+{{- /* Collect auto-generated AuthorizationPolicies from HTTPRoute 403 directResponse rules */ -}}
+{{- $autoAuthzPolicies := list -}}
+{{- if .Values.httpRoutes }}
+{{- $routes := .Values.httpRoutes -}}
+{{- if $routes }}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
+  {{- range $ruleIdx, $rule := (default (list) $route.rules) -}}
+    {{- if and .directResponse .directResponse.status -}}
+      {{- $status := .directResponse.status | toString -}}
+      {{- if eq $status "403" -}}
+        {{- /* Extract path from matches for AuthorizationPolicy */ -}}
+        {{- $paths := list -}}
+        {{- $hosts := list -}}
+        {{- $ports := list "80" -}}
+        {{- if .matches -}}
+          {{- range .matches -}}
+            {{- if .path -}}
+              {{- $pathValue := .path.value -}}
+              {{- $pathType := default "PathPrefix" .path.type -}}
+              {{- if eq $pathType "PathPrefix" -}}
+                {{- $paths = append $paths (printf "%s*" $pathValue) -}}
+              {{- else -}}
+                {{- $paths = append $paths $pathValue -}}
+              {{- end -}}
+            {{- end -}}
+          {{- end -}}
+        {{- else -}}
+          {{- /* If no matches, block all paths */ -}}
+          {{- $paths = list "*" -}}
+        {{- end -}}
+        {{- /* Get hostnames from route or use wildcard */ -}}
+        {{- if $route.hostnames -}}
+          {{- $hosts = $route.hostnames -}}
+        {{- else -}}
+          {{- $hosts = list "*" -}}
+        {{- end -}}
+        {{- /* Get Gateway name from parentRefs */ -}}
+        {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
+        {{- $gatewayName := "main" -}}
+        {{- if $parentRefs -}}
+          {{- $gatewayName = (index $parentRefs 0).name -}}
+        {{- end -}}
+        {{- /* Create AuthorizationPolicy */ -}}
+        {{- $authzPolicy := dict "name" (printf "%s-403-%d" (default (include "gateway-api.fullname" $outer) $route.name) $ruleIdx) "namespace" "istio-system" "action" "DENY" "targetRefs" (list (dict "name" $gatewayName)) "rules" (list (dict "to" (list (dict "operation" (dict "hosts" $hosts "paths" $paths "ports" $ports))))) -}}
+        {{- $autoAuthzPolicies = append $autoAuthzPolicies $authzPolicy -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- /* Merge manually provided policies with auto-generated ones */ -}}
+{{- $manualPolicies := .Values.istio.authorizationPolicies | default (list) -}}
+{{- $allPolicies := $autoAuthzPolicies -}}
+{{- if $manualPolicies }}
+  {{- if kindIs "slice" $manualPolicies -}}
+    {{- $allPolicies = concat $autoAuthzPolicies $manualPolicies -}}
+  {{- else -}}
+    {{- $allPolicies = append $autoAuthzPolicies $manualPolicies -}}
+  {{- end -}}
+{{- end }}
+{{- if $allPolicies }}
+{{- range $idx, $policy := $allPolicies }}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ default (printf "%s-authz-%d" (include "gateway-api.fullname" $outer) $idx) $policy.name | quote }}
+  namespace: {{ default "istio-system" $policy.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $policy.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $policy.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  action: {{ default "DENY" $policy.action }}
+  {{- $defaultTargetRefs := $outer.Values.istio.defaultTargetRefs | default (list) -}}
+  {{- $targetRefs := (or $policy.targetRefs $defaultTargetRefs) -}}
+  {{- if $targetRefs }}
+  targetRefs:
+    {{- range $targetRefs }}
+    - name: {{ .name | quote }}
+      kind: {{ default "Gateway" .kind | quote }}
+      group: {{ default "gateway.networking.k8s.io" .group | quote }}
+      {{- /* Note: AuthorizationPolicy targetRefs do not support cross-namespace references.
+           The target must be in the same namespace as the AuthorizationPolicy. */ -}}
+    {{- end }}
+  {{- end }}
+  {{- with $policy.rules }}
+  rules: {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
