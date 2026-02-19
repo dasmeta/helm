@@ -1,0 +1,66 @@
+# helm diff upgrade --install -n localhost not-found-example ./charts/base/ -f ./examples/base/with-istio-gateway-api-404-response.yaml
+#
+# This example demonstrates how to return a 404 (Not Found) status code for
+# specific paths using HTTPRoute with a non-existent service reference, while
+# routing all other traffic to the actual service.
+#
+# IMPORTANT: When HTTPRoute references a non-existent service, Istio/Gateway API
+# returns 500 (Internal Server Error) or 503 (Service Unavailable), NOT 404.
+# This is because the route exists but the backend is unreachable.
+#
+# To get a true 404 response, you have two options:
+# 1. Create a service that returns 404 (recommended)
+# 2. Use Istio VirtualService with fault injection (outside Gateway API)
+#
+# This example shows option 1: routing to a non-existent service will result
+# in 500/503 errors, which may be acceptable for some use cases.
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # HTTPRoute: Route /restricted path to non-existent service (404), all other traffic to actual service
+  httpRoutes:
+    - name: not-found-example
+      parentRefs:
+        - name: main
+          sectionName: not-found-example
+          # namespace defaults to "istio-system", kind and group have defaults (Gateway, gateway.networking.k8s.io)
+      hostnames:
+        - not-found-example.localhost
+      rules:
+        # Rule 1: Attempt to route /restricted to non-existent service
+        # NOTE: This will return 500/503 (not 404) because the service doesn't exist.
+        # The route matches, but the backend is unreachable, causing a connection error.
+        # For a true 404, create a service that returns 404, or use Istio VirtualService.
+        - matches:
+            - path:
+                value: /restricted
+                # type defaults to "PathPrefix"
+          backendRefs:
+            - name: non-existent-404-service
+              port: 80
+              # This service doesn't exist, so requests will return 500/503 (not 404)
+        # Rule 2: Route all other traffic to the actual service
+        - matches:
+            - path:
+                value: /
+                # type defaults to "PathPrefix"
+          # backendRefs is automatically created with defaults:
+          # name defaults to release name, port defaults to 80

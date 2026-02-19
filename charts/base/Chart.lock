@@ -1,0 +1,6 @@
+dependencies:
+- name: gateway-api
+  repository: https://dasmeta.github.io/helm
+  version: 0.1.0
+digest: sha256:599d48fb2d315228ac3624c858ddba56bb91f75bc9906af058380e48758c8f1a
+generated: "2026-02-19T18:03:11.220721+04:00"

@@ -1,0 +1,64 @@
+# helm diff upgrade --install -n localhost redirect-example ./charts/base/ -f ./examples/base/with-istio-gateway-api-redirects.yaml
+#
+# This example demonstrates HTTPRoute with redirect filters:
+# 1. HTTP to HTTPS redirect
+# 2. Path-based redirects
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # Set default parentRefs for all HTTPRoutes (optional - can be set per route)
+  defaultParentRefs:
+    - name: main
+      sectionName: redirect-example
+      # namespace defaults to "istio-system"
+      # kind and group have defaults (Gateway, gateway.networking.k8s.io)
+
+  # Only HTTPRoute resources - Gateway "main" should already exist in istio-system namespace
+  # All rules for the same hostname are combined into a single HTTPRoute
+  httpRoutes:
+    - name: redirect-example
+      # parentRefs will use defaultParentRefs if not specified
+      hostnames:
+        - redirect-example.localhost
+      rules:
+        # Rule 1: HTTP to HTTPS redirect
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          redirect:
+            scheme: https
+            statusCode: 301
+        # Rule 2: Path-based redirect: /old-path -> /new-path
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /old-path
+          redirect:
+            uri: /new-path
+            redirectCode: 301
+        # Rule 3: Normal backend route (no redirect)
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /new-path
+          # backendRefs is automatically created with defaults:
+          # name defaults to release name, port defaults to 80

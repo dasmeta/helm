@@ -490,3 +490,437 @@ rolloutStrategy:
   #       providerRef:
   #         name: on-call
   #         namespace: ingress-nginx
+
+gatewayApi:
+  enabled: false
+  # Parent chart information (set when gateway-api is used as subchart)
+  # This value adds a label to Kubernetes resources created by gateway-api:
+  #   - helm.sh/parent-chart: parent chart name
+  # Note: This should match the parent chart's Chart.yaml name (currently "base")
+  # Since Helm doesn't support templating in values.yaml, this must be manually set.
+  parentChart:
+    name: base # Must match Chart.yaml name field
+  # Values passed to the gateway-api subchart.
+  #
+  # This section is the root for the gateway-api chart. The "enabled" flag here
+  # controls whether the dependency is rendered (see condition in Chart.yaml).
+  #
+  # By default Gateway API resources are disabled. To switch from the
+  # traditional Ingress to Gateway API you would typically:
+  #   - disable base ingress: ingress.enabled: false
+  #   - enable gateway-api and define gateways/routes below.
+  #
+  # Example (minimal):
+  # gatewayApi:
+  #   enabled: true
+  #   gateways:
+  #     - name: main
+  #       # gatewayClassName defaults to "istio"
+  #       # namespace defaults to "istio-system"
+  #       listeners:
+  #         - hostname: example.com
+  #           # name auto-generated as "http-80-example-com" (protocol-port-hostname, truncated to 63 chars)
+  #           # port defaults to 80
+  #           # protocol defaults to "HTTP"
+  #           # allowedRoutes.namespaces.from defaults to "All"
+  #   defaultParentRefs:
+  #     - name: main
+  #       sectionName: http
+  #       # namespace defaults to "istio-system"
+  #       # kind and group have defaults (Gateway, gateway.networking.k8s.io)
+  #   httpRoutes:
+  #     - name: base-route
+  #       hostnames:
+  #         - example.com
+  #       rules:
+  #         - matches:
+  #             - path:
+  #                 value: /
+  #                 # type defaults to "PathPrefix"
+  #           # backendRefs defaults: name=release name, port=80
+  #
+  # Example with Gateway infrastructure (AWS LoadBalancer configuration):
+  # gatewayApi:
+  #   enabled: true
+  #   gateways:
+  #     - name: internal
+  #       # gatewayClassName defaults to "istio"
+  #       # namespace defaults to "istio-system"
+  #       listeners:
+  #         - hostname: internal.example.com
+  #           # name auto-generated, port defaults to 80, protocol defaults to "HTTP"
+  #       infrastructure:
+  #         annotations:
+  #           # AWS: Create internal LoadBalancer
+  #           service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+  #           service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  #     - name: external
+  #       # gatewayClassName defaults to "istio"
+  #       # namespace defaults to "istio-system"
+  #       listeners:
+  #         - hostname: external.example.com
+  #           # name auto-generated, port defaults to 80, protocol defaults to "HTTP"
+  #       infrastructure:
+  #         annotations:
+  #           # AWS: External LoadBalancer with security groups
+  #           service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+  #           service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  #           service.beta.kubernetes.io/aws-load-balancer-security-groups: "sg-12345,sg-67890"
+  #
+  # Example with simplified 403 response (automatically creates AuthorizationPolicy):
+  # gatewayApi:
+  #   enabled: true
+  #   gateways:
+  #     - name: main
+  #       # gatewayClassName defaults to "istio"
+  #       # namespace defaults to "istio-system"
+  #       listeners:
+  #         - hostname: example.com
+  #           # name auto-generated, port defaults to 80, protocol defaults to "HTTP"
+  #   httpRoutes:
+  #     - name: base-route
+  #       parentRefs:
+  #         - name: main
+  #           sectionName: base-route
+  #           # namespace defaults to "istio-system", kind and group have defaults
+  #       hostnames:
+  #         - example.com
+  #       rules:
+  #         # Rule 1: Return 403 for /restricted path (automatically creates AuthorizationPolicy)
+  #         - matches:
+  #             - path:
+  #                 value: /restricted
+  #                 # type defaults to "PathPrefix"
+  #           directResponse:
+  #             status: 403
+  #         # Rule 2: Route all other traffic to the service
+  #         - matches:
+  #             - path:
+  #                 value: /
+  #                 # type defaults to "PathPrefix"
+  #           # backendRefs defaults: name=release name, port=80
+  #
+  # Example with manual Istio AuthorizationPolicy (advanced use case):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     defaultTargetRefs:
+  #       - name: main
+  #         # namespace defaults to "istio-system", kind and group have defaults
+  #     authorizationPolicies:
+  #       - name: block-admin
+  #         # namespace defaults to "istio-system"
+  #         # action defaults to "DENY"
+  #         # targetRefs uses defaultTargetRefs if not specified
+  #         rules:
+  #           - to:
+  #               - operation:
+  #                   paths: ["/admin*"]
+  #                   ports: ["80"]
+  #
+  # Example with simplified HTTPRoute redirects:
+  # gatewayApi:
+  #   enabled: true
+  #   gateways:
+  #     - name: main
+  #       # gatewayClassName defaults to "istio"
+  #       # namespace defaults to "istio-system"
+  #       listeners:
+  #         - hostname: example.com
+  #           # name auto-generated, port defaults to 80, protocol defaults to "HTTP"
+  #   # All rules for the same hostname are automatically combined into a single HTTPRoute
+  #   httpRoutes:
+  #     - name: redirect-example
+  #       parentRefs:
+  #         - name: main
+  #           sectionName: redirect-example
+  #           # namespace defaults to "istio-system", kind and group have defaults
+  #       hostnames:
+  #         - example.com
+  #       rules:
+  #         # Rule 1: HTTP to HTTPS redirect
+  #         - matches:
+  #             - path:
+  #                 value: /
+  #                 # type defaults to "PathPrefix"
+  #           redirect:
+  #             scheme: https
+  #             statusCode: 301
+  #         # Rule 2: Path-based redirect: /old-path -> /new-path
+  #         - matches:
+  #             - path:
+  #                 value: /old-path
+  #                 # type defaults to "PathPrefix"
+  #           redirect:
+  #             uri: /new-path
+  #             redirectCode: 301
+  #         # Rule 3: Normal backend route (no redirect)
+  #         - matches:
+  #             - path:
+  #                 value: /new-path
+  #                 # type defaults to "PathPrefix"
+  #           # backendRefs defaults: name=release name, port=80
+  #
+  # ==============================================================================
+  # ISTIO-SPECIFIC RESOURCES (gatewayApi.istio.*)
+  # ==============================================================================
+  # The gateway-api chart supports the following Istio-specific CRDs that extend
+  # Gateway API functionality when using Istio as the Gateway implementation:
+  #
+  # 1. Gateway (networking.istio.io/v1) - Istio's native Gateway resource
+  #    - Required when using VirtualService (VirtualService can only reference Istio Gateway)
+  #    - Does NOT create LoadBalancer service - uses selector to match existing service
+  #    - Default namespace: "istio-system"
+  #
+  # 2. AuthorizationPolicy (security.istio.io/v1) - Access control
+  #    - Deny/allow specific paths, hosts, ports, IPs on Gateway resources
+  #    - Can be auto-generated from HTTPRoute rules with directResponse.status: 403
+  #    - Default namespace: "istio-system", default action: "DENY"
+  #
+  # 3. VirtualService (networking.istio.io/v1) - Advanced traffic management
+  #    - Traffic routing, fault injection, response manipulation
+  #    - Can return custom HTTP status codes (403, 404, etc.), redirects, route to backends
+  #    - Default namespace: "istio-system" (recommended to use service namespace)
+  #    - IMPORTANT: Do NOT use HTTPRoute for same hostname when using VirtualService
+  #
+  # 4. PeerAuthentication (security.istio.io/v1) - mTLS configuration
+  #    - Configures mutual TLS for services in the mesh
+  #    - Default namespace: "istio-system"
+  #
+  # 5. DestinationRule (networking.istio.io/v1) - Traffic policies
+  #    - Load balancing, circuit breakers, connection pooling, TLS settings
+  #    - Default namespace: Release.Namespace
+  #
+  # 6. ServiceEntry (networking.istio.io/v1) - External service registry
+  #    - Adds entries to Istio's service registry (external services or manual entries)
+  #    - Default namespace: Release.Namespace
+  #
+  # 7. Sidecar (networking.istio.io/v1) - Sidecar proxy configuration
+  #    - Configures sidecar proxy for inbound/outbound communication
+  #    - Default namespace: Release.Namespace
+  #
+  # 8. WorkloadEntry (networking.istio.io/v1) - VM workload integration
+  #    - Adds VM workloads to the mesh without sidecar injection
+  #    - Default namespace: Release.Namespace
+  #
+  # 9. WorkloadGroup (networking.istio.io/v1) - VM workload template
+  #    - Template for creating WorkloadEntries for VMs
+  #    - Default namespace: Release.Namespace
+  #
+  # 10. RequestAuthentication (security.istio.io/v1) - JWT authentication
+  #     - Defines JWT authentication methods for workloads
+  #     - Default namespace: Release.Namespace
+  #
+  # 11. Telemetry (telemetry.istio.io/v1) - Telemetry configuration
+  #     - Configures telemetry data generation (metrics, traces, logs)
+  #     - Default namespace: Release.Namespace
+  #
+  # All Istio resources support common attributes:
+  #   - name: Resource name (auto-generated if not specified)
+  #   - namespace: Resource namespace (see defaults above)
+  #   - labels: Additional labels to apply
+  #   - annotations: Additional annotations to apply
+  #
+  # For detailed examples of each resource, see below.
+  #
+  # Example with Istio PeerAuthentication (mTLS configuration):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     peerAuthentications:
+  #       - name: gateway-mtls
+  #         namespace: istio-system
+  #         selector:
+  #           matchLabels:
+  #             istio: ingressgateway
+  #         mtls:
+  #           mode: STRICT
+  #
+  # Example with Istio DestinationRule (traffic policies):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     destinationRules:
+  #       - name: backend-policy
+  #         host: backend-service
+  #         trafficPolicy:
+  #           loadBalancer:
+  #             simple: LEAST_CONN
+  #           connectionPool:
+  #             tcp:
+  #               maxConnections: 100
+  #           outlierDetection:
+  #             consecutiveErrors: 3
+  #             interval: 30s
+  #             baseEjectionTime: 30s
+  #
+  # Example with Istio Gateway (networking.istio.io/v1) for VirtualService:
+  # IMPORTANT: Istio Gateway is different from Kubernetes Gateway API Gateway.
+  # VirtualService requires Istio Gateway, not Kubernetes Gateway API Gateway.
+  # Istio Gateway does NOT create a LoadBalancer service - it uses a selector to match
+  # an existing service. The selector must match a service that already exists.
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     gateways:
+  #       - name: virtualservice-gateway
+  #         # namespace defaults to "istio-system"
+  #         # Option 1: If you have istio-gateway helm chart installed
+  #         selector:
+  #           istio: ingressgateway
+  #         # Option 2: If using only Kubernetes Gateway API Gateway, match the service labels
+  #         # selector:
+  #         #   gateway.networking.k8s.io/gateway-name: main
+  #         servers:
+  #           - port:
+  #               number: 80
+  #               name: http
+  #               protocol: HTTP
+  #             hosts:
+  #               - example.com
+  #
+  # Example with Istio VirtualService (advanced traffic management, 403/404 responses):
+  # VirtualService provides advanced traffic routing, fault injection, and response manipulation.
+  # IMPORTANT: When using VirtualService, do NOT use HTTPRoute for the same hostname,
+  # as HTTPRoute may take precedence and prevent VirtualService rules from being applied.
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     gateways:
+  #       - name: virtualservice-gateway
+  #         selector:
+  #           istio: ingressgateway
+  #         servers:
+  #           - port:
+  #               number: 80
+  #               name: http
+  #               protocol: HTTP
+  #             hosts:
+  #               - example.com
+  #     virtualServices:
+  #       - name: status-code-handler
+  #         # namespace defaults to "istio-system" (recommended to use service namespace)
+  #         hosts:
+  #           - example.com
+  #         gateways:
+  #           - istio-system/virtualservice-gateway
+  #         http:
+  #           # Rule 1: Return 403 for /restricted path
+  #           - match:
+  #               - uri:
+  #                   prefix: /restricted
+  #             directResponse:
+  #               status: 403
+  #               body:
+  #                 string: "Forbidden"
+  #           # Rule 2: Return 404 for /missing path
+  #           - match:
+  #               - uri:
+  #                   prefix: /missing
+  #             directResponse:
+  #               status: 404
+  #               body:
+  #                 string: "Not Found"
+  #           # Rule 3: 301 redirect from /old-path to /new-path
+  #           - match:
+  #               - uri:
+  #                   prefix: /old-path
+  #             redirect:
+  #               uri: /new-path
+  #               authority: example.com
+  #               redirectCode: 301
+  #           # Rule 4: Route to backend service
+  #           - match:
+  #               - uri:
+  #                   prefix: /
+  #             route:
+  #               - destination:
+  #                   host: backend-service  # Use short service name if in same namespace
+  #                   port:
+  #                     number: 80
+  #
+  # Example with Istio ServiceEntry (add external services to mesh):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     serviceEntries:
+  #       - name: external-api
+  #         # namespace defaults to Release.Namespace
+  #         hosts:
+  #           - api.example.com
+  #         ports:
+  #           - number: 443
+  #             name: https
+  #             protocol: HTTPS
+  #         location: MESH_EXTERNAL
+  #         resolution: DNS
+  #
+  # Example with Istio Sidecar (configure sidecar proxy):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     sidecars:
+  #       - name: restrict-egress
+  #         # namespace defaults to Release.Namespace
+  #         workloadSelector:
+  #           labels:
+  #             app: my-app
+  #         egress:
+  #           - hosts:
+  #               - "./*"  # Same namespace
+  #               - "istio-system/*"  # istio-system namespace
+  #
+  # Example with Istio WorkloadEntry (add VM workloads to mesh):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     workloadEntries:
+  #       - name: vm-workload
+  #         # namespace defaults to Release.Namespace
+  #         address: 192.168.1.100
+  #         ports:
+  #           http: 8080
+  #         labels:
+  #           app: vm-app
+  #
+  # Example with Istio WorkloadGroup (template for VM workloads):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     workloadGroups:
+  #       - name: vm-group
+  #         # namespace defaults to Release.Namespace
+  #         metadata:
+  #           labels:
+  #             app: vm-app
+  #         template:
+  #           ports:
+  #             http: 8080
+  #
+  # Example with Istio RequestAuthentication (JWT authentication):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     requestAuthentications:
+  #       - name: jwt-auth
+  #         # namespace defaults to Release.Namespace
+  #         selector:
+  #           matchLabels:
+  #             app: my-app
+  #         jwtRules:
+  #           - issuer: "https://example.com"
+  #             jwksUri: "https://example.com/.well-known/jwks.json"
+  #
+  # Example with Istio Telemetry (configure metrics, traces, logs):
+  # gatewayApi:
+  #   enabled: true
+  #   istio:
+  #     telemetries:
+  #       - name: access-logging
+  #         # namespace defaults to Release.Namespace
+  #         selector:
+  #           matchLabels:
+  #             app: my-app
+  #         accessLogging:
+  #           - providers:
+  #               - name: envoy

@@ -1,0 +1,85 @@
+# helm diff upgrade --install -n localhost with-istio-gateway-api-configure-aws-nlb ./charts/base/ -f ./examples/base/with-istio-gateway-api-configure-aws-nlb.yaml
+#
+# This example demonstrates Gateway resources with AWS NLB infrastructure configuration.
+#
+# Infrastructure annotations allow you to configure:
+# - LoadBalancer scheme (internal/external)
+# - Security groups
+# - LoadBalancer type (NLB)
+# - Other AWS-specific settings
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # Internal Gateway (AWS - internal NLB)
+  # Note: namespace defaults to "istio-system" and gatewayClassName defaults to "istio" for Gateway resources
+  gateways:
+    - name: internal
+      # gatewayClassName defaults to "istio"
+      # namespace defaults to "istio-system"
+      listeners:
+        - hostname: with-istio-gateway-api-configure-aws-nlb.devops.dasmeta.com
+          # name auto-generated as "http-80-with-istio-gateway-api-configure-aws-nlb-devops-dasmeta-com" (protocol-port-hostname, truncated to 63 chars)
+          # port defaults to 80
+          # protocol defaults to "HTTP"
+          # allowedRoutes.namespaces.from defaults to "All"
+      infrastructure:
+        annotations:
+          # AWS: Create internal Network Load Balancer
+          service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+          service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+          # Optional: Specify subnets for internal LB
+          # service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-12345,subnet-67890"
+
+    # External Gateway with security group restrictions (AWS)
+    - name: external
+      # gatewayClassName defaults to "istio"
+      listeners:
+        - hostname: with-istio-gateway-api-configure-aws-nlb.devops.dasmeta.com
+          # name auto-generated as "http-80-with-istio-gateway-api-configure-aws-nlb-devops-dasmeta-com" (protocol-port-hostname, truncated to 63 chars)
+          # port defaults to 80
+          # protocol defaults to "HTTP"
+          # allowedRoutes.namespaces.from defaults to "All"
+      infrastructure:
+        annotations:
+          # AWS: External LoadBalancer with security groups
+          service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+          service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+          service.beta.kubernetes.io/aws-load-balancer-security-groups: "sg-12345678,sg-87654321"
+
+  # HTTPRoute for the external gateway
+  httpRoutes:
+    - name: with-istio-gateway-api-configure-aws-nlb
+      parentRefs:
+        - name: external
+          sectionName: http
+          # namespace defaults to "istio-system"
+          # kind and group have defaults
+      hostnames:
+        - with-istio-gateway-api-configure-aws-nlb.devops.dasmeta.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          backendRefs:
+            - name: with-istio-gateway-api-configure-aws-nlb
+              port: 80

@@ -1,0 +1,44 @@
+# helm diff upgrade --install -n localhost http-route-only ./charts/base/ -f ./examples/base/with-istio-gateway-api-http-route-only.yaml
+#
+# This example uses an existing Gateway resource named "main" in the "istio-system" namespace.
+# The Gateway should already be created (e.g., via Istio Terraform module).
+# This example only creates HTTPRoute resources that reference the existing gateway.
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # Only HTTPRoute resources - Gateway "main" should already exist in istio-system namespace
+  httpRoutes:
+    - name: http-echo
+      parentRefs:
+        - name: main
+          sectionName: http-echo-gw-http
+          # namespace defaults to "istio-system"
+          # kind and group have defaults (Gateway, gateway.networking.k8s.io)
+      hostnames:
+        - http-echo-gw.localhost
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /ping
+          backendRefs:
+            - name: http-route-only
+              port: 80

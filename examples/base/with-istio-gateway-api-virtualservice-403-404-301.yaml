@@ -1,0 +1,138 @@
+# helm diff upgrade --install -n localhost virtualservice-example ./charts/base/ -f ./examples/base/with-istio-gateway-api-virtualservice-403-404-301.yaml
+#
+# This example demonstrates how to return custom HTTP status codes (403, 404, and 301 redirect)
+# using Istio VirtualService with Gateway API.
+#
+# VirtualService provides fault injection and redirect capabilities that allow you to:
+# - Return specific HTTP status codes (404, 403, etc.) using directResponse
+# - Perform HTTP redirects (301, 302, etc.) using redirect
+# - Advanced routing rules
+# - Response manipulation
+#
+# IMPORTANT NOTES:
+# 1. VirtualService requires Istio Gateway (networking.istio.io/v1), NOT Kubernetes Gateway API Gateway.
+#    VirtualService cannot directly reference Kubernetes Gateway API Gateway.
+# 2. This example creates an Istio Gateway and references it in VirtualService.
+#    The Istio Gateway uses the same selector as the Gateway API Gateway's underlying service
+#    (typically istio: ingressgateway).
+# 3. When using VirtualService, do NOT use HTTPRoute for the same hostname,
+#    as HTTPRoute may take precedence and prevent VirtualService rules from being applied.
+# 4. VirtualService namespace: Can be in any namespace. For better service resolution,
+#    it's recommended to place VirtualService in the same namespace as the service.
+#    This allows using short service names instead of FQDN.
+# 5. Istio Gateway vs Kubernetes Gateway API Gateway:
+#    - Kubernetes Gateway API Gateway: `kubectl get gateway -A` (creates LoadBalancer service automatically)
+#    - Istio Gateway: `kubectl get gateways.networking.istio.io -A` (uses selector to match existing services)
+#    - Istio Gateway does NOT create a LoadBalancer service. It uses a selector (e.g., istio: ingressgateway)
+#      to match an existing service that already has a LoadBalancer (created by Kubernetes Gateway API Gateway).
+#
+# Note: This uses Istio-specific Gateway and VirtualService (not standard Gateway API).
+# These work alongside Gateway API resources to provide advanced traffic management capabilities.
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # NOTE: VirtualService requires Istio Gateway (networking.istio.io), not Kubernetes Gateway API Gateway.
+  # We create an Istio Gateway here and reference it in VirtualService.
+  # When using VirtualService, we should NOT use HTTPRoute for the same hostname,
+  # as HTTPRoute may take precedence and prevent VirtualService rules from being applied.
+
+  # Istio Gateway: Create an Istio Gateway for VirtualService to reference
+  # IMPORTANT: The selector must match an existing service with the LoadBalancer type.
+  #
+  # Option 1: If you have istio-gateway helm chart installed (enabled in Istio module),
+  #          use: istio: ingressgateway
+  #
+  # Option 2: If using Kubernetes Gateway API Gateway only (istio-gateway disabled),
+  #          match the service created by Kubernetes Gateway API Gateway.
+  #          The service name is typically: {gateway-name}-istio (e.g., main-istio)
+  #          Check the service labels: kubectl get svc -n istio-system -l gateway.networking.k8s.io/gateway-name
+  #          Then use selector like: gateway.networking.k8s.io/gateway-name: main
+  #
+  # For this example, we assume istio-gateway helm chart is NOT installed, so we use
+  # the Kubernetes Gateway API Gateway service selector. Adjust based on your setup.
+  istio:
+    gateways:
+      name: virtualservice-gateway
+      # namespace defaults to "istio-system"
+      # Selector must match the service that has the LoadBalancer.
+      # Option 1: If istio-gateway helm chart is installed:
+      #   selector:
+      #     istio: ingressgateway
+      # Option 2: If using Kubernetes Gateway API Gateway only (replace "main" with your gateway name):
+      selector:
+        istio: ingressgateway
+      servers:
+        - port:
+            number: 80
+            name: http
+            protocol: HTTP
+          hosts:
+            - virtualservice-example.localhost
+
+    # Istio VirtualService: Return 403 for /restricted, 404 for /missing, 301 redirect for /old-path,
+    # and route all other traffic to the service
+    virtualServices:
+      name: status-code-handler
+      # Place VirtualService in the same namespace as the service for easier service resolution
+      # This allows using short service name instead of FQDN
+      namespace: localhost
+      hosts:
+        - virtualservice-example.localhost
+      # Reference the Istio Gateway we created above
+      gateways:
+        - localhost/virtualservice-gateway
+      http:
+        # Rule 1: Return 403 (Forbidden) for /restricted path
+        - match:
+            - uri:
+                prefix: /restricted
+          directResponse:
+            status: 403
+            body:
+              string: "Forbidden"
+        # Rule 2: Return 404 (Not Found) for /missing path
+        - match:
+            - uri:
+                prefix: /missing
+          directResponse:
+            status: 404
+            body:
+              string: "Not Found"
+        # Rule 3: 301 redirect from /old-path to /new-path
+        - match:
+            - uri:
+                prefix: /old-path
+          redirect:
+            uri: /new-path
+            authority: virtualservice-example.localhost
+            redirectCode: 301
+        # Rule 4: Route all other traffic to the service
+        # Note: destination.host should be the Kubernetes service name.
+        # The service name is the release name: virtualservice-example
+        # Try using short name first. If that doesn't work, use FQDN: virtualservice-example.localhost.svc.cluster.local
+        - match:
+            - uri:
+                prefix: /
+          route:
+            - destination:
+                host: virtualservice-example
+                port:
+                  number: 80
