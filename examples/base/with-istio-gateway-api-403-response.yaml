@@ -1,0 +1,59 @@
+# helm diff upgrade --install -n localhost forbidden-example ./charts/base/ -f ./examples/base/with-istio-gateway-api-403-response.yaml
+#
+# This example demonstrates how to return a static 403 (Forbidden) status code for
+# specific paths using a simplified configuration in HTTPRoute rules.
+#
+# SIMPLIFIED APPROACH:
+# Instead of manually creating AuthorizationPolicy, you can now use directResponse
+# with status 403 in HTTPRoute rules. The gateway-api chart will automatically:
+# 1. Create an AuthorizationPolicy to deny access to the specified path
+# 2. Exclude the 403 rule from the HTTPRoute (since AuthorizationPolicy handles it)
+#
+# This provides a cleaner, more intuitive way to configure 403 responses without
+# needing to understand Istio AuthorizationPolicy details.
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # HTTPRoute: Route all traffic to the service, with automatic 403 for /restricted path
+  # The directResponse with status 403 will automatically create an AuthorizationPolicy
+  httpRoutes:
+    - name: forbidden-example
+      parentRefs:
+        - name: main
+          sectionName: forbidden-example
+          # namespace defaults to "istio-system", kind and group have defaults (Gateway, gateway.networking.k8s.io)
+      hostnames:
+        - forbidden-example.localhost
+      rules:
+        # Rule 1: Return 403 for /restricted path (automatically creates AuthorizationPolicy)
+        - matches:
+            - path:
+                value: /restricted
+                # type defaults to "PathPrefix"
+          directResponse:
+            status: 403
+        # Rule 2: Route all other traffic to the service
+        - matches:
+            - path:
+                value: /
+                # type defaults to "PathPrefix"
+          # backendRefs is automatically created with defaults:
+          # name defaults to release name, port defaults to 80

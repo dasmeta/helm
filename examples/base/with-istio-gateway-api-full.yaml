@@ -1,0 +1,56 @@
+# helm diff upgrade --install -n localhost with-istio-gateway-api-full ./charts/base/ -f ./examples/base/with-istio-gateway-api-full.yaml
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+configs:
+  ROLLOUT_TRIGGER_VERSION: "1"
+
+service:
+  enabled: true
+  type: ClusterIP
+
+# Disable traditional Ingress and use Gateway API instead.
+ingress:
+  enabled: false
+
+gatewayApi:
+  enabled: true
+
+  # Single Gateway for HTTP traffic.
+  # Note: namespace defaults to "istio-system", gatewayClassName defaults to "istio"
+  # Listener defaults: name auto-generated from protocol-port-hostname, port=80, protocol="HTTP", allowedRoutes.namespaces.from="All"
+  gateways:
+    - name: full-gateway
+      # gatewayClassName defaults to "istio"
+      # namespace defaults to "istio-system"
+      listeners:
+        - name: http
+          hostname: http-echo-full.localhost
+          # name explicitly set to "http" (overrides auto-generation)
+          # port defaults to 80
+          # protocol defaults to "HTTP"
+          allowedRoutes:
+            namespaces:
+              from: Same # Override default "All" to "Same" for this example
+
+  httpRoutes:
+    - name: http-echo-gateway-api
+      parentRefs:
+        - name: full-gateway
+          sectionName: http
+          # namespace defaults to "istio-system"
+          # kind and group have defaults (Gateway, gateway.networking.k8s.io)
+      hostnames:
+        - http-echo-gateway-api.localhost
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /ping
+          backendRefs:
+            - name: with-istio-gateway-api-full
+              port: 80
