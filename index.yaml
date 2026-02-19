@@ -1261,6 +1261,19 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/flagger-metrics-and-alerts-0.1.0/flagger-metrics-and-alerts-0.1.0.tgz
     version: 0.1.0
+  gateway-api:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-02-19T13:56:14.295574698Z"
+    description: A Helm chart for Kubernetes allowing to create Gateway API resources
+      which is a standardized, next-generation(replaces k8s Ingress) specification
+      for managing network traffic in Kubernetes clusters
+    digest: ecf25baa07c80f2440f39bb0cf85575c27414419d60179f78ec2daba699eb9f3
+    name: gateway-api
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/gateway-api-0.1.0/gateway-api-0.1.0.tgz
+    version: 0.1.0
   helm-chart-test:
   - apiVersion: v1
     appVersion: "1.0"
