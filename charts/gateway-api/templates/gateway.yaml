@@ -1,4 +1,4 @@
-{{- if and .Values.enabled .Values.gateways }}
+{{- if .Values.gateways }}
 {{- $outer := . -}}
 {{- $gateways := .Values.gateways -}}
 {{- if $gateways }}
@@ -8,6 +8,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: {{ default (include "gateway-api.fullname" $outer) $gateway.name }}{{ coalesce $gateway.nameSuffix $idx "" }}
+  namespace: {{ default "istio-system" (default $gateway.namespace $outer.Release.Namespace) | quote }}
   labels:
     {{- include "gateway-api.labels" $outer | nindent 4 }}
     {{- with $gateway.labels }}
@@ -18,7 +19,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ default "istio" $gateway.gatewayClassName }}
+  gatewayClassName: {{ default "istio" $gateway.gatewayClassName | quote }}
   {{- with $gateway.addresses }}
   addresses:
     {{- range . }}
@@ -28,19 +29,62 @@ spec:
   {{- with $gateway.listeners }}
   listeners:
     {{- range . }}
-    - name: {{ .name }}
-      {{- if .hostname }}
-      hostname: {{ .hostname | quote }}
+    {{- $protocol := default "HTTP" .protocol }}
+    {{- $port := default 80 .port }}
+    {{- $hostname := .hostname | default "" }}
+    {{- if .name }}
+    - name: {{ .name | quote }}
+    {{- else }}
+    {{- $hostnameSanitized := $hostname | replace "." "-" | replace "*" "wildcard" }}
+    {{- if not $hostnameSanitized }}
+    {{- $hostnameSanitized = "default" }}
+    {{- end }}
+    {{- $protocolLower := $protocol | lower }}
+    {{- $generatedName := printf "%s-%d-%s" $protocolLower $port $hostnameSanitized }}
+    {{- $nameLength := len $generatedName }}
+    {{- if gt $nameLength 63 }}
+    {{- $generatedName = slice $generatedName 0 63 }}
+    {{- end }}
+    - name: {{ $generatedName | quote }}
+    {{- end }}
+      {{- if $hostname }}
+      hostname: {{ $hostname | quote }}
       {{- end }}
-      port: {{ .port }}
-      protocol: {{ .protocol }}
+      port: {{ $port }}
+      protocol: {{ $protocol | quote }}
       {{- with .tls }}
       tls:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .allowedRoutes }}
+      {{- if .allowedRoutes }}
       allowedRoutes:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .allowedRoutes | nindent 8 }}
+      {{- else }}
+      allowedRoutes:
+        namespaces:
+          from: "All"
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- with $gateway.infrastructure }}
+  infrastructure:
+    {{- with .annotations }}
+    annotations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .parametersRef }}
+    parametersRef:
+      {{- if .group }}
+      group: {{ .group | quote }}
+      {{- end }}
+      {{- if .kind }}
+      kind: {{ .kind | quote }}
+      {{- end }}
+      {{- if .name }}
+      name: {{ .name | quote }}
+      {{- end }}
+      {{- if .namespace }}
+      namespace: {{ .namespace | quote }}
       {{- end }}
     {{- end }}
   {{- end }}

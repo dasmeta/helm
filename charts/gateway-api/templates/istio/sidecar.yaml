@@ -1,0 +1,38 @@
+{{- if .Values.istio.sidecars }}
+{{- $outer := . -}}
+{{- $sidecars := .Values.istio.sidecars -}}
+{{- if $sidecars }}
+{{- range $idx, $sidecar := (ternary $sidecars (list $sidecars) (kindIs "slice" $sidecars)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: {{ default (printf "%s-sidecar-%d" (include "gateway-api.fullname" $outer) $idx) $sidecar.name }}
+  namespace: {{ default $outer.Release.Namespace $sidecar.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $sidecar.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $sidecar.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $sidecar.workloadSelector }}
+  workloadSelector:
+    {{- toYaml $sidecar.workloadSelector | nindent 4 }}
+  {{- end }}
+  {{- if $sidecar.ingress }}
+  ingress: {{- toYaml $sidecar.ingress | nindent 2 }}
+  {{- end }}
+  {{- if $sidecar.egress }}
+  egress: {{- toYaml $sidecar.egress | nindent 2 }}
+  {{- end }}
+  {{- if $sidecar.outboundTrafficPolicy }}
+  outboundTrafficPolicy:
+    {{- toYaml $sidecar.outboundTrafficPolicy | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

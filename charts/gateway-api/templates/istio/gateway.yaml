@@ -1,0 +1,33 @@
+{{- if .Values.istio.gateways }}
+{{- $outer := . -}}
+{{- $gateways := .Values.istio.gateways -}}
+{{- if $gateways }}
+{{- range $idx, $gateway := (ternary $gateways (list $gateways) (kindIs "slice" $gateways)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: {{ default (printf "%s-istio-gw-%d" (include "gateway-api.fullname" $outer) $idx) $gateway.name }}
+  {{- with $gateway.namespace }}
+  namespace: {{ . | quote }}
+  {{- end }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $gateway.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $gateway.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $gateway.selector }}
+  selector:
+    {{- toYaml $gateway.selector | nindent 4 }}
+  {{- end }}
+  {{- if $gateway.servers }}
+  servers: {{- toYaml $gateway.servers | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

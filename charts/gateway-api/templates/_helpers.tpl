@@ -37,6 +37,15 @@ helm.sh/chart: {{ include "gateway-api.chart" . }}
 {{ include "gateway-api.selectorLabels" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- $parentChartName := "" }}
+{{- if .Values.parentChart }}
+{{- if .Values.parentChart.name }}
+{{- $parentChartName = .Values.parentChart.name }}
+{{- end }}
+{{- end }}
+{{- if $parentChartName }}
+helm.sh/parent-chart: {{ $parentChartName | quote }}
+{{- end }}
 {{- end }}
 
 {{/*

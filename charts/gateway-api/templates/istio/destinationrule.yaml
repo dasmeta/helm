@@ -1,0 +1,81 @@
+{{- if .Values.istio.destinationRules }}
+{{- $outer := . -}}
+{{- $rules := .Values.istio.destinationRules -}}
+{{- if $rules }}
+{{- range $idx, $rule := (ternary $rules (list $rules) (kindIs "slice" $rules)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ default (printf "%s-dest-rule-%d" (include "gateway-api.fullname" $outer) $idx) $rule.name }}
+  namespace: {{ default $outer.Release.Namespace $rule.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $rule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $rule.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $rule.host }}
+  host: {{ $rule.host | quote }}
+  {{- end }}
+  {{- with $rule.trafficPolicy }}
+  trafficPolicy:
+    {{- with .loadBalancer }}
+    loadBalancer:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .connectionPool }}
+    connectionPool:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .outlierDetection }}
+    outlierDetection:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .tls }}
+    tls:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .portLevelSettings }}
+    portLevelSettings:
+      {{- range . }}
+      - {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- with $rule.subsets }}
+  subsets:
+    {{- range . }}
+    - name: {{ .name | quote }}
+      {{- with .labels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .trafficPolicy }}
+      trafficPolicy:
+        {{- with .loadBalancer }}
+        loadBalancer:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .connectionPool }}
+        connectionPool:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .outlierDetection }}
+        outlierDetection:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .tls }}
+        tls:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

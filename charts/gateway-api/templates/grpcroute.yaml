@@ -1,8 +1,7 @@
-{{- if and .Values.enabled .Values.grpcRoutes }}
+{{- if .Values.grpcRoutes }}
 {{- $outer := . -}}
 {{- $routes := .Values.grpcRoutes -}}
 {{- if $routes }}
-{{- $defaultParentRefs := .Values.defaultParentRefs | default (list) -}}
 {{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -19,65 +18,46 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- $parentRefs := (or $route.parentRefs $defaultParentRefs) -}}
-  {{- with $parentRefs }}
+  {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
+  {{- if $parentRefs }}
   parentRefs:
-    {{- range . }}
-    - name: {{ .name }}
-      {{- if .namespace }}
-      namespace: {{ .namespace }}
-      {{- end }}
+    {{- range $parentRefs }}
+    - name: {{ .name | quote }}
+      kind: {{ default "Gateway" .kind | quote }}
+      group: {{ default "gateway.networking.k8s.io" .group | quote }}
+      namespace: {{ default "istio-system" .namespace | quote }}
       {{- if .sectionName }}
-      sectionName: {{ .sectionName }}
-      {{- end }}
-      {{- if .kind }}
-      kind: {{ .kind }}
-      {{- end }}
-      {{- if .group }}
-      group: {{ .group }}
+      sectionName: {{ .sectionName | quote }}
       {{- end }}
     {{- end }}
   {{- end }}
   {{- with $route.hostnames }}
-  hostnames:
-    {{- range . }}
-    - {{ . | quote }}
-    {{- end }}
+  hostnames: {{- toYaml . | nindent 2 }}
   {{- end }}
   {{- with $route.rules }}
   rules:
     {{- range . }}
-    - {{- with .matches }}
-      matches:
-        {{- range . }}
-        - {{- with .method }}
-          method:
-            {{- if .type }}
-            type: {{ .type }}
-            {{- end }}
-            {{- if .service }}
-            service: {{ .service | quote }}
-            {{- end }}
-            {{- if .method }}
-            method: {{ .method | quote }}
-            {{- end }}
-          {{- end }}
-        {{- end }}
+      {{- $rule := dict }}
+      {{- if .matches }}
+        {{- $_ := set $rule "matches" .matches }}
       {{- end }}
-      {{- with .backendRefs }}
-      backendRefs:
-        {{- range . }}
-        - name: {{ .name }}
+      {{- $backendRefs := .backendRefs | default (list (dict)) }}
+      {{- if $backendRefs }}
+        {{- $processedBackendRefs := list }}
+        {{- range $backendRefs }}
+          {{- $backendRef := dict "name" (default $outer.Release.Name .name) "port" (default 80 .port) }}
           {{- if .namespace }}
-          namespace: {{ .namespace }}
-          {{- end }}
-          {{- if .port }}
-          port: {{ .port }}
+            {{- $_ := set $backendRef "namespace" .namespace }}
           {{- end }}
           {{- if .weight }}
-          weight: {{ .weight }}
+            {{- $_ := set $backendRef "weight" .weight }}
           {{- end }}
+          {{- $processedBackendRefs = append $processedBackendRefs $backendRef }}
         {{- end }}
+        {{- $_ := set $rule "backendRefs" $processedBackendRefs }}
+      {{- end }}
+      {{- if or $rule.matches $rule.backendRefs }}
+        {{- toYaml (list $rule) | nindent 4 | trimPrefix "- " }}
       {{- end }}
     {{- end }}
   {{- end }}

@@ -1,0 +1,33 @@
+{{- if .Values.istio.workloadGroups }}
+{{- $outer := . -}}
+{{- $groups := .Values.istio.workloadGroups -}}
+{{- if $groups }}
+{{- range $idx, $group := (ternary $groups (list $groups) (kindIs "slice" $groups)) }}
+---
+apiVersion: networking.istio.io/v1
+kind: WorkloadGroup
+metadata:
+  name: {{ default (printf "%s-wg-%d" (include "gateway-api.fullname" $outer) $idx) $group.name }}
+  namespace: {{ default $outer.Release.Namespace $group.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $group.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $group.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $group.metadata }}
+  metadata: {{- toYaml $group.metadata | nindent 2 }}
+  {{- end }}
+  {{- if $group.template }}
+  template: {{- toYaml $group.template | nindent 2 }}
+  {{- end }}
+  {{- if $group.probe }}
+  probe: {{- toYaml $group.probe | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

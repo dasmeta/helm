@@ -1,0 +1,31 @@
+{{- if .Values.istio.requestAuthentications }}
+{{- $outer := . -}}
+{{- $auths := .Values.istio.requestAuthentications -}}
+{{- if $auths }}
+{{- range $idx, $auth := (ternary $auths (list $auths) (kindIs "slice" $auths)) }}
+---
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: {{ default (printf "%s-ra-%d" (include "gateway-api.fullname" $outer) $idx) $auth.name }}
+  namespace: {{ default $outer.Release.Namespace $auth.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $auth.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $auth.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $auth.selector }}
+  selector:
+    {{- toYaml $auth.selector | nindent 4 }}
+  {{- end }}
+  {{- if $auth.jwtRules }}
+  jwtRules: {{- toYaml $auth.jwtRules | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
