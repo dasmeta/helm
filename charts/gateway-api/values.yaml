@@ -181,13 +181,11 @@ defaultParentRefs: []
 #           - path:
 #               type: PathPrefix
 #               value: /restricted
-#         filters:
-#           - type: RequestRedirect
-#             requestRedirect:
-#               path:
-#                 type: ReplaceFullPath
-#                 replaceFullPath: /403.html
-#               statusCode: 403
+#         directResponse:
+#           status: 403
+#         #  ports: # default ports are "80" and "443", but can be overridden
+#         #    - "80"
+#         #    - "443"
 #         # Alternative: Use a backend service that returns 403
 #         # backendRefs:
 #         #   - name: forbidden-service
