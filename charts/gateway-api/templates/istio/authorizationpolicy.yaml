@@ -12,7 +12,7 @@
         {{- /* Extract path from matches for AuthorizationPolicy */ -}}
         {{- $paths := list -}}
         {{- $hosts := list -}}
-        {{- $ports := list "80" -}}
+        {{- $ports := (default (list "80" "443") .directResponse.ports) -}}
         {{- if .matches -}}
           {{- range .matches -}}
             {{- if .path -}}
@@ -35,14 +35,26 @@
         {{- else -}}
           {{- $hosts = list "*" -}}
         {{- end -}}
-        {{- /* Get Gateway name from parentRefs */ -}}
+        {{- /* Get Gateway targetRefs from parentRefs */ -}}
         {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
-        {{- $gatewayName := "main" -}}
+        {{- $targetRefs := list -}}
         {{- if $parentRefs -}}
-          {{- $gatewayName = (index $parentRefs 0).name -}}
+          {{- range $parentRefs -}}
+            {{- $targetRef := dict "name" (default "main" .name) -}}
+            {{- if .kind -}}
+              {{- $targetRef = merge $targetRef (dict "kind" .kind) -}}
+            {{- end -}}
+            {{- if .group -}}
+              {{- $targetRef = merge $targetRef (dict "group" .group) -}}
+            {{- end -}}
+            {{- $targetRefs = append $targetRefs $targetRef -}}
+          {{- end -}}
+        {{- else -}}
+          {{- /* Default to "main" gateway if no parentRefs specified */ -}}
+          {{- $targetRefs = list (dict "name" "main") -}}
         {{- end -}}
         {{- /* Create AuthorizationPolicy */ -}}
-        {{- $authzPolicy := dict "name" (printf "%s-403-%d" (default (include "gateway-api.fullname" $outer) $route.name) $ruleIdx) "namespace" "istio-system" "action" "DENY" "targetRefs" (list (dict "name" $gatewayName)) "rules" (list (dict "to" (list (dict "operation" (dict "hosts" $hosts "paths" $paths "ports" $ports))))) -}}
+        {{- $authzPolicy := dict "name" (printf "%s-403-%d" (default (include "gateway-api.fullname" $outer) $route.name) $ruleIdx) "namespace" "istio-system" "action" "DENY" "targetRefs" $targetRefs "rules" (list (dict "to" (list (dict "operation" (dict "hosts" $hosts "paths" $paths "ports" $ports))))) -}}
         {{- $autoAuthzPolicies = append $autoAuthzPolicies $authzPolicy -}}
       {{- end -}}
     {{- end -}}

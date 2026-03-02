@@ -7,7 +7,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: {{ default (include "gateway-api.fullname" $outer) $gateway.name }}{{ coalesce $gateway.nameSuffix $idx "" }}
+  name: {{ default (include "gateway-api.fullname" $outer) $gateway.name }}{{ coalesce $gateway.nameSuffix "" }}
   namespace: {{ default "istio-system" (default $gateway.namespace $outer.Release.Namespace) | quote }}
   labels:
     {{- include "gateway-api.labels" $outer | nindent 4 }}
