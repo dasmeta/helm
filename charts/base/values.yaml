@@ -815,17 +815,10 @@ gatewayApi:
   #                   prefix: /restricted
   #             directResponse:
   #               status: 403
-  #               body:
-  #                 string: "Forbidden"
-  #           # Rule 2: Return 404 for /missing path
-  #           - match:
-  #               - uri:
-  #                   prefix: /missing
-  #             directResponse:
-  #               status: 404
-  #               body:
-  #                 string: "Not Found"
-  #           # Rule 3: 301 redirect from /old-path to /new-path
+  #               # ports: # default ports are "80" and "443", but can be overridden
+  #               #   - "80"
+  #               #   - "443"
+  #           # Rule 2: 301 redirect from /old-path to /new-path
   #           - match:
   #               - uri:
   #                   prefix: /old-path
