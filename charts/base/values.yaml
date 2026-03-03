@@ -422,6 +422,23 @@ serviceMonitor:
   #     name: secret-name
   #   type: Token
 
+podMonitor:
+  enabled: false
+  interval: 30s
+  targetPortName: "http"
+  path: /metrics/
+  # Optional: override pod label selector if no targets are found (e.g. when using as subchart or job workload).
+  # Get labels from pods: kubectl get pods -n <namespace> -o jsonpath='{.items[0].metadata.labels}' | jq
+  # selectorMatchLabels: {}
+  #   app.kubernetes.io/name: my-app
+  #   app.kubernetes.io/instance: my-release
+  # For authorization
+  # authorization:
+  #   credentials:
+  #     key: TOKEN
+  #     name: secret-name
+  #   type: Token
+
 # This config allows to enable custom rollout strategies by using different providers/operators
 # right now only flagger (https://flagger.app/) operator supported and tested for canary with nginx
 ## NOTE for flagger operator:
