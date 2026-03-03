@@ -9,7 +9,7 @@ spec:
   podMetricsEndpoints:
   - interval: {{ .Values.podMonitor.interval }}
     path: {{ .Values.podMonitor.path }}
-    port: {{ .Values.podMonitor.port }}
+    port: {{ .Values.podMonitor.port | quote }}
     {{- with .Values.podMonitor.authorization }}
     authorization: {{ toYaml . | nindent 6 }}
     {{- end }}
