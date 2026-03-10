@@ -43,7 +43,7 @@ spec:
     {{- $generatedName := printf "%s-%d-%s" $protocolLower $port $hostnameSanitized }}
     {{- $nameLength := len $generatedName }}
     {{- if gt $nameLength 63 }}
-    {{- $generatedName = slice $generatedName 0 63 }}
+    {{- $generatedName = printf "%.63s" $generatedName }}
     {{- end }}
     - name: {{ $generatedName | quote }}
     {{- end }}
