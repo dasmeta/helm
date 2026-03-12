@@ -3,7 +3,7 @@
 apiVersion: flagger.app/v1beta1
 kind: Canary
 metadata:
-  name: {{ include "base.fullname" . }}
+  name: {{ .Values.rolloutStrategy.configs.canaryName | default (include "base.fullname" .) }}
 spec:
   provider: {{ .Values.rolloutStrategy.configs.provider | default "nginx" }}
   # deployment reference
