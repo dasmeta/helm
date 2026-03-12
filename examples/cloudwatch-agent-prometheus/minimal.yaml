@@ -1,0 +1,4 @@
+# helm diff upgrade --install -n localhost cloudwatch-minimal ./charts/cloudwatch-agent-prometheus/ -f ./examples/cloudwatch-agent-prometheus/minimal.yaml
+# Minimal example. Replace clusterName and region with your values. See charts/cloudwatch-agent-prometheus/values.yaml.
+clusterName: my-cluster
+region: us-east-1

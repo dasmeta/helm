@@ -24,6 +24,23 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 
 ### The default values and related description/examples can be found in [./values.yaml](./values.yaml) file
 
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `image.repository` | Main container image repository | set per app |
+| `image.tag` | Image tag | set per app |
+| `containerPort` | Main container port | set per app |
+| `service.enabled` | Create Service | `true` |
+| `service.type` | Service type | `ClusterIP` |
+| `ingress.enabled` | Enable Ingress | `false` |
+| `config` | Env vars for main container (map) | example in values.yaml |
+| `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
+
+### Examples
+
+Example values files live in [examples/base/](../../examples/base/) (e.g. `basic.yaml`). From the repo root: `helm template test charts/base -f examples/base/basic.yaml`.
+
 ## Problems
 
 If you want your chart to have the name `my-app-base` you have to specify it in Chart.yaml file by passing it to `alias`. After everything has to be defined under the alias name(in this case under `my-app-base`) in your values.yaml file. Otherwise, it will get the name `base`. It's a problem that has no dynamic solution in helm. The same problem is with the version and appVersion. Your parent chart will receive `base`'s version if you do not change them by these 2 variables: `version`, `appVersion`. None of these is a mandatory value, so without them, you will have no problem in the process of running the chart.

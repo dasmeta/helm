@@ -1,0 +1,7 @@
+# helm diff upgrade --install -n localhost kafka-connect-minimal ./charts/kafka-connect/ -f ./examples/kafka-connect/minimal.yaml
+# Minimal example. See charts/kafka-connect/values.yaml. Configure schemaRegistry and secrets for your cluster.
+base:
+  replicaCount: 1
+  schemaRegistry:
+    enabled: true
+    url: "http://schema-registry:8081"

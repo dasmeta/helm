@@ -1,3 +1,4 @@
+# helm diff upgrade --install -n localhost with-only-job ./charts/base/ -f ./examples/base/with-only-job.yaml
 
 workloadType: disabled-to-have-only-job
 

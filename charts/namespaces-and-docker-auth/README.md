@@ -1,5 +1,18 @@
 # This helm chart allows to create kubernetes namespaces and configure docker registries(for example dockerhub) images pull credentials secret in namespaces
 
+Public values: [values.yaml](./values.yaml). Examples: [examples/namespaces-and-docker-auth/](../../examples/namespaces-and-docker-auth/). From repo root: `helm template test charts/namespaces-and-docker-auth -f examples/namespaces-and-docker-auth/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `list` | List of namespace names to create | `[]` |
+| `labels` | Labels to set on created namespaces | `{}` |
+| `dockerAuth.enabled` | Enable Docker registry auth (ExternalSecrets from AWS Secret Manager) | `false` |
+| `dockerAuth.serviceAccountRoleArn` | IAM role ARN for Secret Manager access | required when dockerAuth enabled |
+| `dockerAuth.secretManagerSecretName` | AWS Secret Manager secret name | `account` |
+| `dockerAuth.region` | AWS region | `eu-central-1` |
+
 ## to install the chart use the command
 ```sh
 helm upgrade --install -n default app-namespaces dasmeta/namespaces-and-docker-auth -f path-of-values.yaml

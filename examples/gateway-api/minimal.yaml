@@ -1,0 +1,7 @@
+# helm diff upgrade --install -n localhost gateway-api-minimal ./charts/gateway-api/ -f ./examples/gateway-api/minimal.yaml
+# Minimal example for gateway-api. See charts/gateway-api/values.yaml for all options.
+enabled: true
+gateways:
+  - name: main
+    listeners:
+      - hostname: example.com

@@ -1,0 +1,8 @@
+# helm diff upgrade --install -n localhost base-cronjob-minimal ./charts/base-cronjob/ -f ./examples/base-cronjob/minimal.yaml
+# Minimal example for base-cronjob. See charts/base-cronjob/values.yaml for all options.
+jobs:
+  - name: example-cronjob
+    schedule: "0 * * * *"
+    image:
+      repository: busybox
+      tag: latest

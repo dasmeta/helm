@@ -1,5 +1,8 @@
 # helm diff upgrade --install -n localhost with-istio-gateway-api-configure-aws-nlb ./charts/base/ -f ./examples/base/with-istio-gateway-api-configure-aws-nlb.yaml
 #
+# Requires base chart dependency gateway-api with listener name truncation fix (printf "%.63s").
+# Run from repo root after: (cd charts/base && helm dependency update) then: helm template test charts/base -f examples/base/with-istio-gateway-api-configure-aws-nlb.yaml
+#
 # This example demonstrates Gateway resources with AWS NLB infrastructure configuration.
 #
 # Infrastructure annotations allow you to configure:

@@ -1,0 +1,5 @@
+# helm diff upgrade --install -n localhost namespaces-minimal ./charts/namespaces-and-docker-auth/ -f ./examples/namespaces-and-docker-auth/minimal.yaml
+# Minimal example. See charts/namespaces-and-docker-auth/values.yaml.
+list:
+  - dev
+  - stage

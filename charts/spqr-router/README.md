@@ -23,6 +23,8 @@ helm upgrade --install spqr-router dasmeta/spqr-router \
   -f values.yaml
 ```
 
+Public values: [values.yaml](./values.yaml). Examples: [examples/spqr-router/](../../examples/spqr-router/). From repo root: `helm template test charts/spqr-router -f examples/spqr-router/minimal.yaml`.
+
 ## Configuration
 
 This chart is a thin wrapper around the `base` chart:

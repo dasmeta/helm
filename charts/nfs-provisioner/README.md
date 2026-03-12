@@ -1,6 +1,19 @@
 # nfs-provisioner
 This Helm chart deploys an NFS Provisioner on a Kubernetes cluster. The NFS Provisioner enables dynamic provisioning of Persistent Volumes using an existing NFS server.
 
+Public values: [values.yaml](./values.yaml). Examples: [examples/nfs-provisioner/](../../examples/nfs-provisioner/). From repo root: `helm template test charts/nfs-provisioner -f examples/nfs-provisioner/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `provisionerName` | Provisioner name in StorageClass | `cluster.local/nfs` |
+| `storageClass` | Name of the StorageClass | `cluster-local-nfs` |
+| `hostPath` | Host path for volume data (non-HA) | `/srv` |
+| `persistentVolumeClass` | Storage class for provisioner's own PVC (recommended for persistence) | empty by default |
+| `persistentVolumeSize` | Size of provisioner volume | `100Gi` |
+| `image.name` | Provisioner image | `quay.io/kubernetes_incubator/nfs-provisioner` |
+
 ## Installation
 ```
 helm repo add dasmeta https://dasmeta.github.io/helm/

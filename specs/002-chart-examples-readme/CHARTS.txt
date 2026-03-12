@@ -1,0 +1,20 @@
+# Canonical list of 19 top-level charts (T001)
+# One per line; align with plan.md and charts/ direct children.
+base
+base-cronjob
+cloudwatch-agent-prometheus
+flagger-metrics-and-alerts
+gateway-api
+helm-chart-test
+kafka-connect
+karpenter-nodes
+kubernetes-event-exporter-enriched
+mongodb-bi-connector
+namespaces-and-docker-auth
+nfs-provisioner
+pgcat
+proxysql
+resource
+sentry-relay
+spqr-router
+weave-scope

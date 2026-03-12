@@ -20,6 +20,17 @@ metadata:
 type: Opaque
 ```
 
+Public values: [values.yaml](./values.yaml). Examples: [examples/kafka-connect/](../../examples/kafka-connect/). From repo root: `helm template test charts/kafka-connect -f examples/kafka-connect/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `base` | Base chart subchart values (replicaCount, image, service, etc.) | example in values.yaml |
+| `base.schemaRegistry.enabled` | Enable Schema Registry | set per env |
+| `base.schemaRegistry.url` | Schema Registry URL | e.g. http://schema-registry:8081 |
+| Connector configs | GCS Sink and other connectors | example in values.yaml; requires gcs-credentials secret |
+
 ## Installation
 
 ### Add Helm Repository

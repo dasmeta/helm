@@ -1,0 +1,7 @@
+# helm diff upgrade --install -n localhost mongodb-bi-minimal ./charts/mongodb-bi-connector/ -f ./examples/mongodb-bi-connector/minimal.yaml
+# Minimal example. Replace mongodb net.uri with your instance. See charts/mongodb-bi-connector/values.yaml.
+# mongodb-bi-connector:
+#   mongosqldConfig:
+#     mongodb:
+#       net:
+#         uri: mongodb://host:27017

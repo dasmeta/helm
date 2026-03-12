@@ -1,5 +1,15 @@
 # Weave Scope helm chart
 
+Install: `helm repo add dasmeta https://dasmeta.github.io/helm` then `helm upgrade --install my-weave-scope dasmeta/weave-scope -f values.yaml`. Public values: [values.yaml](./values.yaml). Examples: [examples/weave-scope/](../../examples/weave-scope/). This chart contains nested subcharts (*weave-scope-frontend*, *weave-scope-agent*); deploy together or disable one via values.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `weave-scope-frontend.enabled` | Deploy frontend subchart | `true` |
+| `weave-scope-agent.enabled` | Deploy agent subchart | `true` |
+| Subchart image / resources | Per subchart | see values.yaml |
+
 ## About this chart
 
 This chart contains two subcharts (*weave-scope-frontend* and *weave-scope-agent*) which deploy the corresponding components of Weave Scope, an interactive container monitoring and visualization application.

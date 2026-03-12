@@ -1,0 +1,3 @@
+# helm diff upgrade --install -n localhost helm-chart-test-minimal ./charts/helm-chart-test/ -f ./examples/helm-chart-test/minimal.yaml
+# Minimal example. See charts/helm-chart-test/values.yaml.
+replicaCount: 1

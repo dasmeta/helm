@@ -1,0 +1,4 @@
+# helm diff upgrade --install -n localhost nfs-provisioner-minimal ./charts/nfs-provisioner/ -f ./examples/nfs-provisioner/minimal.yaml
+# Minimal example. Set persistentVolumeClass for production. See charts/nfs-provisioner/values.yaml.
+provisionerName: "cluster.local/nfs"
+storageClass: cluster-local-nfs

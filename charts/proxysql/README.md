@@ -49,6 +49,16 @@ helm install my-proxysql dasmeta/proxysql --version 1.2.0
 helm install my-proxysql dasmeta/proxysql --version 1.2.0 -f my-values.yaml
 ```
 
+Public values: [values.yaml](./values.yaml). Example values: [examples/proxysql/](../../examples/proxysql/). From repo root: `helm template test charts/proxysql -f examples/proxysql/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `proxysql` | ProxySQL config (image, service, config, backends) | uses base subchart; example in values.yaml |
+| `proxysql.config` | ProxySQL config file content | connection pooling, mysql_variables, etc. |
+| Backends / MySQL servers | Primary and replica definitions | example in values.yaml and examples/ |
+
 ### Upgrade an existing release
 
 ```bash

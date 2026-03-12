@@ -23,8 +23,19 @@ For full configuration documentation, see: https://github.com/postgresml/pgcat/b
 ## Installation
 
 ```bash
-helm install my-pgcat ./charts/pgcat -f values.yaml
+helm repo add dasmeta https://dasmeta.github.io/helm
+helm upgrade --install my-pgcat dasmeta/pgcat -f values.yaml
 ```
+
+Public values: [values.yaml](./values.yaml). Examples: [examples/pgcat/](../../examples/pgcat/). From repo root: `helm template test charts/pgcat -f examples/pgcat/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `pgcat` | PgCat config (pool mode, databases, admin, etc.) | see values.yaml and [CONFIG.md](https://github.com/postgresml/pgcat/blob/main/CONFIG.md) |
+| `pgcat.podAnnotations` | Pod annotations (e.g. checksum for config) | optional |
+| Base chart fields | image, service, resources (when using base) | example in values.yaml |
 
 ## Configuration
 
