@@ -1,4 +1,4 @@
-enabled: false
+enabled: false # makes no affect if chart used directly, this option can be used in case we use this chart as a sub-chart/dependency in parent chart Chart.yaml
 
 # Parent chart information (optional, used when gateway-api is a subchart)
 # When set, adds a label to Kubernetes resources:
