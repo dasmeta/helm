@@ -2,6 +2,23 @@ apiVersion: v1
 entries:
   base:
   - apiVersion: v2
+    appVersion: 0.3.22
+    created: "2026-03-12T14:30:41.824461662Z"
+    dependencies:
+    - alias: gatewayApi
+      condition: gatewayApi.enabled
+      name: gateway-api
+      repository: https://dasmeta.github.io/helm
+      version: 0.1.1
+    description: A Base Helm chart for Kubernetes
+    digest: 48ef4c717999ff2696f767c1923a8e5aa5b1f7b12119c153029468694161599c
+    icon: https://media.licdn.com/dms/image/C4E0BAQEdK6tkXfbtXQ/company-logo_200_200/0/1674118[…]47483647&v=beta&t=66-Xh3XKEy8l4jC5BCzb-73JqBDxRZPWACNt9KRiL4M
+    name: base
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/base-0.3.22/base-0.3.22.tgz
+    version: 0.3.22
+  - apiVersion: v2
     appVersion: 0.3.21
     created: "2026-03-03T13:56:28.108205505Z"
     dependencies:
