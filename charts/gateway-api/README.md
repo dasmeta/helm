@@ -11,6 +11,8 @@ helm upgrade --install my-gateway dasmeta/gateway-api -f values.yaml
 
 Public values and options: [values.yaml](./values.yaml). Example values: [examples/gateway-api/](../../examples/gateway-api/). From repo root: `helm template test charts/gateway-api -f examples/gateway-api/minimal.yaml`.
 
+You can either set `gateways[].infrastructure.parametersRef` to reference an existing ConfigMap, or set `gateways[].infrastructure.parameters` with the five keys (service, deployment, serviceAccount, horizontalPodAutoscaler, podDisruptionBudget). When `parameters` is set and non-empty, the chart creates a ConfigMap and sets `parametersRef` automatically; empty string values are omitted.
+
 ### Key values
 
 | Key | Description | Default / Example |
@@ -19,7 +21,8 @@ Public values and options: [values.yaml](./values.yaml). Example values: [exampl
 | `gateways` | List of Gateway resources | `[]`; see suboptions below |
 | `gateways[].gatewayClassName` | Gateway class for this Gateway | `istio` |
 | `gateways[].listeners` | Listeners for this Gateway; `hostname`, `port`, `protocol`; name auto-generated (protocol-port-hostname, ≤63 chars) | port 80, protocol HTTP |
-| `gateways[].infrastructure` | Service annotations, parametersRef (e.g. AWS NLB, ConfigMap) | optional |
+| `gateways[].infrastructure` | Annotations, parametersRef (manual ConfigMap), or parameters (chart-generated ConfigMap) | optional |
+| `gateways[].infrastructure.parameters` | Inline config for service, deployment, serviceAccount, horizontalPodAutoscaler, podDisruptionBudget (object or string per key); chart creates a ConfigMap and sets parametersRef when non-empty; empty string omits key | optional; when set, overrides parametersRef |
 | `defaultParentRefs` | Default parentRefs for routes when not set per-route | `[]`; kind=Gateway, group=gateway.networking.k8s.io |
 | `httpRoutes` | List of HTTPRoute resources | `[]`; see suboptions below |
 | `httpRoutes[].name`, `nameSuffix` | Route name and optional suffix for the resource name | e.g. name: main, nameSuffix: -route |

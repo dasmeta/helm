@@ -55,3 +55,13 @@ Selector labels
 app.kubernetes.io/name: {{ include "gateway-api.fullname" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Name of the ConfigMap generated from gateway infrastructure.parameters.
+Used when infrastructure.parameters is set and non-empty.
+*/}}
+{{- define "gateway-api.infrastructureConfigMapName" -}}
+{{- $outer := index . 0 -}}
+{{- $gateway := index . 1 -}}
+{{- include "gateway-api.fullname" $outer }}-infra-{{ $gateway.name }}
+{{- end }}

@@ -4,7 +4,7 @@ description: Stateless Postgres Query Router (SPQR) Helm chart using dasmeta/bas
 type: application
 
 # Chart version – bump on any chart change
-version: 0.1.0
+version: 0.1.1
 
 # Upstream application version (SPQR router)
 appVersion: "2.8.0"

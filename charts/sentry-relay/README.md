@@ -1,5 +1,18 @@
 ## This helm chart allows to create sentry relay app in kubernetes cluster https://docs.sentry.io/product/relay/
 
+Install: `helm repo add dasmeta https://dasmeta.github.io/helm` then `helm upgrade --install my-relay dasmeta/sentry-relay -f values.yaml`. Public values: [values.yaml](./values.yaml). Examples: [examples/sentry-relay/](../../examples/sentry-relay/). Replace upstream/credentials with your values (no literal secrets in examples).
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `mode` | Relay mode: proxy, static, or managed | `proxy` |
+| `upstream` | Sentry ingest URL (e.g. https://&lt;ORG-ID&gt;.ingest.sentry.io) | required for proxy/managed |
+| `workload` | K8s workload type | `DaemonSet` |
+| `loggingLevel` | Log level | `info` |
+| `credentials` | Required for managed mode; secretKey, publicKey, id | commented out by default |
+| `projects` | Required for static mode; project configs | commented out by default |
+
 ### Here are values.yaml file structures for creation relay with sentry cloud by supported proxy, managed or static modes by using minimum configs.
 ### NOTE:
  - By default it creates relay on proxy mode with DaemonSet workload

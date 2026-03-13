@@ -1,0 +1,5 @@
+# helm diff upgrade --install -n localhost pgcat-minimal ./charts/pgcat/ -f ./examples/pgcat/minimal.yaml
+# Minimal example. See charts/pgcat/values.yaml for full options.
+pgcat:
+  podAnnotations:
+    app.config/checksum: v1

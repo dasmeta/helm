@@ -1,7 +1,15 @@
 # MongoDB BI Connector Chart
 
-This chart installs the [MongoDB BI Connector](https://docs.mongodb.com/bi-connector/current/) on your Kubernetes cluster. The BI Connector allows you to access MongoDB data using SQL, and can be used with business intelligence and analytics tools such as Tableau and Qlik.
+This chart installs the [MongoDB BI Connector](https://docs.mongodb.com/bi-connector/current/) on your Kubernetes cluster. Install: `helm repo add dasmeta https://dasmeta.github.io/helm` then `helm upgrade --install my-bi dasmeta/mongodb-bi-connector -f values.yaml`. Public values: [values.yaml](./values.yaml). Examples: [examples/mongodb-bi-connector/](../../examples/mongodb-bi-connector/). The BI Connector allows you to access MongoDB data using SQL, and can be used with business intelligence and analytics tools such as Tableau and Qlik.
 The BI Connector includes a ConfigMap that stores the configuration for the BI Connector. It can be customized easily.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `mongodb-bi-connector.mongosqldConfig.mongodb.net.uri` | MongoDB connection URI | required; e.g. mongodb://host:27017 |
+| `mongodb-bi-connector.mongosqldConfig` | BI Connector config (merged with defaults) | example in values.yaml |
+| `mongodb-bi-connector.base` | Base chart subchart values | image, service, etc. |
 
 ## How to Use
 1. Customize the default values in the values.yaml file.

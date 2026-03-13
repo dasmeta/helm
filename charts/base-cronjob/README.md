@@ -1,5 +1,17 @@
 # This helm chart allows to create and configure kubernetes cronjob resources, it designed in way to be able to pass list of cronjobs configs
 
+Public values and options are documented in [values.yaml](./values.yaml). Example values files: [examples/base-cronjob/](../../examples/base-cronjob/) (e.g. `minimal.yaml`). From repo root: `helm template test charts/base-cronjob -f examples/base-cronjob/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `jobs` | List of cronjob definitions | each: name, schedule, image (repository, tag), env, etc. |
+| `jobs[].name` | CronJob name | required |
+| `jobs[].schedule` | Cron schedule (e.g. "0 * * * *") | required |
+| `jobs[].image.repository` | Container image | required |
+| `jobs[].image.tag` | Image tag | `latest` |
+
 ## Easy how to
 Easiest option to deploy cronjob is:
 ```bash

@@ -1,0 +1,6 @@
+# helm diff upgrade --install -n localhost weave-scope-minimal ./charts/weave-scope/ -f ./examples/weave-scope/minimal.yaml
+# Minimal example. See charts/weave-scope/values.yaml. Nested subcharts: weave-scope-frontend, weave-scope-agent.
+weave-scope-frontend:
+  enabled: true
+weave-scope-agent:
+  enabled: true

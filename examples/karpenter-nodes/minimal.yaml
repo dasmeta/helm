@@ -1,0 +1,4 @@
+# helm diff upgrade --install -n localhost karpenter-nodes-minimal ./charts/karpenter-nodes/ -f ./examples/karpenter-nodes/minimal.yaml
+# Minimal example. Replace with your EC2NodeClass/NodePool. See charts/karpenter-nodes/values.yaml and Karpenter docs.
+ec2NodeClasses: {}
+nodePools: {}

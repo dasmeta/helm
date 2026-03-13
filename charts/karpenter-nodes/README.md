@@ -1,5 +1,17 @@
 # This helm chart allows to create karpenter EC2NodeClass and NodePool resources check here for more details https://karpenter.sh/docs/concepts/ , it also creates FlowSchema resources(in case if karpenter was created not in kube-system, in case of karpenter installed on kube-system the kubernetes provides those resource automatically) for karpenter to access kubernetes api server with priority
 
+Public values: [values.yaml](./values.yaml). Examples: [examples/karpenter-nodes/](../../examples/karpenter-nodes/). From repo root: `helm template test charts/karpenter-nodes -f examples/karpenter-nodes/minimal.yaml`.
+
+### Key values
+
+| Key | Description | Default / Example |
+| --- | ----------- | ----------------- |
+| `createFlowSchemas` | Create FlowSchema resources for Karpenter API priority | `true` |
+| `karpenterServiceAccount` | Service account name in Karpenter namespace | `karpenter` |
+| `karpenterNamespace` | Namespace where Karpenter is installed | `karpenter` |
+| `ec2NodeClasses` | Map of EC2NodeClass name → spec (AMI, subnets, security groups) | `{}`; example in values.yaml |
+| `nodePools` | Map of NodePool name → spec (template, disruption, etc.) | `{}`; example in values.yaml |
+
 ## to install the chart use the command
 ```sh
 helm upgrade --install -n karpenter karpenter-nodes dasmeta/karpenter-nodes -f path-of-values.yaml

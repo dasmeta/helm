@@ -1,0 +1,3 @@
+# helm diff upgrade --install -n localhost event-exporter-minimal ./charts/kubernetes-event-exporter-enriched/ -f ./examples/kubernetes-event-exporter-enriched/minimal.yaml
+# Minimal example. Replace webhookEndpoint with your URL. See charts/kubernetes-event-exporter-enriched/values.yaml.
+webhookEndpoint: https://example.com/webhook/events
