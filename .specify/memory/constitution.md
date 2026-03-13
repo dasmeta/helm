@@ -48,6 +48,7 @@ Default values MUST produce a working install for the primary use case. Optional
 
 ## Development Workflow
 
+- **Feature/spec numbering (exact order)**: Feature branches and `specs/` directories MUST use the next available number in strict order. The format is `NNN-<short-name>` (e.g. `007-gateway-proxysql-versions`). The next number is derived from existing `specs/NNN-*` directories and from branches matching that pattern; numbers MUST NOT be reused. When creating a new feature (e.g. via `/speckit.specify` or equivalent), the workflow MUST use this next number unless a documented exception applies. Rationale: avoids duplicate prefixes, preserves chronological order, and keeps branch/spec identity unambiguous.
 - **Pre-commit**: Developers SHOULD enable local git pre-commit hooks (`git config --global core.hooksPath ./githooks`) as documented in the repo README.
 - **Review**: PRs SHOULD verify that the Constitution Check (plan phase) and lint/template gates are satisfied.
 - **Version bumps**: When changing a chart, bump its version in `Chart.yaml` according to semver; document breaking changes.
@@ -58,4 +59,4 @@ Default values MUST produce a working install for the primary use case. Optional
 
 This constitution supersedes ad-hoc practices for chart development within this repository. Amendments require documentation of the change, version bump of the constitution (semver: MAJOR for incompatible principle removals/redefinitions, MINOR for new principles or material guidance, PATCH for clarifications/typos), and update of the "Last Amended" date. All PRs and reviews MUST verify compliance with Core Principles; exceptions MUST be justified (e.g., in plan Complexity Tracking). Complexity beyond the principles above MUST be justified and documented.
 
-**Version**: 1.4.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-03-13
+**Version**: 1.5.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2025-03-13
