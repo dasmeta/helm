@@ -80,6 +80,40 @@ enabled: false # makes no affect if chart used directly, this option can be used
 #         kind: ConfigMap
 #         name: gateway-config
 #         namespace: istio-system
+#
+# Example with infrastructure.parameters (chart creates ConfigMap and sets parametersRef automatically):
+#   - name: infrastructure-parameters
+#     namespace: istio-system
+#     listeners:
+#       - port: 80
+#         protocol: HTTP
+#     infrastructure:
+#       parameters:
+#         horizontalPodAutoscaler:
+#           spec:
+#             minReplicas: 2
+#             maxReplicas: 2
+#         deployment:
+#           metadata:
+#             annotations:
+#               additional-annotation: some-value
+#           spec:
+#             replicas: 4
+#             template:
+#               spec:
+#                 containers:
+#                   - name: istio-proxy
+#                     resources:
+#                       requests:
+#                         cpu: 1234m
+#         service:
+#           spec:
+#             ports:
+#               - "$patch": delete
+#                 port: 15021
+#         # serviceAccount, podDisruptionBudget: same pattern (object or string) using full YAML fragments
+#       # When parameters is set and non-empty, it overrides any manual parametersRef above.
+#       # Each value can be object (serialized to YAML) or string (used as-is); empty string omits the key.
 gateways: []
 
 # Default parentRefs for HTTPRoute/GRPCRoute/TCPRoute/TLSRoute/UDPRoute objects.

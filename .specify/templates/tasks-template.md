@@ -150,6 +150,8 @@ Examples of foundational tasks (adjust based on your project):
 
 **Purpose**: Improvements that affect multiple user stories
 
+**Helm charts**: For chart repos, include: run `helm lint` for affected chart(s); run `helm template` with new/updated example(s); run `helm template` with other existing examples for regression. Before implementing resource/object fields, check official (or app-version) docs for supported fields and types.
+
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories

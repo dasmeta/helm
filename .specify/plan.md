@@ -75,7 +75,7 @@ dasmeta/helm is a Helm chart repository. All deliverables are charts under `char
   - Resolve the feature branch and open `specs/<branch>/tasks.md`.
   - Execute tasks in **phase order** (Setup → Foundational → User Story phases → Polish). Within a phase, [P] tasks can be done in parallel.
   - For each task: make the required edits (README, examples, etc.); run validation stated in the task (e.g. `helm lint`, `helm template` with example); mark task [x] when done.
-  - **Validation**: After chart/example changes, run `helm lint charts/<name>` and `helm template test charts/<name> -f examples/<name>/<file>.yaml` from repo root; fix any failures.
+  - **Validation**: After chart/example changes, run `helm lint charts/<name>` and `helm template test charts/<name> -f examples/<name>/<file>.yaml` from repo root; test any new or updated example; run other existing examples for that chart to check regression; fix any failures.
   - **Version bump (mandatory)**: Before considering implement complete, complete the **version-bump task** (e.g. T030 in 002). Per constitution and spec FR-005: for every chart that was modified in the feature (README, examples, templates, or any file under that chart), increment `version` in `charts/<chart-name>/Chart.yaml` (at least PATCH). If a chart depends on another chart that was bumped (e.g. base depends on gateway-api), update the dependency version in the parent Chart.yaml. Do not skip this step—tasks.md MUST include an explicit version-bump task and it MUST be executed and marked [x].
 - **Output**: Updated repo (charts/, examples/, specs/); tasks.md with all tasks including version-bump marked [x]; optional `specs/<branch>/implementation.md` summarizing what was done and how to re-validate.
 - **Next**: Commit (per logical group or phase); run `/speckit.analyze` if tasks or spec changed; open PR.
@@ -104,9 +104,11 @@ dasmeta/helm is a Helm chart repository. All deliverables are charts under `char
 |-----------|------|
 | I. Chart-First | All deliverables are Helm charts under `charts/<chart-name>/`; installable via `helm upgrade --install` or as dependency |
 | II. Values Contract | Configuration only via values.yaml and `--set`/`-f`; no hardcoded env-specific values; public values documented in README/values.yaml |
-| III. Lint & Template | Every chart MUST pass `helm lint` and `helm template` with default (or example) values before merge; CI SHOULD enforce |
+| III. Lint & Template | Every chart MUST pass `helm lint` and `helm template` with default (or example) values before merge; run when creating or editing; CI SHOULD enforce |
 | IV. Versioning & Compatibility | Chart and app version in Chart.yaml; semver; breaking value changes = MAJOR bump; bump version on any change (including README) per 002 contract |
 | V. Simplicity & Defaults | Default values produce working install for primary use case; optional features behind explicit flags (YAGNI) |
+| Example testing & regression | New/updated examples MUST be tested with `helm template`; other existing examples for the chart MUST be run to check regression |
+| Official documentation | Before implementing object/resource fields, check official latest or app-version docs for supported fields, structure, type usage |
 
 Violations must be justified in the feature’s plan **Complexity Tracking** table.
 

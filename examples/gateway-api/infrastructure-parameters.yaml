@@ -1,0 +1,23 @@
+# helm diff upgrade --install -n istio-system gateway-api-infra ./charts/gateway-api/ -f ./examples/gateway-api/infrastructure-parameters.yaml
+# Example: gateways[].infrastructure.parameters — chart creates a ConfigMap and sets parametersRef automatically.
+gateways:
+  - name: infrastructure-parameters
+    namespace: istio-system
+    listeners:
+      - port: 80
+        protocol: HTTP
+    infrastructure:
+      parameters:
+        deployment:
+          spec:
+            replicas: 2
+            template:
+              spec:
+                nodeSelector:
+                  kubernetes.io/os: linux
+                # containers:
+                #   - name: istio-proxy
+                #     resources:
+                #       requests:
+                #         cpu: 12m
+                #         memory: 12Mi

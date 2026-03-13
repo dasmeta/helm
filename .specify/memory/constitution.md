@@ -1,13 +1,13 @@
 <!--
   Sync Impact Report
-  Version: 1.0.0 → 1.0.0 (no change; validation run for dasmeta/helm)
-  Modified principles: None
-  Added sections: None
+  Version: 1.3.0 → 1.4.0 (MINOR: new principles and material guidance)
+  Modified principles: III. Lint & Template (expanded: run when creating or editing)
+  Added sections: Additional Constraints — Lint on create/edit; Example testing and regression; Official documentation before implementation. Development Workflow — validation and docs check.
   Removed sections: None
-  Templates: .specify/templates/plan-template.md ✅ (Constitution Check aligns; gates from constitution)
+  Templates: .specify/templates/plan-template.md ✅ (Constitution Check is derived from constitution; plan.md updated)
              .specify/templates/spec-template.md ✅ (no mandatory sections added/removed)
-             .specify/templates/tasks-template.md ✅ (task types unchanged; path conventions remain generic)
-  Commands: .cursor/commands/*.md checked; no outdated or agent-specific references; no updates required.
+             .specify/templates/tasks-template.md ✅ (note added for Helm chart validation tasks)
+  Commands: .specify/templates/commands/ not present; N/A
   Follow-up TODOs: None
 -->
 
@@ -25,7 +25,7 @@ Configuration MUST be exposed only via `values.yaml` and `--set` / `-f` override
 
 ### III. Lint & Template (NON-NEGOTIABLE)
 
-Every chart MUST pass `helm lint` and `helm template` (or equivalent) with default values before merge. CI SHOULD enforce these checks. Rationale: Catches invalid YAML and template errors before release; prevents broken charts from being published.
+Every chart MUST pass `helm lint` and `helm template` (or equivalent) with default values before merge. When creating or editing a chart, the implementer MUST run `helm lint` for the affected chart(s) and `helm template` with default or relevant example values before considering the change complete. CI SHOULD enforce these checks. Rationale: Catches invalid YAML and template errors before release; prevents broken charts from being published.
 
 ### IV. Versioning & Compatibility
 
@@ -42,6 +42,9 @@ Default values MUST produce a working install for the primary use case. Optional
 - **Publishing**: Charts are published to the Dasmeta Helm repo; installation is via `helm repo add dasmeta https://dasmeta.github.io/helm`.
 - **Example files**: Every new or edited file under `examples/<chart-name>/*.yaml` MUST have at the top a comment line with the runnable command to use that example, e.g. `# helm diff upgrade --install -n <namespace> <release> ./charts/<chart-name>/ -f ./examples/<chart-name>/<file>.yaml` (from repo root). This makes it obvious how to run or diff the example without reading the README.
 - **README values table and sync with values.yaml**: Each chart README MUST include a table of key public values with columns: **Key**, **Description**, **Default / Example** (or equivalent). The table documents the main options from `values.yaml` so consumers can scan options without opening the file. The README table and `values.yaml` MUST be kept in sync: when values are added, removed, or changed in `values.yaml`, the README table MUST be updated in the same change (or the same PR). Rationale: single place to scan options; avoids drift between values and docs.
+- **Examples for new abilities**: Whenever a change introduces new public configuration surface or behavior for consumers (e.g. a new top-level or major nested value, support for a new CRD/template, or a new usage mode of the chart), at least one example values file MUST be added or updated under `examples/<chart-name>/` to demonstrate that ability. Rationale: every major new ability is paired with a concrete, runnable example.
+- **Example testing and regression**: When an example values file is added or updated under `examples/<chart-name>/`, the implementer MUST test it (e.g. `helm template <release> ./charts/<chart-name> -f ./examples/<chart-name>/<file>.yaml` from repo root). The implementer MUST also run other existing examples for that chart to check for regression. Rationale: new examples must work; changes must not break existing examples.
+- **Official documentation before implementation**: Before implementing features that define or change Kubernetes object or resource fields (e.g. CRD manifests, Gateway API resources, standard K8s resources), the implementer MUST check the official latest documentation—or the documentation that corresponds to the chart's app version—for supported fields, structure, and type usage. Rationale: ensures manifests and templates align with upstream API; avoids invalid or deprecated field usage.
 
 ## Development Workflow
 
@@ -49,9 +52,10 @@ Default values MUST produce a working install for the primary use case. Optional
 - **Review**: PRs SHOULD verify that the Constitution Check (plan phase) and lint/template gates are satisfied.
 - **Version bumps**: When changing a chart, bump its version in `Chart.yaml` according to semver; document breaking changes.
 - **Implement phase (speckit)**: When running the implement phase (e.g. `/speckit.implement`), the workflow MUST include a version-bump step: for every chart that was modified (README, values, templates, or any file under that chart), increment the `version` field in `charts/<chart-name>/Chart.yaml` (at least PATCH). Implement is not complete until this step is done. Feature task lists (e.g. `tasks.md`) MUST contain an explicit version-bump task (e.g. T030) so it is not forgotten.
+- **Validation on chart changes**: When creating or editing a chart, run `helm lint` for the affected chart(s); run `helm template` with default values and with any new or modified example files; run `helm template` with other existing examples for the same chart to check for regression.
 
 ## Governance
 
 This constitution supersedes ad-hoc practices for chart development within this repository. Amendments require documentation of the change, version bump of the constitution (semver: MAJOR for incompatible principle removals/redefinitions, MINOR for new principles or material guidance, PATCH for clarifications/typos), and update of the "Last Amended" date. All PRs and reviews MUST verify compliance with Core Principles; exceptions MUST be justified (e.g., in plan Complexity Tracking). Complexity beyond the principles above MUST be justified and documented.
 
-**Version**: 1.2.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-03-09
+**Version**: 1.4.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-03-13

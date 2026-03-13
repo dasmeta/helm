@@ -1,0 +1,44 @@
+{{- if .Values.gateways }}
+{{- $outer := . }}
+{{- $gateways := .Values.gateways }}
+{{- range $gateway := (ternary $gateways (list $gateways) (kindIs "slice" $gateways)) }}
+{{- with $gateway.infrastructure }}
+{{- with .parameters }}
+{{- $params := . }}
+{{- $hasParams := false }}
+{{- range $k := list "service" "deployment" "serviceAccount" "horizontalPodAutoscaler" "podDisruptionBudget" }}
+{{- if hasKey $params $k }}
+{{- $v := index $params $k }}
+{{- if or (not (kindIs "string" $v)) (ne $v "") }}
+{{- $hasParams = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if $hasParams }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gateway-api.infrastructureConfigMapName" (list $outer $gateway) }}
+  namespace: {{ default "istio-system" (default $gateway.namespace $outer.Release.Namespace) | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+data:
+  {{- range $k := list "service" "deployment" "serviceAccount" "horizontalPodAutoscaler" "podDisruptionBudget" }}
+  {{- if hasKey $params $k }}
+  {{- $v := index $params $k }}
+  {{- if or (not (kindIs "string" $v)) (ne $v "") }}
+  {{ $k }}: |
+    {{- if kindIs "string" $v }}
+    {{ $v | nindent 4 }}
+    {{- else }}
+    {{ $v | toYaml | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
