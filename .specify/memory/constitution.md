@@ -1,12 +1,12 @@
 <!--
   Sync Impact Report
-  Version: 1.3.0 → 1.4.0 (MINOR: new principles and material guidance)
-  Modified principles: III. Lint & Template (expanded: run when creating or editing)
-  Added sections: Additional Constraints — Lint on create/edit; Example testing and regression; Official documentation before implementation. Development Workflow — validation and docs check.
+  Version: 1.5.0 → 1.6.0 (MINOR: new material guidance)
+  Modified principles: None
+  Added sections: Development Workflow — App version and image tag sync (when updating app version, also update image tag in values.yaml so Chart.yaml appVersion and default image tag match).
   Removed sections: None
-  Templates: .specify/templates/plan-template.md ✅ (Constitution Check is derived from constitution; plan.md updated)
+  Templates: .specify/templates/plan-template.md ✅ (Constitution Check remains derived from constitution)
              .specify/templates/spec-template.md ✅ (no mandatory sections added/removed)
-             .specify/templates/tasks-template.md ✅ (note added for Helm chart validation tasks)
+             .specify/templates/tasks-template.md ✅ (no change)
   Commands: .specify/templates/commands/ not present; N/A
   Follow-up TODOs: None
 -->
@@ -52,6 +52,7 @@ Default values MUST produce a working install for the primary use case. Optional
 - **Pre-commit**: Developers SHOULD enable local git pre-commit hooks (`git config --global core.hooksPath ./githooks`) as documented in the repo README.
 - **Review**: PRs SHOULD verify that the Constitution Check (plan phase) and lint/template gates are satisfied.
 - **Version bumps**: When changing a chart, bump its version in `Chart.yaml` according to semver; document breaking changes.
+- **App version and image tag sync**: When updating an application version in a Helm chart (e.g. `appVersion` in `Chart.yaml`), the implementer MUST also check and update any corresponding image version in `values.yaml` (e.g. `proxysql.image.tag`, or the chart’s image tag key). Both `Chart.yaml` appVersion and the default image tag in values MUST reflect the same release so that default installs use the declared app version. Rationale: avoids mismatch where Chart.yaml advertises one version but rendered manifests pull a different image tag.
 - **Implement phase (speckit)**: When running the implement phase (e.g. `/speckit.implement`), the workflow MUST include a version-bump step: for every chart that was modified (README, values, templates, or any file under that chart), increment the `version` field in `charts/<chart-name>/Chart.yaml` (at least PATCH). Implement is not complete until this step is done. Feature task lists (e.g. `tasks.md`) MUST contain an explicit version-bump task (e.g. T030) so it is not forgotten.
 - **Validation on chart changes**: When creating or editing a chart, run `helm lint` for the affected chart(s); run `helm template` with default values and with any new or modified example files; run `helm template` with other existing examples for the same chart to check for regression.
 
@@ -59,4 +60,4 @@ Default values MUST produce a working install for the primary use case. Optional
 
 This constitution supersedes ad-hoc practices for chart development within this repository. Amendments require documentation of the change, version bump of the constitution (semver: MAJOR for incompatible principle removals/redefinitions, MINOR for new principles or material guidance, PATCH for clarifications/typos), and update of the "Last Amended" date. All PRs and reviews MUST verify compliance with Core Principles; exceptions MUST be justified (e.g., in plan Complexity Tracking). Complexity beyond the principles above MUST be justified and documented.
 
-**Version**: 1.5.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2025-03-13
+**Version**: 1.6.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2025-03-13
