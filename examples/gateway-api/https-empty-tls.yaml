@@ -1,0 +1,11 @@
+# helm diff upgrade --install test charts/gateway-api -f examples/gateway-api/https-empty-tls.yaml
+# HTTPS listener with tls: {} (empty map): explicit opt-out—no gateway-level tls block (e.g. TLS handled in pod)
+enabled: true
+gateways:
+  - name: main-internal
+    listeners:
+      - name: https-443
+        hostname: internal.example.com
+        port: 443
+        protocol: HTTPS
+        tls: {}
