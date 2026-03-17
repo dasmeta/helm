@@ -1,0 +1,16 @@
+# helm diff upgrade --install test charts/gateway-api -f examples/gateway-api/https-explicit-tls.yaml
+# HTTPS listener with explicit tls: chart must render tls exactly as provided (no default injection)
+enabled: true
+gateways:
+  - name: main
+    listeners:
+      - name: https-443
+        hostname: example.com
+        port: 443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: my-custom-secret-tls
+              kind: Secret
+              group: ""

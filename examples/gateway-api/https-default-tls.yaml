@@ -1,0 +1,10 @@
+# helm diff upgrade --install test charts/gateway-api -f examples/gateway-api/https-default-tls.yaml
+# HTTPS listener without tls: chart defaults TLS to mode Terminate and certificateRefs[0].name = {gateway-name}-tls
+enabled: true
+gateways:
+  - name: main-internal
+    listeners:
+      - name: https-443
+        hostname: internal.example.com
+        port: 443
+        protocol: HTTPS

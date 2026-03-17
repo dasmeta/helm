@@ -21,6 +21,7 @@ You can either set `gateways[].infrastructure.parametersRef` to reference an exi
 | `gateways` | List of Gateway resources | `[]`; see suboptions below |
 | `gateways[].gatewayClassName` | Gateway class for this Gateway | `istio` |
 | `gateways[].listeners` | Listeners for this Gateway; `hostname`, `port`, `protocol`; name auto-generated (protocol-port-hostname, ≤63 chars) | port 80, protocol HTTP |
+| `gateways[].listeners[].tls` | For HTTPS and TLS listeners. **Absent** → chart defaults to `mode: Terminate` and `certificateRefs` to Secret `{gateway-name}-tls`. **`tls: {}`** → explicit opt-out (no `tls` block in output; e.g. TLS handled in pod). **Non-empty** → rendered as-is. Secret must be provisioned by the caller (e.g. cert-manager or Terraform). | optional |
 | `gateways[].infrastructure` | Annotations, parametersRef (manual ConfigMap), or parameters (chart-generated ConfigMap) | optional |
 | `gateways[].infrastructure.parameters` | Inline config for service, deployment, serviceAccount, horizontalPodAutoscaler, podDisruptionBudget (object or string per key); chart creates a ConfigMap and sets parametersRef when non-empty; empty string omits key | optional; when set, overrides parametersRef |
 | `defaultParentRefs` | Default parentRefs for routes when not set per-route | `[]`; kind=Gateway, group=gateway.networking.k8s.io |
