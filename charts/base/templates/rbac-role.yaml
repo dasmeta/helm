@@ -1,0 +1,31 @@
+{{- if and .Values.rbac.role.enabled (include "base.rbac.roleRules" .) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "base.rbac.roleName" . }}
+  namespace: {{ default .Release.Namespace .Values.rbac.role.namespace }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+rules:
+{{ include "base.rbac.roleRules" . | trim | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "base.rbac.roleName" . }}
+  namespace: {{ default .Release.Namespace .Values.rbac.role.namespace }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+subjects:
+{{- if .Values.rbac.role.subjects }}
+{{ toYaml .Values.rbac.role.subjects | nindent 2 }}
+{{- else }}
+  - kind: ServiceAccount
+    name: {{ default (include "base.serviceAccountName" .) .Values.rbac.role.serviceAccount.name }}
+    namespace: {{ default .Release.Namespace .Values.rbac.role.serviceAccount.namespace }}
+{{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "base.rbac.roleName" . }}
+{{- end }}

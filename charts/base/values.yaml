@@ -49,6 +49,27 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# Optional namespace Role + RoleBinding. Set rules (Kubernetes policyRules) and/or bind subjects.
+rbac:
+  role:
+    enabled: false
+    # Optional override for Role and RoleBinding metadata.name (default: <release fullname>-role)
+    name: ""
+    # Optional; defaults to the Helm release namespace
+    namespace: ""
+    # Policy rules: list of { apiGroups, resources, verbs, ... }. Use this for multiple rules.
+    rules: []
+    # Single-rule shorthand (used when rules is empty): set all three
+    apiGroups: []
+    resources: []
+    verbs: []
+    # If non-empty, used as RoleBinding.subjects (overrides serviceAccount below)
+    subjects: []
+    serviceAccount:
+      # Defaults to this chart's ServiceAccount (see serviceAccount.*)
+      name: ""
+      namespace: ""
+
 job:
   labels:
     - name: app.kubernetes.io/component
