@@ -72,6 +72,26 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Name for optional namespace Role and RoleBinding (rbac.role).
+*/}}
+{{- define "base.rbac.roleName" -}}
+{{- default (printf "%s-role" (include "base.fullname" .)) .Values.rbac.role.name }}
+{{- end }}
+
+{{/*
+Kubernetes Role rules: from rbac.role.rules, or one rule built from rbac.role.apiGroups/resources/verbs.
+*/}}
+{{- define "base.rbac.roleRules" -}}
+{{- $rules := .Values.rbac.role.rules }}
+{{- if $rules }}
+{{- toYaml $rules }}
+{{- else if and (not (empty .Values.rbac.role.apiGroups)) (not (empty .Values.rbac.role.resources)) (not (empty .Values.rbac.role.verbs)) }}
+{{- $rule := dict "apiGroups" .Values.rbac.role.apiGroups "resources" .Values.rbac.role.resources "verbs" .Values.rbac.role.verbs }}
+{{- list $rule | toYaml }}
+{{- end }}
+{{- end }}
+
+{{/*
 Return the target/server Kubernetes version
 */}}
 {{- define "base.capabilities.kubeVersion" -}}

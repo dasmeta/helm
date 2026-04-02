@@ -1,0 +1,22 @@
+# Namespace Role + RoleBinding: pass apiGroups, resources, and verbs (or full rules: []).
+# Install: helm upgrade --install -n dev myapp ./charts/base/ -f ./examples/base/with-rbac-role.yaml
+
+rbac:
+  role:
+    enabled: true
+    # name: myapp-role
+    # namespace: dev
+    rules:
+      - apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["get", "list"]
+    #   - apiGroups: ["apps"]
+    #     resources: ["deployments"]
+    #     verbs: ["get", "list", "watch"]
+    # subjects:
+    #   - kind: ServiceAccount
+    #     name: myapp
+    #     namespace: dev
+
+serviceAccount:
+  create: true
