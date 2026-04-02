@@ -42,4 +42,8 @@ spec:
         targetAverageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
         {{- end }}
     {{- end }}
+  {{- if and (semverCompare ">=1.23-0" $kubeVersion) .Values.autoscaling.behavior }}
+  behavior:
+{{ toYaml .Values.autoscaling.behavior | nindent 4 }}
+  {{- end }}
 {{- end }}
