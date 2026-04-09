@@ -259,6 +259,7 @@ autoscaling:
   #         value: 50
   #         periodSeconds: 60
 
+# Single-trigger KEDA ScaledObject with `trigger` (singular).
 # If you want scale deployment depends on AWS SQS queue size
 # autoscaling:
 #   enabled: true
@@ -271,6 +272,47 @@ autoscaling:
 #       queueURL: https://sqs.eu-central-1.amazonaws.com/<account-id>/<sqs-name>
 #       queueLength: 3
 #       awsRegion: "eu-central-1"
+
+# Multi-trigger KEDA ScaledObject with `triggers` (array).
+# When `triggers` is set, a ScaledObject is created instead of an HPA.
+# Note: `triggers` (array) and `trigger` (singular) are independent paths.
+# If both are set, `triggers` takes precedence.
+# The `behavior` block (above) is passed through to the ScaledObject.
+
+# Example: CPU + memory + Prometheus (no auth needed)
+# autoscaling:
+#   enabled: true
+#   minReplicas: 2
+#   maxReplicas: 50
+#   pollingInterval: 30
+#   triggers:
+#     - type: cpu
+#       metricType: Utilization
+#       metadata:
+#         value: "70"
+#     - type: memory
+#       metricType: Utilization
+#       metadata:
+#         value: "80"
+#     - type: prometheus
+#       metadata:
+#         serverAddress: http://prometheus:9090
+#         query: sum(rate(http_requests_total[2m]))
+#         threshold: "100"
+
+# Example: RabbitMQ with authentication
+# autoscaling:
+#   enabled: true
+#   minReplicas: 1
+#   maxReplicas: 20
+#   triggers:
+#     - type: rabbitmq
+#       authenticationRef:
+#         name: keda-trigger-auth-rabbitmq
+#         kind: TriggerAuthentication
+#       metadata:
+#         queueName: my-queue
+#         queueLength: "50"
 
 nodeSelector: {}
 
