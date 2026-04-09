@@ -198,9 +198,10 @@ defaultParentRefs: []
 #                 replaceFullPath: /new-path
 #               statusCode: 301
 #
-# Example with custom 403 response (using RequestRedirect with 403 status):
-# Note: For a true static 403 response, you may need a backend service that returns 403,
-# or use Istio-specific Envoy filters. This example shows redirect to a 403 page.
+# Example with custom directResponse status handling:
+# - status 403 keeps existing AuthorizationPolicy behavior in istio/authorizationpolicy.yaml
+# - status 200-599 (except 403) renders Istio EnvoyFilter in istio/envoyfilter.yaml
+# - directResponse.body is optional and defaults to empty string ("")
 # httpRoutes:
 #   - name: forbidden-route
 #     parentRefs:
@@ -220,10 +221,13 @@ defaultParentRefs: []
 #         #  ports: # default ports are "80" and "443", but can be overridden
 #         #    - "80"
 #         #    - "443"
-#         # Alternative: Use a backend service that returns 403
-#         # backendRefs:
-#         #   - name: forbidden-service
-#         #     port: 80
+#       - matches:
+#           - path:
+#               type: PathPrefix
+#               value: /healthz
+#         directResponse:
+#           status: 200
+#           body: "ok"
 httpRoutes: []
 
 # List (or single object) of GRPCRoute resources to create.

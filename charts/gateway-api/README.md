@@ -30,6 +30,8 @@ You can either set `gateways[].infrastructure.parametersRef` to reference an exi
 | `httpRoutes[].parentRefs` | Gateway parent refs (name, sectionName, kind, group); optional if defaultParentRefs set | name: main, sectionName: http |
 | `httpRoutes[].hostnames` | Hostnames this route matches | e.g. example.com |
 | `httpRoutes[].rules` | Route rules: `matches` (path, headers), `backendRefs`, `filters` (e.g. RequestRedirect), `directResponse` | PathPrefix /, backendRefs to service |
+| `httpRoutes[].rules[].directResponse.status` | Direct response status. `403` keeps AuthorizationPolicy flow; non-`403` statuses are rendered via Istio EnvoyFilter | `403` or `200-599` |
+| `httpRoutes[].rules[].directResponse.body` | Optional response body for non-`403` direct responses | `""` (empty string) |
 | `grpcRoutes` | List of GRPCRoute resources | example in values.yaml |
 | `tcpRoutes` | List of TCPRoute resources (experimental) | example in values.yaml |
 | `tlsRoutes` | List of TLSRoute resources | example in values.yaml |

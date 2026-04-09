@@ -8,14 +8,11 @@
   {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
   {{- $hostnames := $route.hostnames | default (list) -}}
   {{- $allRules := list -}}
-  {{- /* Collect and filter rules for this route only (exclude 403 directResponse) */ -}}
+  {{- /* Collect and filter rules for this route only (exclude directResponse rules handled by Istio templates) */ -}}
   {{- range $ruleIdx, $rule := (default (list) $route.rules) -}}
     {{- $shouldFilter := false -}}
-    {{- if and .directResponse .directResponse.status -}}
-      {{- $status := .directResponse.status | toString -}}
-      {{- if eq $status "403" -}}
-        {{- $shouldFilter = true -}}
-      {{- end -}}
+    {{- if .directResponse -}}
+      {{- $shouldFilter = true -}}
     {{- end -}}
     {{- if not $shouldFilter -}}
       {{- $allRules = append $allRules $rule -}}

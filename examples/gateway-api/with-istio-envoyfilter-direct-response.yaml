@@ -1,0 +1,34 @@
+# helm diff upgrade --install -n istio-system gateway-api-direct-response ./charts/gateway-api -f ./examples/gateway-api/with-istio-envoyfilter-direct-response.yaml
+httpRoutes:
+  - name: direct-response
+    parentRefs:
+      - name: main
+        sectionName: http-echo-gw-http
+    hostnames:
+      - http-echo-gw.localhost
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /restricted
+        directResponse:
+          status: 403
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /my-path
+        directResponse:
+          status: 200
+          body: "Hello, World!"
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /empty
+        directResponse:
+          status: 429
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /custom-502
+        directResponse:
+          status: 502
