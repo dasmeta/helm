@@ -1466,6 +1466,18 @@ entries:
   gateway-api:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-04-14T10:44:56.307321588Z"
+    description: A Helm chart for Kubernetes allowing to create Gateway API resources
+      which is a standardized, next-generation(replaces k8s Ingress) specification
+      for managing network traffic in Kubernetes clusters
+    digest: ff00186962e31dc61020dec0126e1528a7f90834bc78e9032a1e58045ff194ee
+    name: gateway-api
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/gateway-api-0.1.6/gateway-api-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-04-09T07:59:38.777340265Z"
     description: A Helm chart for Kubernetes allowing to create Gateway API resources
       which is a standardized, next-generation(replaces k8s Ingress) specification
