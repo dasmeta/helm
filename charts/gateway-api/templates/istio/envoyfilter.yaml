@@ -99,6 +99,6 @@ spec:
     {{- end }}
   {{- end }}
   configPatches:
-    {{- toYaml $filter.configPatches | nindent 4 }}
+    {{- tpl (toYaml $filter.configPatches) $outer | nindent 4 }}
 {{- end }}
 {{- end }}

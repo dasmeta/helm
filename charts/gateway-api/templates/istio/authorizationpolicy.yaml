@@ -104,7 +104,7 @@ spec:
     {{- end }}
   {{- end }}
   {{- with $policy.rules }}
-  rules: {{- toYaml . | nindent 2 }}
+  rules: {{- tpl (toYaml .) $outer | nindent 2 }}
   {{- end }}
 {{- end }}
 {{- end }}
