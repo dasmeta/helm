@@ -48,7 +48,7 @@ spec:
     {{- end }}
   {{- end }}
   {{- if $hostnames }}
-  hostnames: {{- toYaml $hostnames | nindent 2 }}
+  hostnames: {{- tpl (toYaml $hostnames) $outer | nindent 2 }}
   {{- end }}
   {{- if $allRules }}
   rules:

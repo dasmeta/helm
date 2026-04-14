@@ -1,11 +1,14 @@
 # helm diff upgrade --install -n istio-system gateway-api-direct-response ./charts/gateway-api -f ./examples/gateway-api/with-istio-envoyfilter-direct-response.yaml
+global:
+  environment: dev
 httpRoutes:
   - name: direct-response
     parentRefs:
       - name: main
         sectionName: http-echo-gw-http
     hostnames:
-      - http-echo-gw.localhost
+      - "{{ .Values.global.environment }}.http-echo-gw.localhost"
+      # - "http-echo-gw.localhost"
     rules:
       - matches:
           - path:
