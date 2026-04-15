@@ -120,7 +120,7 @@ spec:
         {{- $_ := set $rule "backendRefs" $processedBackendRefs }}
       {{- end }}
       {{- if or $rule.matches $rule.filters $rule.backendRefs }}
-        {{- toYaml (list $rule) | nindent 4 | trimPrefix "- " }}
+        {{- tpl (toYaml (list $rule)) $outer | nindent 4 | trimPrefix "- " }}
       {{- end }}
     {{- end }}
   {{- end }}

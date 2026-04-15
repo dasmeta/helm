@@ -39,5 +39,5 @@ httpRoutes:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: api-v1
+          - name: "{{ .Values.global.environment }}.api-v1"
             port: 80
