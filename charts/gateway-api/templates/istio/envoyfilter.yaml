@@ -1,0 +1,104 @@
+{{- $outer := . -}}
+{{- $autoEnvoyFilters := list -}}
+{{- if .Values.httpRoutes }}
+{{- $routes := .Values.httpRoutes -}}
+{{- if $routes }}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
+  {{- $hostnames := $route.hostnames | default (list "*") -}}
+  {{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
+  {{- $targetRefs := list -}}
+  {{- if $parentRefs -}}
+    {{- range $parentRefs -}}
+      {{- $targetRef := dict "name" (default "main" .name) "kind" (default "Gateway" .kind) "group" (default "gateway.networking.k8s.io" .group) -}}
+      {{- $targetRefs = append $targetRefs $targetRef -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $targetRefs = list (dict "name" "main" "kind" "Gateway" "group" "gateway.networking.k8s.io") -}}
+  {{- end -}}
+  {{- range $ruleIdx, $rule := (default (list) $route.rules) -}}
+    {{- if and $rule.directResponse $rule.directResponse.status -}}
+      {{- $statusStr := toString $rule.directResponse.status -}}
+      {{- if not (regexMatch "^[0-9]+$" $statusStr) -}}
+        {{- fail (printf "httpRoutes[%d].rules[%d].directResponse.status must be numeric" $idx $ruleIdx) -}}
+      {{- end -}}
+      {{- $status := atoi $statusStr -}}
+      {{- if or (lt $status 200) (gt $status 599) -}}
+        {{- fail (printf "httpRoutes[%d].rules[%d].directResponse.status must be in range 200-599" $idx $ruleIdx) -}}
+      {{- end -}}
+      {{- if ne $status 403 -}}
+        {{- if not $rule.matches -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d] with directResponse status %d requires at least one match" $idx $ruleIdx $status) -}}
+        {{- end -}}
+        {{- $body := "" -}}
+        {{- if hasKey $rule.directResponse "body" -}}
+          {{- $body = toString $rule.directResponse.body -}}
+        {{- end -}}
+        {{- $configPatches := list -}}
+        {{- range $matchIdx, $match := $rule.matches -}}
+          {{- if not (and $match.path $match.path.value) -}}
+            {{- fail (printf "httpRoutes[%d].rules[%d].matches[%d].path.value is required for directResponse status %d" $idx $ruleIdx $matchIdx $status) -}}
+          {{- end -}}
+          {{- $pathType := default "PathPrefix" $match.path.type -}}
+          {{- $pathValue := $match.path.value -}}
+          {{- $routeMatch := dict -}}
+          {{- if eq $pathType "Exact" -}}
+            {{- $_ := set $routeMatch "path" $pathValue -}}
+          {{- else -}}
+            {{- $_ := set $routeMatch "path_separated_prefix" $pathValue -}}
+          {{- end -}}
+          {{- range $hostIdx, $host := $hostnames -}}
+            {{- $patch := dict
+              "applyTo" "HTTP_ROUTE"
+              "match" (dict
+                "context" "GATEWAY"
+                "routeConfiguration" (dict
+                  "vhost" (dict "domainName" $host)
+                )
+              )
+              "patch" (dict
+                "operation" "INSERT_FIRST"
+                "value" (dict
+                  "match" $routeMatch
+                  "direct_response" (dict
+                    "status" $status
+                    "body" (dict "inline_string" $body)
+                  )
+                )
+              )
+            -}}
+            {{- $configPatches = append $configPatches $patch -}}
+          {{- end -}}
+        {{- end -}}
+        {{- $nameBase := default (include "gateway-api.fullname" $outer) $route.name -}}
+        {{- $name := (printf "%s-dr-%d" $nameBase $ruleIdx | lower | trunc 63 | trimSuffix "-") -}}
+        {{- $envoyFilter := dict "name" $name "namespace" "istio-system" "targetRefs" $targetRefs "configPatches" $configPatches -}}
+        {{- $autoEnvoyFilters = append $autoEnvoyFilters $envoyFilter -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if $autoEnvoyFilters }}
+{{- range $idx, $filter := $autoEnvoyFilters }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ default (printf "%s-envoyfilter-%d" (include "gateway-api.fullname" $outer) $idx) $filter.name | quote }}
+  namespace: {{ default "istio-system" $filter.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+spec:
+  {{- if $filter.targetRefs }}
+  targetRefs:
+    {{- range $filter.targetRefs }}
+    - group: {{ default "gateway.networking.k8s.io" .group | quote }}
+      kind: {{ default "Gateway" .kind | quote }}
+      name: {{ .name | quote }}
+    {{- end }}
+  {{- end }}
+  configPatches:
+    {{- tpl (toYaml $filter.configPatches) $outer | nindent 4 }}
+{{- end }}
+{{- end }}

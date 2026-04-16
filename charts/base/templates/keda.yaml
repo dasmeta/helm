@@ -1,4 +1,4 @@
-{{- if and .Values.autoscaling.enabled .Values.autoscaling.trigger }}
+{{- if and .Values.autoscaling.enabled (or .Values.autoscaling.trigger .Values.autoscaling.triggers) }}
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -8,9 +8,31 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ include "base.fullname" . }}
-  minReplicaCount:  {{ .Values.autoscaling.minReplicas }}
+  {{- if .Values.autoscaling.pollingInterval }}
+  pollingInterval: {{ .Values.autoscaling.pollingInterval }}
+  {{- end }}
+  minReplicaCount: {{ .Values.autoscaling.minReplicas }}
   maxReplicaCount: {{ .Values.autoscaling.maxReplicas }}
   triggers:
+    {{- if .Values.autoscaling.triggers }}
+    {{- range .Values.autoscaling.triggers }}
+    - type: {{ .type }}
+      {{- if .metricType }}
+      metricType: {{ .metricType }}
+      {{- end }}
+      {{- if .authenticationRef }}
+      authenticationRef:
+        name: {{ .authenticationRef.name }}
+        kind: {{ .authenticationRef.kind | default "ClusterTriggerAuthentication" }}
+      {{- end }}
+      {{- if .metadata }}
+      metadata:
+        {{- range $key, $value := .metadata }}
+        {{ $key }}: "{{ $value }}"
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- else }}
     - type: {{ .Values.autoscaling.trigger.type }}
       authenticationRef:
         name: {{ .Values.autoscaling.trigger.authRef | default "keda-trigger-auth-default" }}
@@ -19,4 +41,11 @@ spec:
         {{- range $key, $value := .Values.autoscaling.trigger.metadata }}
         {{ $key }}: "{{ $value }}"
         {{- end }}
+    {{- end }}
+  {{- if .Values.autoscaling.behavior }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+{{ toYaml .Values.autoscaling.behavior | nindent 8 }}
+  {{- end }}
 {{- end }}
