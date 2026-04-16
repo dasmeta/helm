@@ -350,8 +350,12 @@ extraEnv: {}
 #       name: app-secret
 #       key: MY_CUSTOM_ENV_KEY4_IN_SECRET
 #   MY_CUSTOM_ENV_KEY6:
+#     fieldRef:
+#       fieldPath: spec.nodeName
+#   POD_IP:
+#     valueFrom:
 #       fieldRef:
-#         fieldPath: spec.nodeName
+#         fieldPath: status.podIP
 
 # configs that will be placed into config maps and be used as env variable or mounted as file in container, NOTE: do not place secret values here, use instead secrets config
 config: {} # old/deprecated way to pass configs, still supported

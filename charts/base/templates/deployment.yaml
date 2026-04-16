@@ -81,14 +81,7 @@ spec:
           args: {{ toYaml . | nindent 12 }}
           {{- end }}
           env:
-          {{- range $key, $value := (merge (deepCopy ($initContainer.extraEnv | default dict)) (include "base.predefinedEnvVariables" $ | fromYaml)) }}
-          - name: {{ $key | quote}}
-            {{- if kindIs "map" $value }}
-            valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 14 }}
-            {{- else }}
-            value: {{ $value | quote }}
-            {{- end }}
-          {{- end }}
+            {{- include "base.renderEnvVariables" (dict "root" $ "extraEnv" ($initContainer.extraEnv | default dict)) | nindent 12 }}
           {{- range $secret := $initContainer.secrets }}
           {{- if ne (kindOf $secret) "string" }}
           {{- range $map_key,$map_value := $secret }}
@@ -138,14 +131,7 @@ spec:
           args: {{ toYaml . | nindent 12 }}
           {{- end }}
           env:
-            {{- range $key, $value := (merge (deepCopy (.Values.extraEnv | default dict)) (include "base.predefinedEnvVariables" $ | fromYaml)) }}
-            - name: {{ $key | quote}}
-              {{- if kindIs "map" $value }}
-              valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 16 }}
-              {{- else }}
-              value: {{ $value | quote }}
-              {{- end }}
-            {{- end }}
+            {{- include "base.renderEnvVariables" (dict "root" $ "extraEnv" (.Values.extraEnv | default dict)) | nindent 12 }}
             {{- range $secret := .Values.secrets }}
             {{- if ne (kindOf $secret) "string" }}
             {{- range $map_key,$map_value := $secret }}
@@ -252,14 +238,7 @@ spec:
             {{- end }}
           {{- end }}
           env:
-          {{- range $key, $value := (merge ($extraContainer.extraEnv | default dict) (include "base.predefinedEnvVariables" $ | fromYaml)) }}
-          - name: {{ $key | quote}}
-            {{- if kindIs "map" $value }}
-            valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 14 }}
-            {{- else }}
-            value: {{ $value | quote }}
-            {{- end }}
-          {{- end }}
+            {{- include "base.renderEnvVariables" (dict "root" $ "extraEnv" ($extraContainer.extraEnv | default dict)) | nindent 12 }}
           {{- range $secret := $extraContainer.secrets }}
           {{- if ne (kindOf $secret) "string" }}
           {{- range $map_key,$map_value := $secret }}
