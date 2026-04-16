@@ -360,3 +360,36 @@ POD_IP:
     fieldRef:
       fieldPath: status.podIP
 {{- end -}}
+
+{{/*
+Renders env variables with predefined items first so later variables can
+reference them using Kubernetes env expansion syntax like $(POD_IP).
+User-provided extraEnv can still override predefined items.
+*/}}
+{{- define "base.renderEnvVariables" -}}
+{{- $root := .root -}}
+{{- $extraEnv := default dict .extraEnv -}}
+{{- $predefinedEnv := include "base.predefinedEnvVariables" $root | fromYaml -}}
+{{- range $key, $value := $predefinedEnv }}
+{{- $renderValue := $value -}}
+{{- if hasKey $extraEnv $key }}
+  {{- $renderValue = index $extraEnv $key -}}
+{{- end }}
+- name: {{ $key | quote }}
+  {{- if kindIs "map" $renderValue }}
+  valueFrom: {{ toYaml (ternary $renderValue $renderValue.valueFrom (empty ($renderValue).valueFrom)) | nindent 4 }}
+  {{- else }}
+  value: {{ $renderValue | quote }}
+  {{- end }}
+{{- end }}
+{{- range $key, $value := $extraEnv }}
+{{- if not (hasKey $predefinedEnv $key) }}
+- name: {{ $key | quote }}
+  {{- if kindIs "map" $value }}
+  valueFrom: {{ toYaml (ternary $value $value.valueFrom (empty ($value).valueFrom)) | nindent 4 }}
+  {{- else }}
+  value: {{ $value | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}

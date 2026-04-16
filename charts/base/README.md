@@ -455,6 +455,39 @@ extraContainer:
       NGINX_PORT: 8082
 ```
 
+#### extraEnv with fieldRef/valueFrom on all container types
+```yaml
+extraEnv:
+  POD_IP:
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP
+
+initContainers:
+  - name: init
+    image:
+      repository: nginx
+      tag: 1.19
+      pullPolicy: IfNotPresent
+    extraEnv:
+      POD_IP:
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+
+extraContainers:
+  - name: sidecar
+    image:
+      repository: nginx
+      tag: 1.19
+      pullPolicy: IfNotPresent
+    extraEnv:
+      POD_IP:
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+```
+
 ### If you want add pod extra label
 ```yaml
   base:
