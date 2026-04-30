@@ -240,6 +240,16 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
 
+  # Optional. Annotations to apply to the rendered ScaledObject (KEDA mode only).
+  # Useful for KEDA's transfer-hpa-ownership migration path.
+  # scaledObjectAnnotations:
+  #   scaledobject.keda.sh/transfer-hpa-ownership: "true"
+
+  # Optional. Custom name for the HPA that KEDA manages on behalf of the ScaledObject.
+  # Defaults to "keda-hpa-{release-name}". Set to the existing HPA's name when migrating
+  # from plain HPA to KEDA via transfer-hpa-ownership (see README).
+  # hpaName: my-existing-hpa
+
   # Optional HPA scale up/down behavior (Kubernetes autoscaling/v2+).
   # If set, it will be rendered under `spec.behavior` in the generated HPA.
   #
@@ -313,6 +323,25 @@ autoscaling:
 #       metadata:
 #         queueName: my-queue
 #         queueLength: "50"
+
+# Example: Migrate an existing plain HPA to a KEDA ScaledObject without manually
+# deleting the old HPA. KEDA's vscaledobject.kb.io webhook normally rejects creating
+# a ScaledObject when an HPA already manages the same workload; the transfer-hpa-ownership
+# annotation, paired with `hpaName` matching the existing HPA's name, tells KEDA to
+# claim the existing HPA in place. See charts/base/README.md for the full recipe
+# (including the optional `helm.sh/resource-policy: keep` step for zero-gap migration).
+# autoscaling:
+#   enabled: true
+#   minReplicas: 2
+#   maxReplicas: 50
+#   scaledObjectAnnotations:
+#     scaledobject.keda.sh/transfer-hpa-ownership: "true"
+#   hpaName: my-release-name # must match the existing HPA's metadata.name
+#   triggers:
+#     - type: cpu
+#       metricType: Utilization
+#       metadata:
+#         value: "70"
 
 nodeSelector: {}
 

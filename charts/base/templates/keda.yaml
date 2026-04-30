@@ -5,6 +5,10 @@ metadata:
   name: {{ include "base.fullname" . }}
   labels:
     {{- include "base.labels" . | nindent 4 }}
+  {{- with .Values.autoscaling.scaledObjectAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   scaleTargetRef:
     name: {{ include "base.fullname" . }}
@@ -42,10 +46,15 @@ spec:
         {{ $key }}: "{{ $value }}"
         {{- end }}
     {{- end }}
-  {{- if .Values.autoscaling.behavior }}
+  {{- if or .Values.autoscaling.behavior .Values.autoscaling.hpaName }}
   advanced:
     horizontalPodAutoscalerConfig:
+      {{- with .Values.autoscaling.hpaName }}
+      name: {{ . }}
+      {{- end }}
+      {{- with .Values.autoscaling.behavior }}
       behavior:
-{{ toYaml .Values.autoscaling.behavior | nindent 8 }}
+{{ toYaml . | nindent 8 }}
+      {{- end }}
   {{- end }}
 {{- end }}
