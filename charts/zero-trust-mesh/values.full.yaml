@@ -1,0 +1,72 @@
+namespace: default
+
+labels:
+  namespaceLabelKey: kubernetes.io/metadata.name
+
+namespaceResources:
+  enabled: true
+
+# Preferred top-level identity fields (kept with legacy serviceConfig below for compatibility).
+workload: backend
+serviceAccount: backend-runtime-sa
+
+serviceConfig:
+  enabled: true
+  namespace: default
+  workload: backend
+  serviceAccount: backend-runtime-sa
+
+allowTo:
+  - service: auth
+    namespace: shared
+    port: 8080
+    protocol: TCP
+    serviceAccount: auth-runtime-sa
+    methods: ["POST"]
+    paths: ["/verify", "/token"]
+
+  - service: payments
+    namespace: poc-mesh
+    port: 8080
+    methods: ["POST"]
+    paths: ["/charge"]
+
+  - hosts:
+      - api.stripe.com
+      - s3.eu-central-1.amazonaws.com
+    # Optional host ports; merged with defaults 80/HTTP and 443/HTTPS.
+    ports:
+      - number: 443
+        protocol: TLS
+      - number: 8443
+        protocol: HTTPS
+
+networkPolicy:
+  enabled: true
+  defaultDeny: true
+  allowDns: true
+  dnsNamespace: kube-system
+  dnsPodLabels:
+    k8s-app: kube-dns
+  egressGateway:
+    enabled: false
+    namespace: istio-system
+    podLabels:
+      istio: egressgateway
+    ports:
+      - port: 443
+        protocol: TCP
+      - port: 80
+        protocol: TCP
+
+istio:
+  enabled: true
+  strictMtls: true
+  defaultDenyAuthorization: true
+  egressGateway:
+    enabled: false
+    namespace: istio-system
+    # serviceName should match your real Istio gateway Service (for example: main-istio)
+    serviceName: istio-egressgateway
+    selector:
+      istio: egressgateway

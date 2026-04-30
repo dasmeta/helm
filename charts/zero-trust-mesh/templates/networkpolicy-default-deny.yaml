@@ -1,0 +1,16 @@
+{{- $np := .Values.networkPolicy | default (dict) -}}
+{{- $nsr := .Values.namespaceResources | default (dict) -}}
+{{- if and (default false (default .Values.namespaceResourcesEnabled $nsr.enabled)) (default true $np.enabled) (default true $np.defaultDeny) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ztm.fullname" . }}-default-deny-all
+  namespace: {{ include "ztm.workloadNamespace" . }}
+  labels:
+    {{- include "ztm.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+{{- end }}

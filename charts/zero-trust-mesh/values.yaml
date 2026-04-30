@@ -1,0 +1,26 @@
+# namespace: <optional override; defaults to Helm release namespace>
+
+# workload: <auto from Helm release name when omitted>
+# Optional; defaults to workload when empty.
+serviceAccount: ""
+
+# Keep false for per-service releases. Enable only in one baseline release per namespace.
+namespaceResourcesEnabled: false
+
+# Single allowTo list:
+# - service rule: workload -> service
+# - hosts rule: approved external hosts (default ports: 80/HTTP and 443/HTTPS)
+allowTo:
+  - service: backend
+    port: 8080
+    methods: ["GET", "POST"]
+    paths: ["/api/*"]
+
+  - hosts: ["api.stripe.com"]
+    # Optional custom ports/protocols for this host group.
+    # These are merged with defaults (80/HTTP and 443/HTTPS).
+    # ports:
+    #   - number: 80
+    #     protocol: HTTP
+    #   - number: 443
+    #     protocol: HTTPS

@@ -1,0 +1,12 @@
+{{- $istio := .Values.istio | default (dict) -}}
+{{- $nsr := .Values.namespaceResources | default (dict) -}}
+{{- if and (default false (default .Values.namespaceResourcesEnabled $nsr.enabled)) (default true $istio.enabled) (default true $istio.defaultDenyAuthorization) }}
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "ztm.fullname" . }}-default-deny
+  namespace: {{ include "ztm.workloadNamespace" . }}
+  labels:
+    {{- include "ztm.labels" . | nindent 4 }}
+spec: {}
+{{- end }}

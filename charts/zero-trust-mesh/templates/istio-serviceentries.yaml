@@ -1,0 +1,53 @@
+{{- $istio := .Values.istio | default (dict) -}}
+{{- if and (default true $istio.enabled) .Values.allowTo }}
+{{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
+{{- range .Values.allowTo }}
+{{- if .hosts }}
+{{- $defaultPorts := list (dict "number" 80 "protocol" "HTTP") (dict "number" 443 "protocol" "HTTPS") -}}
+{{- $userPorts := .ports | default (list) -}}
+{{- $mergedByNumber := dict -}}
+{{- $ports := list -}}
+{{- range $p := $defaultPorts }}
+{{- $pNumber := printf "%v" $p.number -}}
+{{- $pProtocol := default "HTTPS" ($p.protocol | upper) -}}
+{{- $pName := default (include "ztm.sanitizeName" (printf "%s-%s" ($pProtocol | lower) $pNumber)) $p.name -}}
+{{- $_ := set $mergedByNumber $pNumber (dict "number" $p.number "protocol" $pProtocol "name" $pName) -}}
+{{- end -}}
+{{- range $p := $userPorts }}
+{{- $pNumber := printf "%v" $p.number -}}
+{{- $pProtocol := default "HTTPS" ($p.protocol | upper) -}}
+{{- $pName := default (include "ztm.sanitizeName" (printf "%s-%s" ($pProtocol | lower) $pNumber)) $p.name -}}
+{{- $_ := set $mergedByNumber $pNumber (dict "number" $p.number "protocol" $pProtocol "name" $pName) -}}
+{{- end -}}
+{{- range $p := $defaultPorts }}
+{{- $pNumber := printf "%v" $p.number -}}
+{{- $ports = append $ports (get $mergedByNumber $pNumber) -}}
+{{- end -}}
+{{- range $p := $userPorts }}
+{{- $pNumber := printf "%v" $p.number -}}
+{{- if not (has (int $p.number) (list 80 443)) -}}
+{{- $ports = append $ports (get $mergedByNumber $pNumber) -}}
+{{- end -}}
+{{- end -}}
+{{- range .hosts }}
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: external-{{ include "ztm.sanitizeName" . }}
+  namespace: {{ $workloadNamespace }}
+spec:
+  hosts:
+    - {{ . | quote }}
+  location: MESH_EXTERNAL
+  resolution: DNS
+  ports:
+    {{- range $port := $ports }}
+    - number: {{ $port.number }}
+      name: {{ $port.name }}
+      protocol: {{ $port.protocol }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
