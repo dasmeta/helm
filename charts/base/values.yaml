@@ -322,6 +322,11 @@ affinity: {}
 
 secretStoreKind: SecretStore
 externalSecretRemoteKey: ""
+# Optional per Kubernetes secret key (data[].secretKey) AWS Secrets Manager secret id for mixed sources.
+# Keys must match the generated secretKey: main-container env names (e.g. KAFKA_USERNAME), mount keys
+# (folder/file form with slashes replaced by dashes), or extra-container keys (container-name + env name).
+# Precedence per entry: this map → externalSecretRemoteKey → product/env/fullname.
+externalSecretRemoteKeyBySecretKey: {}
 
 topologySpreadConstraints: []
 spread: # this option creates a default topologySpreadConstraints rule to spread release pods across available nodes
