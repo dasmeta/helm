@@ -29,8 +29,3 @@ dependencies:
     repository: "https://dasmeta.github.io/helm"
     alias: gatewayApi
     condition: gatewayApi.enabled
-  - name: zero-trust-mesh
-    version: 0.1.0
-    repository: "file://../zero-trust-mesh"
-    alias: zeroTrustMesh
-    condition: zeroTrustMesh.enabled
