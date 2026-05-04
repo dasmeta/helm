@@ -1030,3 +1030,14 @@ gatewayApi:
 # Values under this key are passed to the subchart.
 zeroTrustMesh:
   enabled: false
+
+  # enabled: true
+  # namespaceResourcesEnabled: true
+  # allowTo:
+  #   - service: backend
+  #     port: 8080
+  #     methods: ["GET", "POST"]
+  #     paths: ["/*"]
+  #   - hosts:
+  #       - google.com
+  #       - www.google.com

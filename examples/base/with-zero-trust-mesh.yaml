@@ -1,0 +1,64 @@
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: "1.27"
+  pullPolicy: IfNotPresent
+
+containerPort: 80
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  protocol: TCP
+
+# Make pod/service selectors explicit so zeroTrustMesh `workload` maps correctly.
+selectorLabelsOverride:
+  app: nginx-curl-test
+
+ingress:
+  enabled: false
+
+resources: {}
+
+extraEnv:
+  NGINX_ENTRYPOINT_QUIET_LOGS: "1"
+
+# Sidecar container for in-pod curl checks and manual debugging.
+extraContainer:
+  name: curl
+  image:
+    repository: curlimages/curl
+    tag: "8.7.1"
+    pullPolicy: IfNotPresent
+  command:
+    - sh
+    - -c
+    - |
+      while true; do
+        sleep 3600
+      done
+
+podAnnotations:
+  sidecar.istio.io/inject: "true"
+podSecurityContext: {}
+securityContext: {}
+
+autoscaling:
+  enabled: false
+
+gatewayApi:
+  enabled: false
+
+zeroTrustMesh:
+  enabled: true
+  namespaceResourcesEnabled: true
+  allowTo:
+    - service: backend
+      port: 8080
+      methods: ["GET", "POST"]
+      paths: ["/*"]
+    - hosts:
+        - google.com
+        - www.google.com
