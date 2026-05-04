@@ -1025,3 +1025,8 @@ gatewayApi:
   #         accessLogging:
   #           - providers:
   #               - name: envoy
+
+# zero-trust-mesh subchart (zero-trust-mesh-0.1.0). Disabled by default; enable per release.
+# Values under this key are passed to the subchart.
+zeroTrustMesh:
+  enabled: false
