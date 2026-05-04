@@ -2,8 +2,5 @@ dependencies:
 - name: gateway-api
   repository: https://dasmeta.github.io/helm
   version: 0.1.3
-- name: zero-trust-mesh
-  repository: file://../zero-trust-mesh
-  version: 0.1.0
-digest: sha256:013360b8a9b5d60d8da7e491dff6ace64b37db04337e0f76f70064da6f10b8d3
-generated: "2026-04-30T10:40:14.683436+04:00"
+digest: sha256:604d962e23428e5e69bc6acd0d32501a3dad7756bbb531f95a9a4786e295fa75
+generated: "2026-03-13T17:50:49.733487+04:00"
