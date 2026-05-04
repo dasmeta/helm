@@ -1,0 +1,29 @@
+{{- $np := .Values.networkPolicy | default (dict) -}}
+{{- $egw := $np.egressGateway | default (dict) -}}
+{{- $istio := .Values.istio | default (dict) -}}
+{{- $istioEgw := $istio.egressGateway | default (dict) -}}
+{{- $labels := .Values.labels | default (dict) -}}
+{{- $nsr := .Values.namespaceResources | default (dict) -}}
+{{- if and (default false (default .Values.namespaceResourcesEnabled $nsr.enabled)) (ne $np.enabled false) (eq $egw.enabled true) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ztm.fullname" . }}-allow-egress-egateway
+  namespace: {{ include "ztm.workloadNamespace" . }}
+  labels:
+    {{- include "ztm.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              {{ default "kubernetes.io/metadata.name" $labels.namespaceLabelKey }}: {{ default (default "istio-system" $istioEgw.namespace) $egw.namespace }}
+          podSelector:
+            matchLabels:
+              {{- toYaml (default (default (dict "istio" "egressgateway") $istioEgw.selector) $egw.podLabels) | nindent 14 }}
+      ports:
+        {{- toYaml (default (list (dict "port" 443 "protocol" "TCP") (dict "port" 80 "protocol" "TCP")) $egw.ports) | nindent 8 }}
+{{- end }}

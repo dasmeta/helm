@@ -1,0 +1,66 @@
+{{- $istio := .Values.istio | default (dict) -}}
+{{- $egw := $istio.egressGateway | default (dict) -}}
+{{- $egwNamespace := default "istio-system" $egw.namespace -}}
+{{- $egwServiceName := default "istio-egressgateway" $egw.serviceName -}}
+{{- if and (ne $istio.enabled false) (eq $egw.enabled true) .Values.allowTo }}
+{{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
+{{- range .Values.allowTo }}
+{{- if .hosts }}
+{{- range .hosts }}
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: egress-gateway-{{ include "ztm.sanitizeName" . }}
+  namespace: {{ $egwNamespace }}
+spec:
+  selector:
+    {{- toYaml (default (dict "istio" "egressgateway") $egw.selector) | nindent 4 }}
+  servers:
+    - port:
+        number: 443
+        name: tls
+        protocol: TLS
+      hosts:
+        - {{ . | quote }}
+      tls:
+        mode: PASSTHROUGH
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: route-{{ include "ztm.sanitizeName" . }}-via-egressgateway
+  namespace: {{ $workloadNamespace }}
+spec:
+  hosts:
+    - {{ . | quote }}
+  gateways:
+    - mesh
+    - {{ printf "%s/%s" $egwNamespace (printf "egress-gateway-%s" (include "ztm.sanitizeName" .)) }}
+  tls:
+    - match:
+        - gateways:
+            - mesh
+          port: 443
+          sniHosts:
+            - {{ . | quote }}
+      route:
+        - destination:
+            host: {{ printf "%s.%s.svc.cluster.local" $egwServiceName $egwNamespace }}
+            port:
+              number: 443
+    - match:
+        - gateways:
+            - {{ printf "%s/%s" $egwNamespace (printf "egress-gateway-%s" (include "ztm.sanitizeName" .)) }}
+          port: 443
+          sniHosts:
+            - {{ . | quote }}
+      route:
+        - destination:
+            host: {{ . | quote }}
+            port:
+              number: 443
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

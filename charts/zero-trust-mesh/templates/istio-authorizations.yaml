@@ -1,0 +1,38 @@
+{{- $istio := .Values.istio | default (dict) -}}
+{{- if and (default true $istio.enabled) .Values.allowTo }}
+{{- $sourceNamespace := include "ztm.workloadNamespace" . -}}
+{{- $sourceServiceAccount := include "ztm.workloadServiceAccount" . -}}
+{{- range .Values.allowTo }}
+{{- if .service }}
+{{- $targetNamespace := default $sourceNamespace .namespace -}}
+{{- $targetServiceAccount := default .service .serviceAccount -}}
+{{- $policyName := printf "allow-%s-to-%s" $sourceServiceAccount $targetServiceAccount -}}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "ztm.sanitizeName" $policyName }}
+  namespace: {{ $targetNamespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .service }}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - {{ printf "cluster.local/ns/%s/sa/%s" $sourceNamespace $sourceServiceAccount | quote }}
+      to:
+        - operation:
+            {{- if .methods }}
+            methods:
+              {{- toYaml .methods | nindent 14 }}
+            {{- end }}
+            {{- if .paths }}
+            paths:
+              {{- toYaml .paths | nindent 14 }}
+            {{- end }}
+{{ end }}
+{{ end }}
+{{- end }}

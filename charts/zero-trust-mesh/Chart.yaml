@@ -1,0 +1,6 @@
+apiVersion: v2
+name: zero-trust-mesh
+version: 0.1.0
+description: Helm chart for Kubernetes NetworkPolicy + Istio zero-trust service communication
+appVersion: "1.0"
+type: application

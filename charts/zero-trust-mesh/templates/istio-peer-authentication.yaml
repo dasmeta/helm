@@ -1,0 +1,14 @@
+{{- $istio := .Values.istio | default (dict) -}}
+{{- $nsr := .Values.namespaceResources | default (dict) -}}
+{{- if and (default false (default .Values.namespaceResourcesEnabled $nsr.enabled)) (default true $istio.enabled) (default true $istio.strictMtls) }}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "ztm.fullname" . }}-strict-mtls
+  namespace: {{ include "ztm.workloadNamespace" . }}
+  labels:
+    {{- include "ztm.labels" . | nindent 4 }}
+spec:
+  mtls:
+    mode: STRICT
+{{- end }}

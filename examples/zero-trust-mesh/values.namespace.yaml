@@ -1,0 +1,12 @@
+namespace: default
+
+# Namespace-only baseline mode:
+# - default deny ingress/egress
+# - DNS egress allow
+# - egress only to Istio egress gateway
+# - STRICT mTLS
+# - default deny AuthorizationPolicy
+namespaceResourcesEnabled: true
+
+# Keep allowTo list empty so no service-level rules are created.
+allowTo: []
