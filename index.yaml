@@ -2394,4 +2394,16 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/weave-scope-1.0.0/weave-scope-1.0.0.tgz
     version: 1.0.0
+  zero-trust-mesh:
+  - apiVersion: v2
+    appVersion: "1.0"
+    created: "2026-05-04T12:07:53.643038385Z"
+    description: Helm chart for Kubernetes NetworkPolicy + Istio zero-trust service
+      communication
+    digest: f26c688722c3398783a2d7df59dce8acb0a1ea0509afdec46b02aef83a872302
+    name: zero-trust-mesh
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/zero-trust-mesh-0.1.0/zero-trust-mesh-0.1.0.tgz
+    version: 0.1.0
 generated: "2021-09-30T12:37:56.5022652Z"
