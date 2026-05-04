@@ -1025,4 +1025,3 @@ gatewayApi:
   #         accessLogging:
   #           - providers:
   #               - name: envoy
-
