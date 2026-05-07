@@ -78,6 +78,19 @@ If your cluster does not have an `istio-egressgateway` Service name, set:
 
 Most security defaults are now implicit in templates. Advanced overrides can still be set under `networkPolicy` and `istio` in `values.full.yaml`.
 
+### Key values
+
+| Key | Description | Default / Example |
+|-----|-------------|-------------------|
+| `workload` | Source workload name used for source pod selectors and default source service account | Helm release name |
+| `serviceAccount` | Source service account override | `""` |
+| `namespaceResourcesEnabled` | Enables namespace-wide default deny, DNS, egress gateway, mTLS, and default-deny AuthorizationPolicy resources | `false` |
+| `allowTo[].service` | Destination service rule name | `backend` |
+| `allowTo[].targetPodLabels` | Optional target pod selector override for generated NetworkPolicy and AuthorizationPolicy resources | `{ app: backend }` |
+| `allowTo[].serviceAccount` | Optional target service account override for AuthorizationPolicy naming | `allowTo[].service` |
+| `allowTo[].methods` / `allowTo[].paths` | Optional Istio operation filters | `["GET"]`, `["/api/*"]` |
+| `allowTo[].hosts` | Approved external hosts for ServiceEntry-based egress | `["api.stripe.com"]` |
+
 ## Install
 
 ```bash
