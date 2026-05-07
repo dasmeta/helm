@@ -25,6 +25,14 @@
 {{- default (include "ztm.workloadName" .) (.Values.serviceAccount | default $svc.serviceAccount) -}}
 {{- end -}}
 
+{{- define "ztm.targetPodLabels" -}}
+{{- if .targetPodLabels -}}
+{{- toYaml .targetPodLabels -}}
+{{- else -}}
+app.kubernetes.io/name: {{ .service }}
+{{- end -}}
+{{- end -}}
+
 {{- define "ztm.labels" -}}
 app.kubernetes.io/name: {{ include "ztm.name" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}

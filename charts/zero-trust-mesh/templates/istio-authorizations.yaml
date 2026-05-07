@@ -16,7 +16,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ .service }}
+      {{- include "ztm.targetPodLabels" . | nindent 6 }}
   action: ALLOW
   rules:
     - from:
