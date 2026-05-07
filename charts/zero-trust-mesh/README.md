@@ -44,6 +44,8 @@ workload: frontend
 namespaceResourcesEnabled: false
 allowTo:
   - service: backend
+    targetPodLabels:
+      app: backend
     port: 8080
     methods: ["GET", "POST"]
     paths: ["/api/*"]
@@ -57,6 +59,7 @@ allowTo:
 - Service rule:
   - `service` (required)
   - `namespace` (optional, defaults to Helm release namespace)
+  - `targetPodLabels` (optional target pod selector override for NetworkPolicy and AuthorizationPolicy; defaults to `app.kubernetes.io/name: <service>`)
   - `port` (optional, default `8080`)
   - `protocol` (optional, default `TCP`)
   - `serviceAccount` (optional target service account override)

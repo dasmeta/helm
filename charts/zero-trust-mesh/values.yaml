@@ -12,6 +12,10 @@ namespaceResourcesEnabled: false
 # - hosts rule: approved external hosts (default ports: 80/HTTP and 443/HTTPS)
 allowTo:
   - service: backend
+    # Optional target pod selector override; defaults to:
+    # app.kubernetes.io/name: <service>
+    # targetPodLabels:
+    #   app: backend
     port: 8080
     methods: ["GET", "POST"]
     paths: ["/api/*"]
