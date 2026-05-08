@@ -1,0 +1,11 @@
+# helm template ztm-target-pod-labels ./charts/zero-trust-mesh -n default -f ./examples/zero-trust-mesh/target-pod-labels.yaml
+workload: frontend
+namespaceResourcesEnabled: false
+allowTo:
+  - service: backend
+    targetPodLabels:
+      app: backend
+      component: api
+    port: 8080
+    methods: ["GET"]
+    paths: ["/api/*"]
