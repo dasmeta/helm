@@ -1,0 +1,11 @@
+workload: frontend
+namespaceResourcesEnabled: false
+allowTo:
+  - ips:
+      - 192.0.2.10
+      - 198.51.100.0/24
+    ports:
+      - number: 443
+        protocol: TCP
+      - number: 8080
+        protocol: HTTP

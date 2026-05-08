@@ -10,6 +10,7 @@ namespaceResourcesEnabled: false
 # Single allowTo list:
 # - service rule: workload -> service
 # - hosts rule: approved external hosts (default ports: 80/HTTP and 443/HTTPS)
+# - ips rule: approved external IP/CIDR egress (default port: 443/TCP)
 allowTo:
   - service: backend
     # Optional target pod selector override; defaults to:
@@ -28,3 +29,12 @@ allowTo:
     #     protocol: HTTP
     #   - number: 443
     #     protocol: HTTPS
+
+  - ips: ["192.0.2.10"]
+    # Single IPs are normalized to /32 for NetworkPolicy ipBlock.
+    # CIDRs like 198.51.100.0/24 can also be used.
+    # Optional custom ports/protocols for this IP group.
+    # Defaults to 443/TCP.
+    # ports:
+    #   - number: 443
+    #     protocol: TCP

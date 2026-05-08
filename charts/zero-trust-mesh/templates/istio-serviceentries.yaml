@@ -49,5 +49,38 @@ spec:
     {{- end }}
 {{- end }}
 {{- end }}
+{{ if .ips }}
+{{- $defaultPorts := list (dict "number" 443 "protocol" "TCP") -}}
+{{- $ports := .ports | default $defaultPorts -}}
+{{- $addresses := list -}}
+{{- range .ips }}
+{{- $addresses = append $addresses (include "ztm.ipCidr" .) -}}
+{{- end -}}
+{{- $hashSource := printf "%s-%s" (join "," $addresses) (toJson $ports) -}}
+{{- $resourceName := printf "external-ip-%s" ($hashSource | sha256sum | trunc 10) }}
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: {{ $resourceName }}
+  namespace: {{ $workloadNamespace }}
+spec:
+  hosts:
+    - {{ printf "%s.ztm.local" $resourceName | quote }}
+  addresses:
+    {{- range $addresses }}
+    - {{ . | quote }}
+    {{- end }}
+  location: MESH_EXTERNAL
+  resolution: NONE
+  ports:
+    {{- range $port := $ports }}
+    {{- $number := required "allowTo[].ips ports[].number is required" $port.number }}
+    {{- $protocol := default "TCP" $port.protocol | upper }}
+    - number: {{ $number }}
+      name: {{ default (include "ztm.sanitizeName" (printf "%s-%v" ($protocol | lower) $number)) $port.name }}
+      protocol: {{ $protocol }}
+    {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

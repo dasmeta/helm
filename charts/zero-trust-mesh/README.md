@@ -9,7 +9,7 @@ Minimal Helm chart for strict Kubernetes + Istio zero-trust communication.
 - STRICT mTLS via Istio `PeerAuthentication`
 - Default deny via Istio `AuthorizationPolicy`
 - Service-account based allow rules with optional HTTP methods/paths
-- External egress only to approved hosts via Istio egress gateway
+- External egress only to approved hosts or IP blocks
 
 ## Two deployment modes
 
@@ -50,11 +50,15 @@ allowTo:
     methods: ["GET", "POST"]
     paths: ["/api/*"]
   - hosts: ["api.stripe.com"]
+  - ips: ["192.0.2.10"]
+    ports:
+      - number: 443
+        protocol: TCP
 ```
 
 ## Values design
 
-`allowTo` is a single list with two entry types:
+`allowTo` is a single list with three entry types:
 
 - Service rule:
   - `service` (required)
@@ -68,6 +72,11 @@ allowTo:
   - `hosts` (list of approved external hosts)
   - `ports` (optional list; merged with defaults `80/HTTP` and `443/HTTPS`)
   - `paths` can be provided in values for future/egress-gateway routing use, but are not enforced by `ServiceEntry`-only mode
+- IP rule:
+  - `ips` (list of approved external destination IPs or CIDR blocks)
+  - `ports` (optional list; defaults to `443/TCP`)
+  - single IPv4 addresses are rendered as `/32` CIDRs for `NetworkPolicy` `ipBlock`
+  - renders both an Istio `ServiceEntry` with `resolution: NONE` and a workload-scoped egress `NetworkPolicy`
 
 Source service account defaults to `workload`, or can be set with top-level `serviceAccount`.
 
@@ -90,6 +99,7 @@ Most security defaults are now implicit in templates. Advanced overrides can sti
 | `allowTo[].serviceAccount` | Optional target service account override for AuthorizationPolicy naming | `allowTo[].service` |
 | `allowTo[].methods` / `allowTo[].paths` | Optional Istio operation filters | `["GET"]`, `["/api/*"]` |
 | `allowTo[].hosts` | Approved external hosts for ServiceEntry-based egress | `["api.stripe.com"]` |
+| `allowTo[].ips` | Approved external destination IPs or CIDR blocks for direct IP egress | `["192.0.2.10"]` |
 
 ## Install
 

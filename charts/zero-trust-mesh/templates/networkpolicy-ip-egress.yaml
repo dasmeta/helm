@@ -1,0 +1,40 @@
+{{- $np := .Values.networkPolicy | default (dict) -}}
+{{- if and (ne $np.enabled false) .Values.allowTo }}
+{{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
+{{- $sourceWorkload := include "ztm.workloadName" . -}}
+{{- range .Values.allowTo }}
+{{- if .ips }}
+{{- $defaultPorts := list (dict "number" 443 "protocol" "TCP") -}}
+{{- $ports := .ports | default $defaultPorts -}}
+{{- $addresses := list -}}
+{{- range .ips }}
+{{- $addresses = append $addresses (include "ztm.ipCidr" .) -}}
+{{- end -}}
+{{- $hashSource := printf "%s-%s" (join "," $addresses) (toJson $ports) -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-{{ include "ztm.sanitizeName" (printf "%s-to-ip-%s" $sourceWorkload ($hashSource | sha256sum | trunc 10)) }}
+  namespace: {{ $workloadNamespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $sourceWorkload }}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        {{- range $addresses }}
+        - ipBlock:
+            cidr: {{ . | quote }}
+        {{- end }}
+      ports:
+        {{- range $port := $ports }}
+        {{- $number := required "allowTo[].ips ports[].number is required" $port.number }}
+        - port: {{ $number }}
+          protocol: {{ include "ztm.networkPolicyProtocol" $port.protocol }}
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

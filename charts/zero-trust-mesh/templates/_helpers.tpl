@@ -10,6 +10,26 @@
 {{- regexReplaceAll "[^a-z0-9-]+" (lower .) "-" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "ztm.ipCidr" -}}
+{{- $ip := printf "%v" . -}}
+{{- if contains "/" $ip -}}
+{{- $ip -}}
+{{- else if contains ":" $ip -}}
+{{- printf "%s/128" $ip -}}
+{{- else -}}
+{{- printf "%s/32" $ip -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "ztm.networkPolicyProtocol" -}}
+{{- $protocol := default "TCP" . | upper -}}
+{{- if or (eq $protocol "UDP") (eq $protocol "SCTP") -}}
+{{- $protocol -}}
+{{- else -}}
+TCP
+{{- end -}}
+{{- end -}}
+
 {{- define "ztm.workloadNamespace" -}}
 {{- $svc := .Values.serviceConfig | default (dict) -}}
 {{- default .Release.Namespace (default $svc.namespace .Values.namespace) -}}
