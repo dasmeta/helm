@@ -645,6 +645,68 @@ autoscaling:
       awsRegion: <aws-region>
 ```
 
+### Migrating from plain HPA to KEDA without deleting the existing HPA
+
+When this chart is rendered with `autoscaling.enabled: true` and no `trigger`/`triggers`,
+it produces a plain `HorizontalPodAutoscaler` named `{{ include "base.fullname" . }}`.
+When `triggers` is set, the same template path produces a KEDA `ScaledObject` with the
+same name. Flipping a release between the two modes via `helm upgrade` is rejected by
+KEDA's `vscaledobject.kb.io` admission webhook because the same-named HPA still exists
+when the new ScaledObject is created (Helm creates new resources before deleting old
+ones during upgrade). See [kedacore/keda#6250](https://github.com/kedacore/keda/issues/6250)
+for background.
+
+The chart now exposes the two fields KEDA's
+[transfer-hpa-ownership](https://keda.sh/docs/2.19/concepts/scaling-deployments/#transfer-ownership-of-an-existing-hpa)
+migration path needs:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 50
+  scaledObjectAnnotations:
+    scaledobject.keda.sh/transfer-hpa-ownership: "true"
+  hpaName: my-release-name # must match the existing HPA's metadata.name
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+```
+
+With the annotation, the webhook skips its duplicate-HPA check, and KEDA claims the
+existing HPA in place by rewriting its `ownerReferences`.
+
+There is one residual subtlety: Helm still deletes the old HPA at the end of the
+upgrade (because the chart no longer renders an HPA template when `triggers` is set),
+which leaves a brief metrics-blind window of up to `pollingInterval` seconds before
+KEDA's reconciler recreates the HPA. The deployment's replica count stays put during
+this window because Kubernetes does not autoscale a Deployment without an autoscaler;
+only metrics evaluation pauses.
+
+For a zero-gap migration, also tell Helm to keep the old HPA before the upgrade:
+
+```bash
+kubectl annotate hpa/<existing-hpa-name> -n <namespace> helm.sh/resource-policy=keep
+helm upgrade <release> dasmeta/base --version <new-version> -f values.yaml
+```
+
+After the upgrade has completed and KEDA owns the HPA, you can remove the annotation:
+
+```bash
+kubectl annotate hpa/<existing-hpa-name> -n <namespace> helm.sh/resource-policy-
+```
+
+#### Reverse direction (KEDA → plain HPA)
+
+There is no equivalent transfer mechanism for going back from a `ScaledObject` to a
+plain HPA via this chart. KEDA owns its managed HPA via `ownerReferences`, so deleting
+the `ScaledObject` triggers garbage collection of the underlying HPA. Tracking issue:
+[kedacore/keda#6250](https://github.com/kedacore/keda/issues/6250). If you need to
+reverse, expect to manually recreate the HPA after the chart upgrade has removed the
+ScaledObject.
+
 ### custom rollout strategy(canary,blue/gree) configs by using flagger
 ```yaml
 # This config allows to enable custom rollout strategies by using different providers/operators
