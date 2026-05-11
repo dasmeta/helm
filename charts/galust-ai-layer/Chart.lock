@@ -1,0 +1,15 @@
+dependencies:
+- name: base
+  repository: https://dasmeta.github.io/helm
+  version: 0.3.2
+- name: base
+  repository: https://dasmeta.github.io/helm
+  version: 0.3.2
+- name: base
+  repository: https://dasmeta.github.io/helm
+  version: 0.3.2
+- name: base
+  repository: https://dasmeta.github.io/helm
+  version: 0.3.2
+digest: sha256:34d0dda0c6459ceaaa2b2e45c9f334038b1763aa7b0683e5e241af5a96276961
+generated: "2026-05-11T14:46:40.654468+04:00"

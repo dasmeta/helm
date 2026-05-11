@@ -1,0 +1,20 @@
+Galust AI layer chart rendered for namespace {{ .Release.Namespace }}.
+
+Enabled components:
+{{- if .Values.backend.enabled }}
+- backend: {{ .Values.backend.fullnameOverride | default "backend" }}
+{{- end }}
+{{- if .Values.mcp.enabled }}
+- mcp: {{ .Values.mcp.fullnameOverride | default "mcp" }}
+{{- end }}
+{{- if .Values.mcpUseCase.enabled }}
+- mcp-use-case: {{ .Values.mcpUseCase.fullnameOverride | default "mcp-use-case" }}
+{{- end }}
+{{- if .Values.orchestrator.enabled }}
+- orchestrator: {{ .Values.orchestrator.fullnameOverride | default "orchestrator" }}
+{{- end }}
+
+Image pull access:
+- By default the chart references an existing imagePullSecret named {{ include "galust-ai-layer.imagePullSecretName" . }}.
+- Set imagePullSecret.create=true with dockerConfigJson or dockerConfigJsonBase64 to render that Secret from this chart.
+- AWS IAM trust, ECR repository policy, and external secret provisioning are outside this chart.

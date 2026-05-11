@@ -1,0 +1,25 @@
+# Minimal test overlay for externally reachable Galust AI layer URLs.
+imagePullSecret:
+  create: false
+  name: ecr-secret
+  annotations: {}
+  dockerConfigJson: ""
+  dockerConfigJsonBase64: ""
+
+imagePullSecrets: &galustImagePullSecrets
+  - name: ecr-secret
+
+global:
+  API_URL: &apiUrl https://api.galust.ai
+  API_HOST: &apiHost api.galust.ai
+  APP_URL: &appUrl https://app.galust.ai
+  MCP_URL: &mcpUrl https://mcp.galust.ai
+  MCP_HOST: &mcpHost mcp.galust.ai
+  ADMIN_URL: &adminUrl https://api.galust.ai/admin
+  OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
+  OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
+  ORCHESTRATOR_ENDPOINT: &orchestratorEndpoint https://api.galust.ai/orchestrator/api/galust/ask
+
+orchestrator:
+  envFrom:
+    secret: ai-layer-orchestrator
