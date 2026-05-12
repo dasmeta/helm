@@ -8,21 +8,21 @@ appVersion: "0.1.0"
 dependencies:
   - name: base
     alias: backend
-    version: 0.3.2
+    version: 0.3.29
     repository: https://dasmeta.github.io/helm
     condition: backend.enabled
   - name: base
     alias: mcp
-    version: 0.3.2
+    version: 0.3.29
     repository: https://dasmeta.github.io/helm
     condition: mcp.enabled
   - name: base
     alias: mcpUseCase
-    version: 0.3.2
+    version: 0.3.29
     repository: https://dasmeta.github.io/helm
     condition: mcpUseCase.enabled
   - name: base
     alias: orchestrator
-    version: 0.3.2
+    version: 0.3.29
     repository: https://dasmeta.github.io/helm
     condition: orchestrator.enabled

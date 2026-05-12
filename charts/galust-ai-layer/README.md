@@ -56,6 +56,7 @@ Required default Kubernetes objects:
 | Docker registry pull secret | `ecr-secret` | all components |
 | Backend app secret | `ai-layer-strapi` | backend |
 | Backend DB host secret | `cnpg-main-urls`, key `host` | backend |
+| Backend DB port | `backend.config.DATABASE_PORT`, default `5432` | backend |
 | Backend DB password secret | `cnpg-main-user`, key `password` | backend |
 | Backend uploads PVC | `ai-layer-strapi-uploads` | backend |
 | MCP secret | `ai-layer-mcp` | MCP |
@@ -145,15 +146,18 @@ backend:
       - host: *apiHost
 ```
 
-Important: YAML anchors are resolved before Helm merges extra values files. If you deploy with `-f values.test.yaml` and only override `global`, Helm will not recalculate aliases already resolved in `values.yaml`. To change domains for another environment, either edit the full values file or provide a values file that also overrides the component `config` and `ingress` fields.
+Important: YAML anchors are resolved before Helm merges extra values files. If you deploy with `-f examples/galust-ai-layer/values.test.yaml` and only override `global`, Helm will not recalculate aliases already resolved in `values.yaml`. To change domains for another environment, either edit the full values file or provide a values file that also overrides the component `config` and `ingress` fields.
 
 ## Image Pull Access
 
-The default values expect an existing Kubernetes docker registry secret named `ecr-secret`:
+The default values expect an existing Kubernetes docker registry secret named `ecr-secret`. The secret name is anchored once and reused by every component:
 
 ```yaml
+imagePullSecret:
+  name: &imagePullSecretName ecr-secret
+
 imagePullSecrets:
-  - name: ecr-secret
+  - name: *imagePullSecretName
 ```
 
 The chart can also render the secret when `imagePullSecret.create=true`:
@@ -166,7 +170,9 @@ helm upgrade --install galust-ai-layer ./charts/galust-ai-layer \
   --set-file imagePullSecret.dockerConfigJson=./dockerconfig.json
 ```
 
-AWS IAM trust, ECR repository policies, role assumption, and External Secrets setup are intentionally outside this chart. Provide the resulting Kubernetes pull secret name through `imagePullSecrets` and each component's `imagePullSecrets` override.
+AWS IAM trust, ECR repository policies, role assumption, and External Secrets setup are intentionally outside this chart. Provide the resulting Kubernetes pull secret name through `imagePullSecret.name` and each component's `imagePullSecrets` override.
+
+ECR authorization tokens expire. For long-running environments, prefer a cluster-managed renewal mechanism such as External Secrets, a registry credential controller, or a platform-owned refresh job. This chart can reference an existing pull secret or render one from provided docker config JSON, but it does not create AWS IAM credentials or install a token renewal controller.
 
 Example secret creation:
 
@@ -182,14 +188,47 @@ kubectl create secret docker-registry ecr-secret \
 
 ## Backend Notes
 
-The backend values use the existing Galust Strapi image and runtime defaults from `ai-layer/backend/helm/strapi.yaml`, but this umbrella chart does not provision AWS IAM or a managed database. By default the backend expects:
+The backend values use the existing Galust Strapi image and runtime defaults from `ai-layer/backend/helm/strapi.yaml`, but this umbrella chart does not provision AWS IAM or a managed database. Database secrets are created outside this chart. By default the backend expects:
 
 - an `ai-layer-strapi` secret for Strapi application secrets
 - `cnpg-main-urls` with key `host`
+- `backend.config.DATABASE_PORT`, defaulting to `5432`
 - `cnpg-main-user` with key `password`
 - a PVC named `ai-layer-strapi-uploads` for `/opt/app/public/uploads`
 
 Override those names for environment-specific infrastructure.
+
+If the database host and password are stored in one Kubernetes Secret, override the `extraEnv` references:
+
+```yaml
+backend:
+  extraEnv:
+    DATABASE_HOST:
+      secretKeyRef:
+        name: my-database-secret
+        key: host
+    DATABASE_PASSWORD:
+      secretKeyRef:
+        name: my-database-secret
+        key: password
+```
+
+If the database port is also stored in the same CNPG URL secret, override `DATABASE_PORT` from `config` with an `extraEnv` secret reference:
+
+```yaml
+backend:
+  config:
+    DATABASE_PORT: null
+  extraEnv:
+    DATABASE_HOST:
+      secretKeyRef:
+        name: cnpg-main-urls
+        key: host
+    DATABASE_PORT:
+      secretKeyRef:
+        name: cnpg-main-urls
+        key: port
+```
 
 ## Deploy
 
@@ -208,13 +247,13 @@ helm upgrade --install galust-ai-layer charts/galust-ai-layer \
   --create-namespace
 ```
 
-Deploy with the test values overlay:
+Deploy with the test values example:
 
 ```bash
 helm upgrade --install galust-ai-layer charts/galust-ai-layer \
   -n ai-layer \
   --create-namespace \
-  -f charts/galust-ai-layer/values.test.yaml
+  -f examples/galust-ai-layer/values.test.yaml
 ```
 
 Disable a component:
@@ -255,7 +294,7 @@ helm dependency update charts/galust-ai-layer
 helm lint charts/galust-ai-layer
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set backend.enabled=false
-helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f charts/galust-ai-layer/values.test.yaml
+helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml
 ```
 
 ## Troubleshooting
@@ -269,5 +308,5 @@ If ingress does not work, confirm the ingress controller, DNS records, TLS secre
 If URL overrides do not appear in rendered manifests, remember that YAML anchors are not dynamic Helm templates. Render locally with:
 
 ```bash
-helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f charts/galust-ai-layer/values.test.yaml
+helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml
 ```

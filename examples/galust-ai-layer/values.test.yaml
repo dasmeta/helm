@@ -1,14 +1,4 @@
-# Minimal test overlay for externally reachable Galust AI layer URLs.
-imagePullSecret:
-  create: false
-  name: ecr-secret
-  annotations: {}
-  dockerConfigJson: ""
-  dockerConfigJsonBase64: ""
-
-imagePullSecrets: &galustImagePullSecrets
-  - name: ecr-secret
-
+# Minimal example overlay for externally reachable Galust AI layer URLs.
 global:
   API_URL: &apiUrl https://api.galust.ai
   API_HOST: &apiHost api.galust.ai
