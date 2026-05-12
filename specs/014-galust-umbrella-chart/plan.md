@@ -10,7 +10,7 @@ Add `charts/galust-ai-layer` as an umbrella chart that deploys the Galust AI lay
 ## Technical Context
 
 **Language/Version**: Helm 3 chart YAML and Go templates  
-**Primary Dependencies**: Published `dasmeta/base` chart version `0.3.2`, matching the `ai-layer` deployment workflows  
+**Primary Dependencies**: Published `dasmeta/base` chart version `0.3.29`, matching the current shared chart release  
 **Storage**: Backend uploads PVC, default `ai-layer-strapi-uploads`  
 **Testing**: `helm dependency update`, `helm lint`, `helm template`  
 **Target Platform**: Kubernetes / EKS  
