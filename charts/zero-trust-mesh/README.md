@@ -94,6 +94,7 @@ Most security defaults are now implicit in templates. Advanced overrides can sti
 | `workload` | Source workload name used for source pod selectors and default source service account | Helm release name |
 | `serviceAccount` | Source service account override | `""` |
 | `namespaceResourcesEnabled` | Enables namespace-wide default deny, DNS, egress gateway, mTLS, and default-deny AuthorizationPolicy resources | `false` |
+| `allowTo` | Service, host, and IP allow rules | `[]` |
 | `allowTo[].service` | Destination service rule name | `backend` |
 | `allowTo[].targetPodLabels` | Optional target pod selector override for generated NetworkPolicy and AuthorizationPolicy resources | `{ app: backend }` |
 | `allowTo[].serviceAccount` | Optional target service account override for AuthorizationPolicy naming | `allowTo[].service` |
