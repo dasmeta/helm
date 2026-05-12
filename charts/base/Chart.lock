@@ -4,6 +4,6 @@ dependencies:
   version: 0.1.3
 - name: zero-trust-mesh
   repository: https://dasmeta.github.io/helm
-  version: 0.1.0
-digest: sha256:013360b8a9b5d60d8da7e491dff6ace64b37db04337e0f76f70064da6f10b8d3
-generated: "2026-05-04T16:34:45.692269+04:00"
+  version: 0.1.3
+digest: sha256:e7ff901ebce4f9fa8dbaea29f55b6504a4c102dfab5184ab65516eb11cbbfdbb
+generated: "2026-05-12T18:41:21.80521+04:00"
