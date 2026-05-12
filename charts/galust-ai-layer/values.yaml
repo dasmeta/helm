@@ -1,0 +1,300 @@
+imagePullSecret:
+  create: false
+  name: &imagePullSecretName ecr-secret
+  annotations: {}
+  dockerConfigJson: ""
+  dockerConfigJsonBase64: ""
+
+imagePullSecrets: &galustImagePullSecrets
+  - name: *imagePullSecretName
+
+ecrCredentialsRefresh:
+  enabled: false
+  schedule: "0 */6 * * *"
+  registry: 565580475168.dkr.ecr.eu-central-1.amazonaws.com
+  region: eu-central-1
+  secretName: *imagePullSecretName
+  image:
+    repository: alpine
+    tag: "3.20"
+    pullPolicy: IfNotPresent
+  awsCredentialsSecret:
+    name: ""
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  resources: {}
+
+global:
+  API_URL: &apiUrl https://api.galust.ai
+  API_HOST: &apiHost api.galust.ai
+  APP_URL: &appUrl https://app.galust.ai
+  MCP_URL: &mcpUrl https://mcp.galust.ai
+  MCP_HOST: &mcpHost mcp.galust.ai
+  ADMIN_URL: &adminUrl https://api.galust.ai/admin
+  OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
+  OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
+  ORCHESTRATOR_ENDPOINT: &orchestratorEndpoint https://api.galust.ai/orchestrator/api/galust/ask
+
+gatewayApi:
+  enabled: false
+
+zeroTrustMesh:
+  enabled: false
+
+backend:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-strapi
+  version: 0.1.0
+  appVersion: 0.1.0
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-backend
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets: *galustImagePullSecrets
+  replicaCount: 1
+  containerPort: 1337
+  service:
+    type: ClusterIP
+    port: 1337
+  persistence:
+    uploads:
+      enabled: true
+      claimName: ai-layer-strapi-uploads
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: ""
+      keepPvc: true
+  storage:
+    - persistentVolumeClaimName: ai-layer-strapi-uploads
+      accessModes:
+        - ReadWriteOnce
+      requestedSize: 20Gi
+      keepPvc: true
+  volumes:
+    - name: strapi-uploads
+      persistentVolumeClaim:
+        claimName: ai-layer-strapi-uploads
+      mountPath: /opt/app/public/uploads
+  resources:
+    limits:
+      cpu: 1500m
+      memory: 1500Mi
+    requests:
+      cpu: 1000m
+      memory: 1000Mi
+  securityContext:
+    readOnlyRootFilesystem: false
+    runAsNonRoot: false
+    runAsUser: 0
+    runAsGroup: 0
+  envFrom:
+    secret: ai-layer-strapi
+  config:
+    PORT: "1337"
+    DATABASE_CLIENT: postgres
+    DATABASE_PORT: "5432"
+    DATABASE_NAME: strapi
+    DATABASE_USERNAME: strapi
+    STRAPI_DISABLE_UPDATE_NOTIFICATION: "true"
+    FAST_REFRESH: "false"
+    EXTRA_ARGS: ""
+    ADMIN_URL: *adminUrl
+    APP_HOST: 0.0.0.0
+    APP_URL: *adminUrl
+    BACKEND_URL: *apiUrl
+    ENV: production
+    HOST: 0.0.0.0
+    NODE_ENV: production
+    PUBLIC_URL: *apiUrl
+    STRAPI_ADMIN_BACKEND_URL: *apiUrl
+  extraEnv:
+    DATABASE_HOST:
+      secretKeyRef:
+        name: db-ai-layer-strapi
+        key: host
+    DATABASE_PASSWORD:
+      secretKeyRef:
+        name: db-ai-layer-strapi
+        key: password
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: *apiHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 1337
+    tls:
+      - secretName: com-galust-api-tls2
+        hosts:
+          - *apiHost
+
+mcp:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-mcp
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets: *galustImagePullSecrets
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-mcp
+  service:
+    type: ClusterIP
+    port: 4002
+  containerPort: 4002
+  envFrom:
+    secret: ai-layer-mcp
+  config:
+    DEBUG_MCP_HEADER_FLOW: "true"
+    OPENAPI_BASE_URL: *openapiBaseUrl
+    OPENAPI_SPEC_URL: *openapiSpecUrl
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: *mcpHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 4002
+    tls:
+      - secretName: com-galust-mcp-tls2
+        hosts:
+          - *mcpHost
+
+mcpUseCase:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-mcp-use-case
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp-use-case
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets: *galustImagePullSecrets
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-mcp-use-case
+  service:
+    type: ClusterIP
+    port: 4002
+  containerPort: 4002
+  envFrom:
+    secret: ai-layer-mcp-use-case
+  config:
+    DEBUG_MCP_HEADER_FLOW: "true"
+    TOOLS_CATALOG_URL: *apiUrl
+    ORCHESTRATOR_ENDPOINT: *orchestratorEndpoint
+
+orchestrator:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-orchestrator
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-orchestrator
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets: *galustImagePullSecrets
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-orchestrator
+  service:
+    type: ClusterIP
+    port: 3000
+  containerPort: 3000
+  resources:
+    requests:
+      cpu: 500m
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+  envFrom:
+    # Existing Kubernetes Secret loaded as environment variables by the orchestrator.
+    # Override this name when secrets are managed outside this chart under a different name.
+    secret: ai-layer-orchestrator
+  config:
+    NODE_ENV: production
+    OPENAI_MODEL: gpt-4o-mini
+    LANGFUSE_HOST: https://cloud.langfuse.com
+    GLOBAL_PREFIX: orchestrator
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
+    AI_LAYER_BACKEND_URL: *apiUrl
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/cors-allow-origin: *appUrl
+      nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+      nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id
+    hosts:
+      - host: *apiHost
+        paths:
+          - path: /orchestrator
+            pathType: Prefix
+            backend:
+              servicePort: 3000
+    tls:
+      - clusterIssuer: letsencrypt-prod
+        secretName: com-galust-api-tls2
+        hosts:
+          - *apiHost
