@@ -1,6 +1,6 @@
 {{- $np := .Values.networkPolicy | default (dict) -}}
 {{- $labels := .Values.labels | default (dict) -}}
-{{- if and (default true $np.enabled) .Values.allowTo }}
+{{- if and (default false .Values.enabled) (default true $np.enabled) .Values.allowTo }}
 {{- $sourceNamespace := include "ztm.workloadNamespace" . -}}
 {{- $sourceWorkload := include "ztm.workloadName" . -}}
 {{- range .Values.allowTo }}

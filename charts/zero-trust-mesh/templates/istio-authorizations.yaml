@@ -1,5 +1,5 @@
 {{- $istio := .Values.istio | default (dict) -}}
-{{- if and (default true $istio.enabled) .Values.allowTo }}
+{{- if and (default false .Values.enabled) (default true $istio.enabled) .Values.allowTo }}
 {{- $sourceNamespace := include "ztm.workloadNamespace" . -}}
 {{- $sourceServiceAccount := include "ztm.workloadServiceAccount" . -}}
 {{- range .Values.allowTo }}
