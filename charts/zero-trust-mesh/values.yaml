@@ -7,34 +7,38 @@ serviceAccount: ""
 # Keep false for per-service releases. Enable only in one baseline release per namespace.
 namespaceResourcesEnabled: false
 
-# Single allowTo list:
+# Single allowTo list. Defaults to no service-level allow rules.
+# Supported entry types:
 # - service rule: workload -> service
 # - hosts rule: approved external hosts (default ports: 80/HTTP and 443/HTTPS)
 # - ips rule: approved external IP/CIDR egress (default port: 443/TCP)
-allowTo:
-  - service: backend
-    # Optional target pod selector override; defaults to:
-    # app.kubernetes.io/name: <service>
-    # targetPodLabels:
-    #   app: backend
-    port: 8080
-    methods: ["GET", "POST"]
-    paths: ["/api/*"]
+allowTo: []
 
-  - hosts: ["api.stripe.com"]
-    # Optional custom ports/protocols for this host group.
-    # These are merged with defaults (80/HTTP and 443/HTTPS).
-    # ports:
-    #   - number: 80
-    #     protocol: HTTP
-    #   - number: 443
-    #     protocol: HTTPS
-
-  - ips: ["192.0.2.10"]
-    # Single IPs are normalized to /32 for NetworkPolicy ipBlock.
-    # CIDRs like 198.51.100.0/24 can also be used.
-    # Optional custom ports/protocols for this IP group.
-    # Defaults to 443/TCP.
-    # ports:
-    #   - number: 443
-    #     protocol: TCP
+# Example allowTo entries:
+# allowTo:
+#   - service: backend
+#     # Optional target pod selector override; defaults to:
+#     # app.kubernetes.io/name: <service>
+#     # targetPodLabels:
+#     #   app: backend
+#     port: 8080
+#     methods: ["GET", "POST"]
+#     paths: ["/api/*"]
+#
+#   - hosts: ["api.stripe.com"]
+#     # Optional custom ports/protocols for this host group.
+#     # These are merged with defaults (80/HTTP and 443/HTTPS).
+#     # ports:
+#     #   - number: 80
+#     #     protocol: HTTP
+#     #   - number: 443
+#     #     protocol: HTTPS
+#
+#   - ips: ["192.0.2.10"]
+#     # Single IPs are normalized to /32 for NetworkPolicy ipBlock.
+#     # CIDRs like 198.51.100.0/24 can also be used.
+#     # Optional custom ports/protocols for this IP group.
+#     # Defaults to 443/TCP.
+#     # ports:
+#     #   - number: 443
+#     #     protocol: TCP
