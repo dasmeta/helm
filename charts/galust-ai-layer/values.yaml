@@ -92,11 +92,11 @@ backend:
   extraEnv:
     DATABASE_HOST:
       secretKeyRef:
-        name: cnpg-main-urls
+        name: db-ai-layer-strapi
         key: host
     DATABASE_PASSWORD:
       secretKeyRef:
-        name: cnpg-main-user
+        name: db-ai-layer-strapi
         key: password
   ingress:
     enabled: true

@@ -55,9 +55,9 @@ Required default Kubernetes objects:
 | --- | --- | --- |
 | Docker registry pull secret | `ecr-secret` | all components |
 | Backend app secret | `ai-layer-strapi` | backend |
-| Backend DB host secret | `cnpg-main-urls`, key `host` | backend |
+| Backend DB host secret | `db-ai-layer-strapi`, key `host` | backend |
 | Backend DB port | `backend.config.DATABASE_PORT`, default `5432` | backend |
-| Backend DB password secret | `cnpg-main-user`, key `password` | backend |
+| Backend DB password secret | `db-ai-layer-strapi`, key `password` | backend |
 | Backend uploads PVC | `ai-layer-strapi-uploads` | backend |
 | MCP secret | `ai-layer-mcp` | MCP |
 | MCP use-case secret | `ai-layer-mcp-use-case` | MCP use-case |
@@ -191,9 +191,9 @@ kubectl create secret docker-registry ecr-secret \
 The backend values use the existing Galust Strapi image and runtime defaults from `ai-layer/backend/helm/strapi.yaml`, but this umbrella chart does not provision AWS IAM or a managed database. Database secrets are created outside this chart. By default the backend expects:
 
 - an `ai-layer-strapi` secret for Strapi application secrets
-- `cnpg-main-urls` with key `host`
+- `db-ai-layer-strapi` with key `host`
 - `backend.config.DATABASE_PORT`, defaulting to `5432`
-- `cnpg-main-user` with key `password`
+- `db-ai-layer-strapi` with key `password`
 - a PVC named `ai-layer-strapi-uploads` for `/opt/app/public/uploads`
 
 Override those names for environment-specific infrastructure.
@@ -213,7 +213,7 @@ backend:
         key: password
 ```
 
-If the database port is also stored in the same CNPG URL secret, override `DATABASE_PORT` from `config` with an `extraEnv` secret reference:
+If the database port is also stored in the same database secret, override `DATABASE_PORT` from `config` with an `extraEnv` secret reference:
 
 ```yaml
 backend:
@@ -222,11 +222,11 @@ backend:
   extraEnv:
     DATABASE_HOST:
       secretKeyRef:
-        name: cnpg-main-urls
+        name: db-ai-layer-strapi
         key: host
     DATABASE_PORT:
       secretKeyRef:
-        name: cnpg-main-urls
+        name: db-ai-layer-strapi
         key: port
 ```
 
@@ -301,7 +301,7 @@ helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/gal
 
 If pods are stuck in `ImagePullBackOff`, check the `ecr-secret` secret and ECR access.
 
-If the backend fails to start, check the `ai-layer-strapi`, `cnpg-main-urls`, and `cnpg-main-user` secrets, plus database reachability from the namespace.
+If the backend fails to start, check the `ai-layer-strapi` and `db-ai-layer-strapi` secrets, plus database reachability from the namespace.
 
 If ingress does not work, confirm the ingress controller, DNS records, TLS secret or cert-manager issuer, and rendered ingress hosts.
 
