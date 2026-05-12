@@ -1,5 +1,33 @@
+imagePullSecret:
+  create: false
+  name: &imagePullSecretName ecr-secret
+  annotations: {}
+  dockerConfigJson: ""
+  dockerConfigJsonBase64: ""
+
 imagePullSecrets: &galustImagePullSecrets
-  - name: ecr-secret
+  - name: *imagePullSecretName
+
+ecrCredentialsRefresh:
+  enabled: false
+  schedule: "0 */6 * * *"
+  registry: 565580475168.dkr.ecr.eu-central-1.amazonaws.com
+  region: eu-central-1
+  secretName: *imagePullSecretName
+  image:
+    repository: alpine
+    tag: "3.20"
+    pullPolicy: IfNotPresent
+  awsCredentialsSecret:
+    name: ""
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  resources: {}
 
 global:
   API_URL: &apiUrl https://api.galust.ai
@@ -24,6 +52,7 @@ backend:
     enabled: false
   zeroTrustMesh:
     enabled: false
+    allowTo: []
   fullnameOverride: ai-layer-strapi
   version: 0.1.0
   appVersion: 0.1.0
@@ -122,6 +151,7 @@ mcp:
     enabled: false
   zeroTrustMesh:
     enabled: false
+    allowTo: []
   fullnameOverride: ai-layer-mcp
   version: 0.0.1
   appVersion: 0.0.1
@@ -172,6 +202,7 @@ mcpUseCase:
     enabled: false
   zeroTrustMesh:
     enabled: false
+    allowTo: []
   fullnameOverride: ai-layer-mcp-use-case
   version: 0.0.1
   appVersion: 0.0.1
@@ -205,6 +236,7 @@ orchestrator:
     enabled: false
   zeroTrustMesh:
     enabled: false
+    allowTo: []
   fullnameOverride: ai-layer-orchestrator
   version: 0.0.1
   appVersion: 0.0.1

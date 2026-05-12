@@ -17,4 +17,5 @@ Enabled components:
 Image pull access:
 - By default the chart references an existing imagePullSecret named {{ include "galust-ai-layer.imagePullSecretName" . }}.
 - Set imagePullSecret.create=true with dockerConfigJson or dockerConfigJsonBase64 to render that Secret from this chart.
+- Set ecrCredentialsRefresh.enabled=true to render a CronJob that refreshes the ECR docker registry secret.
 - AWS IAM trust, ECR repository policy, and external secret provisioning are outside this chart.

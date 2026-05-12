@@ -38,3 +38,17 @@ Image pull secret name used by the optional generated dockerconfigjson Secret.
 {{- define "galust-ai-layer.imagePullSecretName" -}}
 {{- default "ecr-secret" .Values.imagePullSecret.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+Name used for the optional ECR credentials refresh resources.
+*/}}
+{{- define "galust-ai-layer.ecrCredentialsRefreshName" -}}
+{{- printf "%s-ecr-refresh" (include "galust-ai-layer.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Service account name used by the optional ECR credentials refresh job.
+*/}}
+{{- define "galust-ai-layer.ecrCredentialsRefreshServiceAccountName" -}}
+{{- default (include "galust-ai-layer.ecrCredentialsRefreshName" .) .Values.ecrCredentialsRefresh.serviceAccount.name | trunc 63 | trimSuffix "-" }}
+{{- end }}

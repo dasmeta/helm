@@ -40,14 +40,23 @@ Before deploying, confirm the target cluster has:
 - Kubernetes access through a working `kubectl` context.
 - Helm 3 installed locally.
 - Access to the `dasmeta` Helm repository, because this chart depends on `dasmeta/base`.
+- AWS access to the target account, usually through an AWS SSO permission set and account assignment managed outside this chart.
 - Namespace access for `ai-layer`, or permission to create it.
 - Image pull access for the private ECR images.
+- ECR read access for the private repositories used by the backend, MCP, MCP use-case, and orchestrator images.
 - Required application secrets already created in the namespace.
 - Database connectivity for the backend.
 - A PVC or storage class suitable for backend uploads.
 - Ingress controller installed if ingress is enabled.
 - DNS records pointing the public hosts to the ingress/load balancer.
 - TLS/cert-manager setup if the default TLS annotations and secrets are used.
+
+If AWS access is managed through the Terraform SSO/RBAC modules, create or assign an AWS SSO permission set before deploying this chart. The permission set should allow the operator or automation role to:
+
+- Read private ECR repositories and get ECR authorization tokens.
+- Access the target EKS cluster and update Kubernetes resources in the `ai-layer` namespace.
+- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-use-case`, and `ai-layer-orchestrator`.
+- If `ecrCredentialsRefresh.enabled=true`, provide an AWS identity for the refresh job with `ecr:GetAuthorizationToken`.
 
 Required default Kubernetes objects:
 
@@ -172,7 +181,7 @@ helm upgrade --install galust-ai-layer ./charts/galust-ai-layer \
 
 AWS IAM trust, ECR repository policies, role assumption, and External Secrets setup are intentionally outside this chart. Provide the resulting Kubernetes pull secret name through `imagePullSecret.name` and each component's `imagePullSecrets` override.
 
-ECR authorization tokens expire. For long-running environments, prefer a cluster-managed renewal mechanism such as External Secrets, a registry credential controller, or a platform-owned refresh job. This chart can reference an existing pull secret or render one from provided docker config JSON, but it does not create AWS IAM credentials or install a token renewal controller.
+ECR authorization tokens expire. For long-running environments, enable the optional refresh CronJob or use another cluster-managed renewal mechanism such as External Secrets, a registry credential controller, or a platform-owned refresh job. This chart can reference an existing pull secret, render one from provided docker config JSON, or refresh the secret through the optional CronJob.
 
 Example secret creation:
 
@@ -184,6 +193,62 @@ kubectl create secret docker-registry ecr-secret \
   --docker-server=565580475168.dkr.ecr.eu-central-1.amazonaws.com \
   --docker-username=AWS \
   --docker-password='<ecr-login-password>'
+```
+
+## ECR Credentials Refresh
+
+The chart can render an optional CronJob that refreshes the ECR docker registry secret before the token expires:
+
+```yaml
+ecrCredentialsRefresh:
+  enabled: true
+  schedule: "0 */6 * * *"
+  registry: 565580475168.dkr.ecr.eu-central-1.amazonaws.com
+  region: eu-central-1
+  secretName: ecr-secret
+```
+
+The refresh job updates the same `kubernetes.io/dockerconfigjson` Secret referenced by component `imagePullSecrets`. It creates a namespaced `Role`, `RoleBinding`, `ServiceAccount`, and `CronJob`.
+
+Use an existing Kubernetes Secret with AWS credentials:
+
+```bash
+kubectl create secret generic ecr-refresh-aws-credentials \
+  -n ai-layer \
+  --from-literal=AWS_ACCESS_KEY_ID='<aws-access-key-id>' \
+  --from-literal=AWS_SECRET_ACCESS_KEY='<aws-secret-access-key>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Then enable the refresher:
+
+```bash
+helm upgrade --install galust-ai-layer charts/galust-ai-layer \
+  -n ai-layer \
+  --create-namespace \
+  --set ecrCredentialsRefresh.enabled=true \
+  --set ecrCredentialsRefresh.awsCredentialsSecret.name=ecr-refresh-aws-credentials
+```
+
+If the cluster uses IRSA or EKS Pod Identity, leave `awsCredentialsSecret.name` empty and annotate the refresh service account:
+
+```yaml
+ecrCredentialsRefresh:
+  enabled: true
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/<role-name>
+```
+
+The AWS identity used by the refresh job needs permission to call `ecr:GetAuthorizationToken`. The refresh container uses `alpine` and installs `aws-cli`, `curl`, `ca-certificates`, and `coreutils` at runtime, so the namespace must allow outbound package download access or you must override `ecrCredentialsRefresh.image` with an internal image that already contains the required tools.
+
+After installing, trigger the first refresh before private-image workloads need to pull:
+
+```bash
+kubectl create job \
+  -n ai-layer \
+  --from=cronjob/galust-ai-layer-ecr-refresh \
+  galust-ai-layer-ecr-refresh-manual
 ```
 
 ## Backend Notes
