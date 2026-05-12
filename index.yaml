@@ -1502,6 +1502,38 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/flagger-metrics-and-alerts-0.1.0/flagger-metrics-and-alerts-0.1.0.tgz
     version: 0.1.0
+  galust-ai-layer:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-05-12T14:50:44.049633242Z"
+    dependencies:
+    - alias: backend
+      condition: backend.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.29
+    - alias: mcp
+      condition: mcp.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.29
+    - alias: mcpUseCase
+      condition: mcpUseCase.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.29
+    - alias: orchestrator
+      condition: orchestrator.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.29
+    description: Galust AI layer umbrella chart for Kubernetes clusters
+    digest: 82b0fecb08ba19c5f072e2527f5a4943d0a21dfe8c17ca8792c79416dfd0490e
+    name: galust-ai-layer
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/galust-ai-layer-0.1.0/galust-ai-layer-0.1.0.tgz
+    version: 0.1.0
   gateway-api:
   - apiVersion: v2
     appVersion: 1.16.0
