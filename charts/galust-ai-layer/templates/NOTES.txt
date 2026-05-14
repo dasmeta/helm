@@ -10,6 +10,9 @@ Enabled components:
 {{- if .Values.mcpUseCase.enabled }}
 - mcp-use-case: {{ .Values.mcpUseCase.fullnameOverride | default "mcp-use-case" }}
 {{- end }}
+{{- if .Values.mcpProducts.enabled }}
+- mcp-products: {{ .Values.mcpProducts.fullnameOverride | default "mcp-products" }}
+{{- end }}
 {{- if .Values.orchestrator.enabled }}
 - orchestrator: {{ .Values.orchestrator.fullnameOverride | default "orchestrator" }}
 {{- end }}
