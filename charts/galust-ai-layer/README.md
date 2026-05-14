@@ -9,6 +9,7 @@ This chart is an umbrella chart for the Galust AI layer services. It wraps the p
 - Strapi backend
 - MCP
 - MCP use-case service
+- MCP products service
 - Orchestrator
 
 The chart manages Kubernetes workload configuration for these services. It does not provision cloud infrastructure, databases, DNS records, TLS issuers, IAM roles, ECR policies, or external secrets.
@@ -22,6 +23,7 @@ The chart wraps the published `dasmeta/base` chart with one alias per deployable
 | Strapi backend | `backend.enabled` | `true` |
 | MCP | `mcp.enabled` | `true` |
 | MCP use-case service | `mcpUseCase.enabled` | `true` |
+| MCP products service | `mcpProducts.enabled` | `true` |
 | Orchestrator | `orchestrator.enabled` | `true` |
 
 Each component can be disabled independently:
@@ -43,7 +45,7 @@ Before deploying, confirm the target cluster has:
 - AWS access to the target account, usually through an AWS SSO permission set and account assignment managed outside this chart.
 - Namespace access for `ai-layer`, or permission to create it.
 - Image pull access for the private ECR images.
-- ECR read access for the private repositories used by the backend, MCP, MCP use-case, and orchestrator images.
+- ECR read access for the private repositories used by the backend, MCP, MCP use-case, MCP products and orchestrator images.
 - Required application secrets already created in the namespace.
 - Database connectivity for the backend.
 - A PVC or storage class suitable for backend uploads.
@@ -55,7 +57,7 @@ If AWS access is managed through the Terraform SSO/RBAC modules, create or assig
 
 - Read private ECR repositories and get ECR authorization tokens.
 - Access the target EKS cluster and update Kubernetes resources in the `ai-layer` namespace.
-- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-use-case`, and `ai-layer-orchestrator`.
+- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-use-case`, `ai-layer-mcp-products` and `ai-layer-orchestrator`.
 - If `ecrCredentialsRefresh.enabled=true`, provide an AWS identity for the refresh job with `ecr:GetAuthorizationToken`.
 
 Required default Kubernetes objects:
@@ -70,6 +72,7 @@ Required default Kubernetes objects:
 | Backend uploads PVC | `ai-layer-strapi-uploads` | backend |
 | MCP secret | `ai-layer-mcp` | MCP |
 | MCP use-case secret | `ai-layer-mcp-use-case` | MCP use-case |
+| MCP products secret | `ai-layer-mcp-products` | MCP products |
 | Orchestrator secret | `ai-layer-orchestrator` | orchestrator |
 
 External dependencies such as Redis, Qdrant, Langfuse, OpenAI credentials, database provisioning, External Secrets, IAM trust, and DNS are handled outside this chart.
@@ -345,6 +348,7 @@ Expected default service names:
 - `ai-layer-strapi`
 - `ai-layer-mcp`
 - `ai-layer-mcp-use-case`
+- `ai-layer-mcp-products`
 - `ai-layer-orchestrator`
 
 Expected public hosts when ingress is enabled:

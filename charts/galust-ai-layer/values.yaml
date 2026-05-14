@@ -227,8 +227,47 @@ mcpUseCase:
     secret: ai-layer-mcp-use-case
   config:
     DEBUG_MCP_HEADER_FLOW: "true"
-    TOOLS_CATALOG_URL: *apiUrl
+    DEBUG_MCP_USE_CASE: "true"
+    DEBUG_MCP_USE_CASE_API: "true"
+    DEBUG_MCP_TOOL_CALL_HEADERS: "true"
+    AI_LAYER_BACKEND_URL: *apiUrl
     ORCHESTRATOR_ENDPOINT: *orchestratorEndpoint
+
+mcpProducts:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-mcp-products
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp-products
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets: *galustImagePullSecrets
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-mcp-products
+  service:
+    type: ClusterIP
+    port: 4002
+  containerPort: 4002
+  envFrom:
+    secret: ai-layer-mcp-products
+  config:
+    NODE_ENV: production
+    DEBUG_MCP_HEADER_FLOW: "true"
+    DEBUG_MCP_PRODUCTS: "true"
+    DEBUG_MCP_PRODUCTS_API: "true"
+    AI_LAYER_BACKEND_URL: *apiUrl
 
 orchestrator:
   enabled: true
@@ -275,6 +314,7 @@ orchestrator:
     GLOBAL_PREFIX: orchestrator
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
     AI_LAYER_BACKEND_URL: *apiUrl
+    PORTKEY_PROVIDER: dm-openai
   ingress:
     enabled: true
     class: nginx
