@@ -1,19 +1,22 @@
 imagePullSecret:
   create: false
-  name: &imagePullSecretName ecr-secret
+  name: ecr-secret
   annotations: {}
   dockerConfigJson: ""
   dockerConfigJsonBase64: ""
 
-imagePullSecrets: &galustImagePullSecrets
-  - name: *imagePullSecretName
+# Do not use YAML anchors for this list. Helm stores release values as JSON;
+# a shared anchor makes every component point at the same slice and install fails with:
+# "json: unsupported value: encountered a cycle via map[string]interface {}".
+imagePullSecrets:
+  - name: ecr-secret
 
 ecrCredentialsRefresh:
   enabled: false
   schedule: "0 */6 * * *"
   registry: 565580475168.dkr.ecr.eu-central-1.amazonaws.com
   region: eu-central-1
-  secretName: *imagePullSecretName
+  secretName: ecr-secret
   image:
     repository: alpine
     tag: "3.20"
@@ -46,46 +49,63 @@ gatewayApi:
 zeroTrustMesh:
   enabled: false
 
+# Strapi backend (TrueCharts: oci://oci.trueforge.org/truecharts/strapi)
 backend:
   enabled: true
-  gatewayApi:
-    enabled: false
-  zeroTrustMesh:
-    enabled: false
-    allowTo: []
-  fullnameOverride: ai-layer-strapi
-  version: 0.1.0
-  appVersion: 0.1.0
+  global:
+    fullnameOverride: ai-layer-strapi
   image:
     repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-backend
     tag: latest
     pullPolicy: Always
-  imagePullSecrets: *galustImagePullSecrets
-  replicaCount: 1
-  containerPort: 1337
+  imagePullSecrets:
+    - name: ecr-secret
   service:
-    type: ClusterIP
-    port: 1337
+    main:
+      ports:
+        main:
+          port: 1337
   persistence:
-    uploads:
+    data:
       enabled: true
-      claimName: ai-layer-strapi-uploads
-      size: 20Gi
-      accessModes:
-        - ReadWriteOnce
-      storageClassName: ""
-      keepPvc: true
-  storage:
-    - persistentVolumeClaimName: ai-layer-strapi-uploads
-      accessModes:
-        - ReadWriteOnce
-      requestedSize: 20Gi
-      keepPvc: true
-  volumes:
-    - name: strapi-uploads
-      persistentVolumeClaim:
-        claimName: ai-layer-strapi-uploads
       mountPath: /opt/app/public/uploads
+  cnpg:
+    main:
+      enabled: true
+      user: strapi
+      database: strapi
+      monitoring:
+        enablePodMonitor: true
+      cluster:
+        instances: 2
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        storage:
+          size: "20Gi"
+        walStorage:
+          size: "20Gi"
+        postgresql:
+          max_connections: "300"
+          logging_collector: "on"
+          log_min_duration_statement: "500ms"
+          log_statement: "none"
+          shared_buffers: "1GB"
+          work_mem: "8MB"
+          effective_cache_size: "4GB"
+          maintenance_work_mem: "128MB"
+          bgwriter_lru_maxpages: "1000"
+          bgwriter_lru_multiplier: "4.0"
+          checkpoint_timeout: "15min"
+          max_wal_size: "2GB"
+          checkpoint_completion_target: "0.9"
+          autovacuum_max_workers: "3"
+          autovacuum_naptime: "30s"
+          autovacuum_vacuum_cost_limit: "2000"
   resources:
     limits:
       cpu: 1500m
@@ -93,57 +113,52 @@ backend:
     requests:
       cpu: 1000m
       memory: 1000Mi
+  portal:
+    open:
+      enabled: true
   securityContext:
-    readOnlyRootFilesystem: false
-    runAsNonRoot: false
-    runAsUser: 0
-    runAsGroup: 0
-  envFrom:
-    secret: ai-layer-strapi
-  config:
-    PORT: "1337"
-    DATABASE_CLIENT: postgres
-    DATABASE_PORT: "5432"
-    DATABASE_NAME: strapi
-    DATABASE_USERNAME: strapi
-    STRAPI_DISABLE_UPDATE_NOTIFICATION: "true"
-    FAST_REFRESH: "false"
-    EXTRA_ARGS: ""
-    ADMIN_URL: *adminUrl
-    APP_HOST: 0.0.0.0
-    APP_URL: *adminUrl
-    BACKEND_URL: *apiUrl
-    ENV: production
-    HOST: 0.0.0.0
-    NODE_ENV: production
-    PUBLIC_URL: *apiUrl
-    STRAPI_ADMIN_BACKEND_URL: *apiUrl
-  extraEnv:
-    DATABASE_HOST:
-      secretKeyRef:
-        name: db-ai-layer-strapi
-        key: host
-    DATABASE_PASSWORD:
-      secretKeyRef:
-        name: db-ai-layer-strapi
-        key: password
-  ingress:
-    enabled: true
-    class: nginx
-    annotations:
-      kubernetes.io/tls-acme: "true"
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-    hosts:
-      - host: *apiHost
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              servicePort: 1337
-    tls:
-      - secretName: com-galust-api-tls2
-        hosts:
-          - *apiHost
+    container:
+      readOnlyRootFilesystem: false
+      runAsNonRoot: false
+      runAsUser: 0
+      runAsGroup: 0
+  workload:
+    main:
+      podSpec:
+        containers:
+          main:
+            envFrom:
+              - secretRef:
+                  name: ai-layer-strapi
+                  expandObjectName: false
+            env:
+              PORT: "{{ .Values.service.main.ports.main.port }}"
+              DATABASE_CLIENT: postgres
+              DATABASE_PORT: 5432
+              DATABASE_NAME: "{{ .Values.cnpg.main.database }}"
+              DATABASE_HOST:
+                secretKeyRef:
+                  name: db-ai-layer-strapi
+                  key: host
+                  expandObjectName: false
+              DATABASE_USERNAME: "{{ .Values.cnpg.main.user }}"
+              DATABASE_PASSWORD:
+                secretKeyRef:
+                  name: db-ai-layer-strapi
+                  key: password
+                  expandObjectName: false
+              STRAPI_DISABLE_UPDATE_NOTIFICATION: true
+              FAST_REFRESH: false
+              EXTRA_ARGS: ""
+              ADMIN_URL: *adminUrl
+              APP_HOST: 0.0.0.0
+              APP_URL: *adminUrl
+              BACKEND_URL: *apiUrl
+              ENV: production
+              HOST: 0.0.0.0
+              NODE_ENV: production
+              PUBLIC_URL: *apiUrl
+              STRAPI_ADMIN_BACKEND_URL: *apiUrl
 
 mcp:
   enabled: true
@@ -159,7 +174,8 @@ mcp:
     repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp
     tag: latest
     pullPolicy: Always
-  imagePullSecrets: *galustImagePullSecrets
+  imagePullSecrets:
+    - name: ecr-secret
   replicaCount: 1
   labels:
     version:
@@ -178,23 +194,6 @@ mcp:
     DEBUG_MCP_HEADER_FLOW: "true"
     OPENAPI_BASE_URL: *openapiBaseUrl
     OPENAPI_SPEC_URL: *openapiSpecUrl
-  ingress:
-    enabled: true
-    class: nginx
-    annotations:
-      kubernetes.io/tls-acme: "true"
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-    hosts:
-      - host: *mcpHost
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              servicePort: 4002
-    tls:
-      - secretName: com-galust-mcp-tls2
-        hosts:
-          - *mcpHost
 
 mcpUseCase:
   enabled: true
@@ -210,7 +209,8 @@ mcpUseCase:
     repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp-use-case
     tag: latest
     pullPolicy: Always
-  imagePullSecrets: *galustImagePullSecrets
+  imagePullSecrets:
+    - name: ecr-secret
   replicaCount: 1
   labels:
     version:
@@ -247,7 +247,8 @@ mcpProducts:
     repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp-products
     tag: latest
     pullPolicy: Always
-  imagePullSecrets: *galustImagePullSecrets
+  imagePullSecrets:
+    - name: ecr-secret
   replicaCount: 1
   labels:
     version:
@@ -283,7 +284,8 @@ orchestrator:
     repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-orchestrator
     tag: latest
     pullPolicy: Always
-  imagePullSecrets: *galustImagePullSecrets
+  imagePullSecrets:
+    - name: ecr-secret
   replicaCount: 1
   labels:
     version:
