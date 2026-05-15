@@ -1,4 +1,7 @@
 dependencies:
+- name: strapi
+  repository: oci://oci.trueforge.org/truecharts
+  version: 18.9.0
 - name: base
   repository: https://dasmeta.github.io/helm
   version: 0.3.30
@@ -11,5 +14,5 @@ dependencies:
 - name: base
   repository: https://dasmeta.github.io/helm
   version: 0.3.30
-digest: sha256:3ae019b1c079a7732bc63cfa018197047452b090f2e5e1cc07ab1fb43b283f8c
-generated: "2026-05-13T14:31:30.015306+04:00"
+digest: sha256:9254d4312b54d6c0960468538a451fb3e6a0f9e5d0a7cc29d121a906263021e1
+generated: "2026-05-15T12:22:19.073404+04:00"

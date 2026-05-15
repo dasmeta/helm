@@ -2,7 +2,7 @@ Galust AI layer chart rendered for namespace {{ .Release.Namespace }}.
 
 Enabled components:
 {{- if .Values.backend.enabled }}
-- backend: {{ .Values.backend.fullnameOverride | default "backend" }}
+- strapi (backend): {{ .Values.backend.fullnameOverride | default "ai-layer-strapi" }}
 {{- end }}
 {{- if .Values.mcp.enabled }}
 - mcp: {{ .Values.mcp.fullnameOverride | default "mcp" }}

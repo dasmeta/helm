@@ -6,10 +6,10 @@ version: 0.1.2
 appVersion: "0.1.2"
 
 dependencies:
-  - name: base
+  - name: strapi
     alias: backend
-    version: 0.3.30
-    repository: https://dasmeta.github.io/helm
+    version: 18.9.0
+    repository: oci://oci.trueforge.org/truecharts
     condition: backend.enabled
   - name: base
     alias: mcp
