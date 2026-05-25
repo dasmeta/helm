@@ -37,7 +37,7 @@ TCP
 
 {{- define "ztm.workloadName" -}}
 {{- $svc := .Values.serviceConfig | default (dict) -}}
-{{- .Values.workload | default ($svc.workload | default .Release.Name) -}}
+{{- default (.Values.workload | default ($svc.workload | default ($svc.service | default .Release.Name))) .Values.service -}}
 {{- end -}}
 
 {{- define "ztm.workloadServiceAccount" -}}
@@ -46,10 +46,27 @@ TCP
 {{- end -}}
 
 {{- define "ztm.targetPodLabels" -}}
-{{- if .targetPodLabels -}}
-{{- toYaml .targetPodLabels -}}
+{{- if .podLabels -}}
+{{- toYaml .podLabels -}}
 {{- else -}}
-app.kubernetes.io/name: {{ .service }}
+app.kubernetes.io/name: {{ default .workload .service }}
+{{- end -}}
+{{- end -}}
+
+{{- define "ztm.sourcePodLabels" -}}
+{{- if .podLabels -}}
+{{- toYaml .podLabels -}}
+{{- else -}}
+app.kubernetes.io/name: {{ default .workload .service }}
+{{- end -}}
+{{- end -}}
+
+{{- define "ztm.denyAllPodLabels" -}}
+{{- $denyAll := .Values.denyAll | default (dict) -}}
+{{- if $denyAll.podLabels -}}
+{{- toYaml $denyAll.podLabels -}}
+{{- else -}}
+app.kubernetes.io/name: {{ include "ztm.workloadName" . }}
 {{- end -}}
 {{- end -}}
 

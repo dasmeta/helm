@@ -1,8 +1,14 @@
 {{- $np := .Values.networkPolicy | default (dict) -}}
-{{- if and (ne $np.enabled false) .Values.allowTo }}
+{{- $egress := list -}}
+{{- range (.Values.allowPolicies | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- if and (ne $np.enabled false) $egress }}
 {{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
 {{- $sourceWorkload := include "ztm.workloadName" . -}}
-{{- range .Values.allowTo }}
+{{- range $egress }}
 {{- if .ips }}
 {{- $defaultPorts := list (dict "number" 443 "protocol" "TCP") -}}
 {{- $ports := .ports | default $defaultPorts -}}
@@ -20,7 +26,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ $sourceWorkload }}
+      {{- include "ztm.denyAllPodLabels" $ | nindent 6 }}
   policyTypes:
     - Egress
   egress:
@@ -31,7 +37,7 @@ spec:
         {{- end }}
       ports:
         {{- range $port := $ports }}
-        {{- $number := required "allowTo[].ips ports[].number is required" $port.number }}
+        {{- $number := required "egress[].ips ports[].number is required" $port.number }}
         - port: {{ $number }}
           protocol: {{ include "ztm.networkPolicyProtocol" $port.protocol }}
         {{- end }}

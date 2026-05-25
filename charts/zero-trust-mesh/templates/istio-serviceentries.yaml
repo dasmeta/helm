@@ -1,7 +1,13 @@
 {{- $istio := .Values.istio | default (dict) -}}
-{{- if and (default true $istio.enabled) .Values.allowTo }}
+{{- $egress := list -}}
+{{- range (.Values.allowPolicies | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- if and (default true $istio.enabled) $egress }}
 {{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
-{{- range .Values.allowTo }}
+{{- range $egress }}
 {{- if .hosts }}
 {{- $defaultPorts := list (dict "number" 80 "protocol" "HTTP") (dict "number" 443 "protocol" "HTTPS") -}}
 {{- $userPorts := .ports | default (list) -}}
@@ -75,7 +81,7 @@ spec:
   resolution: NONE
   ports:
     {{- range $port := $ports }}
-    {{- $number := required "allowTo[].ips ports[].number is required" $port.number }}
+    {{- $number := required "egress[].ips ports[].number is required" $port.number }}
     {{- $protocol := default "TCP" $port.protocol | upper }}
     - number: {{ $number }}
       name: {{ default (include "ztm.sanitizeName" (printf "%s-%v" ($protocol | lower) $number)) $port.name }}

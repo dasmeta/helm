@@ -1,0 +1,55 @@
+{{- $np := .Values.networkPolicy | default (dict) -}}
+{{- $denyAll := .Values.denyAll | default (dict) -}}
+{{- $egress := list -}}
+{{- range (.Values.allowPolicies | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- if and (default false $denyAll.enabled) (default true $np.enabled) $egress }}
+{{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
+{{- $sourceWorkload := include "ztm.workloadName" . -}}
+{{- $portsByKey := dict -}}
+{{- range $egress }}
+{{- if .hosts }}
+{{- $defaultPorts := list (dict "number" 80 "protocol" "TCP") (dict "number" 443 "protocol" "TCP") -}}
+{{- $ports := .ports | default $defaultPorts -}}
+{{- range $port := $ports }}
+{{- $number := required "egress[].hosts ports[].number is required" $port.number -}}
+{{- $protocol := include "ztm.networkPolicyProtocol" $port.protocol -}}
+{{- $_ := set $portsByKey (printf "%v-%s" $number $protocol) (dict "number" $number "protocol" $protocol) -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if $portsByKey }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-{{ include "ztm.sanitizeName" (printf "%s-egress-to-external-hosts" $sourceWorkload) }}
+  namespace: {{ $workloadNamespace }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ztm.denyAllPodLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 100.64.0.0/10
+              - 127.0.0.0/8
+              - 169.254.0.0/16
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        {{- range $key := keys $portsByKey | sortAlpha }}
+        {{- $port := get $portsByKey $key }}
+        - port: {{ $port.number }}
+          protocol: {{ $port.protocol }}
+        {{- end }}
+{{- end }}
+{{- end }}
