@@ -2648,6 +2648,17 @@ entries:
   zero-trust-mesh:
   - apiVersion: v2
     appVersion: "1.0"
+    created: "2026-05-25T10:31:01.312799653Z"
+    description: Helm chart for Kubernetes NetworkPolicy + Istio zero-trust service
+      communication
+    digest: 77df2ead345b68cd69d0e905bf4db24eb36e208259b6425915c244f27a9d5843
+    name: zero-trust-mesh
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/zero-trust-mesh-0.1.4/zero-trust-mesh-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: "1.0"
     created: "2026-05-12T14:23:26.121957363Z"
     description: Helm chart for Kubernetes NetworkPolicy + Istio zero-trust service
       communication
