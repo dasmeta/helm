@@ -100,10 +100,9 @@ For `type: ingress` entries:
 - `allowUnauthenticated` (optional, default `false`): omit the Istio source principal match for non-mesh sources such as `ingress-nginx`; keep `podLabels` set so NetworkPolicy still restricts packet sources
 
 For `type: egress` entries, service destinations use `service` as the peer
-service name. The older `workload` key is still accepted. For service
-destinations it renders service-scoped egress `NetworkPolicy` rules only; the
-destination service must open inbound traffic with its own ingress allow policy
-if it has `denyAll.enabled: true`.
+service name. For service destinations it renders service-scoped egress
+`NetworkPolicy` rules only; the destination service must open inbound traffic
+with its own ingress allow policy if it has `denyAll.enabled: true`.
 
 `type: egress` supports three destination forms:
 
@@ -126,12 +125,6 @@ if it has `denyAll.enabled: true`.
   - renders both an Istio `ServiceEntry` with `resolution: NONE` and a workload-scoped egress `NetworkPolicy`
 
 Source service account defaults to `service`, or can be set with top-level `serviceAccount`.
-
-The split `ingress` and `egress` lists, plus `allowFrom` and `allowTo`, remain
-supported for backward compatibility. `workload` and `serviceDenyAll` are
-accepted as deprecated aliases for `service` and `denyAll`. `allowpolices` is
-accepted as a deprecated misspelled alias, but new values should use
-`allowPolicies`.
 
 If your cluster does not have an `istio-egressgateway` Service name, set:
 - `istio.egressGateway.serviceName` to your real gateway Service
@@ -161,10 +154,6 @@ Most security defaults are now implicit in templates. Advanced overrides can sti
 | `allowPolicies[].allowUnauthenticated` | Allow non-mesh inbound sources; NetworkPolicy should still restrict source pods or CIDRs | `false` |
 | `allowPolicies[].hosts` | Approved external hosts for ServiceEntry-based egress | `["api.stripe.com"]` |
 | `allowPolicies[].ips` | Approved external destination IPs or CIDR blocks for direct IP egress | `["192.0.2.10"]` |
-| `allowPolicies[].targetPodLabels` / `sourcePodLabels` | Legacy selector aliases still accepted by split or typed entries | `{ app: backend }` |
-| `allowpolices` | Deprecated misspelled alias for `allowPolicies` | `[]` |
-| `allowFrom` / `allowTo` | Backward-compatible aliases for `ingress` / `egress` | `[]` |
-| `legacyAllowToIngress.enabled` | Also render the previous target-side ingress policies from service egress entries | `false` |
 
 ## Install
 

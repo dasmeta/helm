@@ -27,24 +27,6 @@ serviceDenyAll: {}
 # `type: egress` entries open outbound traffic from the current service.
 allowPolicies: []
 
-# Deprecated misspelled alias for allowPolicies. Prefer allowPolicies.
-allowpolices: []
-
-# Backward-compatible split lists.
-egress: []
-ingress: []
-
-# Backward-compatible aliases for older values APIs.
-allowTo: []
-allowFrom: []
-
-# Backward-compatibility switch for the previous allowTo service behavior, where
-# allowTo/egress also rendered target-side ingress NetworkPolicy and
-# AuthorizationPolicy resources. Keep disabled when each service owns its own
-# inbound ingress rules.
-legacyAllowToIngress:
-  enabled: false
-
 # Example typed allow entries:
 # allowPolicies:
 #   - type: ingress
@@ -92,30 +74,3 @@ legacyAllowToIngress:
 #     # ports:
 #     #   - number: 443
 #     #     protocol: TCP
-
-# Legacy split-list ingress examples:
-# ingress:
-#   - service: frontend
-#     serviceAccount: frontend
-#     # Optional source pod selector override; defaults to:
-#     # app.kubernetes.io/name: <service>
-#     # sourcePodLabels:
-#     #   app: frontend
-#     port: 80
-#     methods: ["GET"]
-#     paths: ["/*"]
-#   - service: ingress-nginx
-#     namespace: ingress-nginx
-#     sourcePodLabels:
-#       app.kubernetes.io/name: ingress-nginx
-#       app.kubernetes.io/component: controller
-#     port: 80
-#     # Use when the source is not in the mesh and has no Istio principal.
-#     # NetworkPolicy still restricts packets to sourcePodLabels.
-#     allowUnauthenticated: true
-#   - service: internal-alb
-#     # Use VPC CIDR or narrower ALB subnet CIDRs for AWS ALB target-type ip.
-#     sourceIpBlocks:
-#       - 172.31.0.0/16
-#     port: 80
-#     allowUnauthenticated: true

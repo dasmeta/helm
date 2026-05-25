@@ -1,13 +1,8 @@
 {{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
 {{- $np := .Values.networkPolicy | default (dict) -}}
 {{- $labels := .Values.labels | default (dict) -}}
-{{- $ingress := concat (.Values.ingress | default (list)) (.Values.allowFrom | default (list)) -}}
+{{- $ingress := list -}}
 {{- range (.Values.allowPolicies | default (list)) -}}
-{{- if eq (default "" .type) "ingress" -}}
-{{- $ingress = append $ingress . -}}
-{{- end -}}
-{{- end -}}
-{{- range (.Values.allowpolices | default (list)) -}}
 {{- if eq (default "" .type) "ingress" -}}
 {{- $ingress = append $ingress . -}}
 {{- end -}}

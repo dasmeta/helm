@@ -46,9 +46,7 @@ TCP
 {{- end -}}
 
 {{- define "ztm.targetPodLabels" -}}
-{{- if .targetPodLabels -}}
-{{- toYaml .targetPodLabels -}}
-{{- else if .podLabels -}}
+{{- if .podLabels -}}
 {{- toYaml .podLabels -}}
 {{- else -}}
 app.kubernetes.io/name: {{ default .workload .service }}
@@ -56,9 +54,7 @@ app.kubernetes.io/name: {{ default .workload .service }}
 {{- end -}}
 
 {{- define "ztm.sourcePodLabels" -}}
-{{- if .sourcePodLabels -}}
-{{- toYaml .sourcePodLabels -}}
-{{- else if .podLabels -}}
+{{- if .podLabels -}}
 {{- toYaml .podLabels -}}
 {{- else -}}
 app.kubernetes.io/name: {{ default .workload .service }}

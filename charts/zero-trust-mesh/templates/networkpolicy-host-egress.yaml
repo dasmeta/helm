@@ -1,12 +1,7 @@
 {{- $np := .Values.networkPolicy | default (dict) -}}
 {{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
-{{- $egress := concat (.Values.egress | default (list)) (.Values.allowTo | default (list)) -}}
+{{- $egress := list -}}
 {{- range (.Values.allowPolicies | default (list)) -}}
-{{- if eq (default "" .type) "egress" -}}
-{{- $egress = append $egress . -}}
-{{- end -}}
-{{- end -}}
-{{- range (.Values.allowpolices | default (list)) -}}
 {{- if eq (default "" .type) "egress" -}}
 {{- $egress = append $egress . -}}
 {{- end -}}

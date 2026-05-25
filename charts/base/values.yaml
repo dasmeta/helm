@@ -1031,8 +1031,8 @@ gatewayApi:
 zeroTrustMesh:
   enabled: false
   # Keep empty by default so enabling the subchart from base does not create
-  # sample ingress or egress allow rules.
-  allowPolicies: []
+  # sample service or external egress allow rules.
+  allowTo: []
 
   # enabled: true
   # namespaceResourcesEnabled: true
