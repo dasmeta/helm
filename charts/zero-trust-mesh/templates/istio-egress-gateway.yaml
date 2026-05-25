@@ -2,9 +2,20 @@
 {{- $egw := $istio.egressGateway | default (dict) -}}
 {{- $egwNamespace := default "istio-system" $egw.namespace -}}
 {{- $egwServiceName := default "istio-egressgateway" $egw.serviceName -}}
-{{- if and (ne $istio.enabled false) (eq $egw.enabled true) .Values.allowTo }}
+{{- $egress := concat (.Values.egress | default (list)) (.Values.allowTo | default (list)) -}}
+{{- range (.Values.allowPolicies | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- range (.Values.allowpolices | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- if and (ne $istio.enabled false) (eq $egw.enabled true) $egress }}
 {{- $workloadNamespace := include "ztm.workloadNamespace" . -}}
-{{- range .Values.allowTo }}
+{{- range $egress }}
 {{- if .hosts }}
 {{- range .hosts }}
 ---

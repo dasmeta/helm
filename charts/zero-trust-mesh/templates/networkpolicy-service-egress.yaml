@@ -1,5 +1,5 @@
 {{- $np := .Values.networkPolicy | default (dict) -}}
-{{- $legacy := .Values.legacyAllowToIngress | default (dict) -}}
+{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
 {{- $labels := .Values.labels | default (dict) -}}
 {{- $egress := concat (.Values.egress | default (list)) (.Values.allowTo | default (list)) -}}
 {{- range (.Values.allowPolicies | default (list)) -}}
@@ -12,34 +12,34 @@
 {{- $egress = append $egress . -}}
 {{- end -}}
 {{- end -}}
-{{- if and (default false $legacy.enabled) (default true $np.enabled) $egress }}
+{{- if and (default false $denyAll.enabled) (default true $np.enabled) $egress }}
 {{- $sourceNamespace := include "ztm.workloadNamespace" . -}}
 {{- $sourceWorkload := include "ztm.workloadName" . -}}
 {{- range $egress }}
 {{- $targetService := default .workload .service -}}
 {{- if $targetService }}
 {{- $targetNamespace := default $sourceNamespace .namespace -}}
-{{- $ruleName := printf "%s-to-%s-%v" $sourceWorkload $targetService (.port | default 8080) -}}
+{{- $ruleName := printf "%s-egress-to-%s-%v" $sourceWorkload $targetService (.port | default 8080) -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-{{ include "ztm.sanitizeName" $ruleName }}
-  namespace: {{ $targetNamespace }}
+  namespace: {{ $sourceNamespace }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "ztm.targetPodLabels" . | nindent 6 }}
+      {{- include "ztm.serviceDenyAllPodLabels" $ | nindent 6 }}
   policyTypes:
-    - Ingress
-  ingress:
-    - from:
+    - Egress
+  egress:
+    - to:
         - namespaceSelector:
             matchLabels:
-              {{ default "kubernetes.io/metadata.name" $labels.namespaceLabelKey }}: {{ $sourceNamespace }}
+              {{ default "kubernetes.io/metadata.name" $labels.namespaceLabelKey }}: {{ $targetNamespace }}
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: {{ $sourceWorkload }}
+              {{- include "ztm.targetPodLabels" . | nindent 14 }}
       ports:
         - port: {{ .port | default 8080 }}
           protocol: {{ .protocol | default "TCP" }}

@@ -1,0 +1,58 @@
+{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- $istio := .Values.istio | default (dict) -}}
+{{- $ingress := concat (.Values.ingress | default (list)) (.Values.allowFrom | default (list)) -}}
+{{- range (.Values.allowPolicies | default (list)) -}}
+{{- if eq (default "" .type) "ingress" -}}
+{{- $ingress = append $ingress . -}}
+{{- end -}}
+{{- end -}}
+{{- range (.Values.allowpolices | default (list)) -}}
+{{- if eq (default "" .type) "ingress" -}}
+{{- $ingress = append $ingress . -}}
+{{- end -}}
+{{- end -}}
+{{- if and (default false $denyAll.enabled) (default true $istio.enabled) $ingress }}
+{{- $targetNamespace := include "ztm.workloadNamespace" . -}}
+{{- $targetServiceAccount := include "ztm.workloadServiceAccount" . -}}
+{{- range $ingress }}
+{{- $sourceWorkload := required "ingress[].service is required" (default .workload .service) -}}
+{{- $sourceNamespace := default $targetNamespace .namespace -}}
+{{- $sourceServiceAccount := default $sourceWorkload .serviceAccount -}}
+{{- $policyName := printf "allow-%s-ingress-from-%s" $targetServiceAccount $sourceServiceAccount -}}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "ztm.sanitizeName" $policyName }}
+  namespace: {{ $targetNamespace }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ztm.serviceDenyAllPodLabels" $ | nindent 6 }}
+  action: ALLOW
+  rules:
+    {{- if and .allowUnauthenticated (not (or .methods .paths)) }}
+    - {}
+    {{- else }}
+    -
+      {{- if not .allowUnauthenticated }}
+      from:
+        - source:
+            principals:
+              - {{ printf "cluster.local/ns/%s/sa/%s" $sourceNamespace $sourceServiceAccount | quote }}
+      {{- end }}
+      {{- if or .methods .paths }}
+      to:
+        - operation:
+            {{- if .methods }}
+            methods:
+              {{- toYaml .methods | nindent 14 }}
+            {{- end }}
+            {{- if .paths }}
+            paths:
+              {{- toYaml .paths | nindent 14 }}
+            {{- end }}
+      {{- end }}
+    {{- end }}
+{{ end }}
+{{- end }}

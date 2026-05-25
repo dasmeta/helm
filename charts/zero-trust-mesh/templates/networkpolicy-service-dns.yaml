@@ -1,0 +1,31 @@
+{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- $np := .Values.networkPolicy | default (dict) -}}
+{{- $nsr := .Values.namespaceResources | default (dict) -}}
+{{- if and (default false $denyAll.enabled) (default true $np.enabled) (not (default false (default .Values.namespaceResourcesEnabled $nsr.enabled))) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ztm.fullname" . }}-allow-dns-egress
+  namespace: {{ include "ztm.workloadNamespace" . }}
+  labels:
+    {{- include "ztm.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ztm.serviceDenyAllPodLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+{{- end }}

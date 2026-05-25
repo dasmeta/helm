@@ -1,0 +1,15 @@
+{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- $istio := .Values.istio | default (dict) -}}
+{{- if and (default false $denyAll.enabled) (default true $istio.enabled) }}
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "ztm.fullname" . }}-service-deny-all
+  namespace: {{ include "ztm.workloadNamespace" . }}
+  labels:
+    {{- include "ztm.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ztm.serviceDenyAllPodLabels" . | nindent 6 }}
+{{- end }}

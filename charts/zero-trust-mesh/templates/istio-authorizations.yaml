@@ -1,11 +1,24 @@
 {{- $istio := .Values.istio | default (dict) -}}
-{{- if and (default true $istio.enabled) .Values.allowTo }}
+{{- $legacy := .Values.legacyAllowToIngress | default (dict) -}}
+{{- $egress := concat (.Values.egress | default (list)) (.Values.allowTo | default (list)) -}}
+{{- range (.Values.allowPolicies | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- range (.Values.allowpolices | default (list)) -}}
+{{- if eq (default "" .type) "egress" -}}
+{{- $egress = append $egress . -}}
+{{- end -}}
+{{- end -}}
+{{- if and (default false $legacy.enabled) (default true $istio.enabled) $egress }}
 {{- $sourceNamespace := include "ztm.workloadNamespace" . -}}
 {{- $sourceServiceAccount := include "ztm.workloadServiceAccount" . -}}
-{{- range .Values.allowTo }}
-{{- if .service }}
+{{- range $egress }}
+{{- $targetService := default .workload .service -}}
+{{- if $targetService }}
 {{- $targetNamespace := default $sourceNamespace .namespace -}}
-{{- $targetServiceAccount := default .service .serviceAccount -}}
+{{- $targetServiceAccount := default $targetService .serviceAccount -}}
 {{- $policyName := printf "allow-%s-to-%s" $sourceServiceAccount $targetServiceAccount -}}
 ---
 apiVersion: security.istio.io/v1

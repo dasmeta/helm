@@ -1,0 +1,9 @@
+# helm template ztm-service-deny-all ./charts/zero-trust-mesh -n default -f ./examples/zero-trust-mesh/service-deny-all.yaml
+workload: frontend
+namespaceResourcesEnabled: false
+serviceDenyAll:
+  enabled: true
+  podLabels:
+    app: frontend
+    component: api
+

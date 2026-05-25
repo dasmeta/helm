@@ -1,31 +1,80 @@
 # namespace: <optional override; defaults to Helm release namespace>
 
-# workload: <auto from Helm release name when omitted>
-# Optional; defaults to workload when empty.
+# service: <auto from Helm release name when omitted>
+# workload: <deprecated alias for service>
+# Optional; defaults to service when empty.
 serviceAccount: ""
 
 # Keep false for per-service releases. Enable only in one baseline release per namespace.
 namespaceResourcesEnabled: false
 
-# Single allowTo list. Defaults to no service-level allow rules.
-# Supported entry types:
-# - service rule: workload -> service
-# - hosts rule: approved external hosts (default ports: 80/HTTP and 443/HTTPS)
-# - ips rule: approved external IP/CIDR egress (default port: 443/TCP)
-allowTo: []
+# Optional service-level deny-all. This is safer for incremental rollout than
+# namespaceResourcesEnabled because it selects only the current service pods.
+# denyAll:
+#   enabled: false
+#   # Optional pod selector override; defaults to:
+#   # app.kubernetes.io/name: <service>
+#   # podLabels:
+#   #   app: frontend
+#   #   component: api
+denyAll: {}
 
-# Example allowTo entries:
-# allowTo:
-#   - service: backend
+# Deprecated alias for denyAll. Prefer denyAll.
+serviceDenyAll: {}
+
+# Single typed allow list. Defaults to no service-level allow rules.
+# `type: ingress` entries open inbound traffic to the current service.
+# `type: egress` entries open outbound traffic from the current service.
+allowPolicies: []
+
+# Deprecated misspelled alias for allowPolicies. Prefer allowPolicies.
+allowpolices: []
+
+# Backward-compatible split lists.
+egress: []
+ingress: []
+
+# Backward-compatible aliases for older values APIs.
+allowTo: []
+allowFrom: []
+
+# Backward-compatibility switch for the previous allowTo service behavior, where
+# allowTo/egress also rendered target-side ingress NetworkPolicy and
+# AuthorizationPolicy resources. Keep disabled when each service owns its own
+# inbound ingress rules.
+legacyAllowToIngress:
+  enabled: false
+
+# Example typed allow entries:
+# allowPolicies:
+#   - type: ingress
+#     service: gateway
+#     # Optional source service account override; defaults to service.
+#     # serviceAccount: gateway
+#     # Optional peer pod selector override; defaults to:
+#     # app.kubernetes.io/name: <service>
+#     # podLabels:
+#     #   app: gateway
+#     port: 80
+#     methods: ["GET"]
+#     paths: ["/*"]
+#   - type: ingress
+#     service: internal-alb
+#     # Use VPC CIDR or narrower ALB subnet CIDRs for AWS ALB target-type ip.
+#     sourceIpBlocks:
+#       - 172.31.0.0/16
+#     port: 80
+#     allowUnauthenticated: true
+#   - type: egress
+#     service: backend
 #     # Optional target pod selector override; defaults to:
 #     # app.kubernetes.io/name: <service>
-#     # targetPodLabels:
+#     # podLabels:
 #     #   app: backend
 #     port: 8080
-#     methods: ["GET", "POST"]
-#     paths: ["/api/*"]
 #
-#   - hosts: ["api.stripe.com"]
+#   - type: egress
+#     hosts: ["api.stripe.com"]
 #     # Optional custom ports/protocols for this host group.
 #     # These are merged with defaults (80/HTTP and 443/HTTPS).
 #     # ports:
@@ -34,7 +83,8 @@ allowTo: []
 #     #   - number: 443
 #     #     protocol: HTTPS
 #
-#   - ips: ["192.0.2.10"]
+#   - type: egress
+#     ips: ["192.0.2.10"]
 #     # Single IPs are normalized to /32 for NetworkPolicy ipBlock.
 #     # CIDRs like 198.51.100.0/24 can also be used.
 #     # Optional custom ports/protocols for this IP group.
@@ -42,3 +92,30 @@ allowTo: []
 #     # ports:
 #     #   - number: 443
 #     #     protocol: TCP
+
+# Legacy split-list ingress examples:
+# ingress:
+#   - service: frontend
+#     serviceAccount: frontend
+#     # Optional source pod selector override; defaults to:
+#     # app.kubernetes.io/name: <service>
+#     # sourcePodLabels:
+#     #   app: frontend
+#     port: 80
+#     methods: ["GET"]
+#     paths: ["/*"]
+#   - service: ingress-nginx
+#     namespace: ingress-nginx
+#     sourcePodLabels:
+#       app.kubernetes.io/name: ingress-nginx
+#       app.kubernetes.io/component: controller
+#     port: 80
+#     # Use when the source is not in the mesh and has no Istio principal.
+#     # NetworkPolicy still restricts packets to sourcePodLabels.
+#     allowUnauthenticated: true
+#   - service: internal-alb
+#     # Use VPC CIDR or narrower ALB subnet CIDRs for AWS ALB target-type ip.
+#     sourceIpBlocks:
+#       - 172.31.0.0/16
+#     port: 80
+#     allowUnauthenticated: true

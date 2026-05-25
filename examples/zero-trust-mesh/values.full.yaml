@@ -6,32 +6,62 @@ labels:
 namespaceResources:
   enabled: true
 
-# Preferred top-level identity fields (kept with legacy serviceConfig below for compatibility).
-workload: backend
+# Current service identity.
+service: backend
 serviceAccount: backend-runtime-sa
 
-serviceConfig:
+# Optional service-level deny-all. Use this for a protected service release.
+# Keep this disabled for source/peer services that should stay unrestricted.
+denyAll:
   enabled: true
-  namespace: default
-  workload: backend
-  serviceAccount: backend-runtime-sa
+  podLabels:
+    app.kubernetes.io/name: backend
 
-allowTo:
-  - service: auth
+allowPolicies:
+  # Inbound traffic to backend from selected in-mesh services.
+  - type: ingress
+    service: frontend
+    namespace: default
+    serviceAccount: frontend-runtime-sa
+    podLabels:
+      app.kubernetes.io/name: frontend
+    port: 8080
+    protocol: TCP
+    methods: ["GET", "POST"]
+    paths: ["/api/*"]
+
+  # Inbound traffic from a non-mesh source such as an ingress controller.
+  # NetworkPolicy still restricts packets to the selected pods.
+  - type: ingress
+    service: ingress-nginx
+    namespace: ingress-nginx
+    podLabels:
+      app.kubernetes.io/name: ingress-nginx
+      app.kubernetes.io/component: controller
+    port: 8080
+    protocol: TCP
+    allowUnauthenticated: true
+
+  # Outbound traffic from backend to another service.
+  - type: egress
+    service: auth
     namespace: shared
     port: 8080
     protocol: TCP
-    serviceAccount: auth-runtime-sa
-    methods: ["POST"]
-    paths: ["/verify", "/token"]
+    podLabels:
+      app.kubernetes.io/name: auth
 
-  - service: payments
+  - type: egress
+    service: payments
     namespace: poc-mesh
     port: 8080
-    methods: ["POST"]
-    paths: ["/charge"]
+    protocol: TCP
+    podLabels:
+      app.kubernetes.io/name: payments
 
-  - hosts:
+  # External host egress.
+  - type: egress
+    hosts:
       - api.stripe.com
       - s3.eu-central-1.amazonaws.com
     # Optional host ports; merged with defaults 80/HTTP and 443/HTTPS.
