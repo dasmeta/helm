@@ -1038,6 +1038,7 @@ zeroTrustMesh:
   # namespaceResourcesEnabled: true
   # allowTo:
   #   - service: backend
+  #     port: 8080
   #     methods: ["GET", "POST"]
   #     paths: ["/*"]
   #   - hosts:
