@@ -8,5 +8,5 @@ namespace: default
 # - default deny AuthorizationPolicy
 namespaceResourcesEnabled: true
 
-# Keep allowTo list empty so no service-level rules are created.
-allowTo: []
+# Keep allowPolicies empty so no service-level rules are created.
+allowPolicies: []
