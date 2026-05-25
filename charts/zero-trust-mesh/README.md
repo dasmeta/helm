@@ -143,7 +143,6 @@ Most security defaults are now implicit in templates. Advanced overrides can sti
 | `namespaceResourcesEnabled` | Enables namespace-wide default deny, DNS, egress gateway, mTLS, and default-deny AuthorizationPolicy resources | `false` |
 | `denyAll.enabled` | Enables service-scoped deny-all for both inbound and outbound traffic | `false` |
 | `denyAll.podLabels` | Optional pod selector override for service-level deny-all resources | Not set; defaults to `app.kubernetes.io/name: <service>` |
-| `serviceDenyAll` | Deprecated alias for `denyAll` | `{}` |
 | `allowPolicies` | Preferred typed inbound/outbound allow rules owned by the current service | `[]` |
 | `allowPolicies[].type` | Policy direction, either `ingress` or `egress` | `ingress` |
 | `allowPolicies[].service` | Peer service name for ingress source or egress destination | `backend` |

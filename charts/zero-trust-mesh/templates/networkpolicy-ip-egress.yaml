@@ -26,7 +26,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      {{- include "ztm.serviceDenyAllPodLabels" $ | nindent 6 }}
+      {{- include "ztm.denyAllPodLabels" $ | nindent 6 }}
   policyTypes:
     - Egress
   egress:

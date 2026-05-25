@@ -1,4 +1,4 @@
-{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- $denyAll := .Values.denyAll | default (dict) -}}
 {{- $np := .Values.networkPolicy | default (dict) -}}
 {{- $istio := .Values.istio | default (dict) -}}
 {{- $nsr := .Values.namespaceResources | default (dict) -}}
@@ -13,7 +13,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      {{- include "ztm.serviceDenyAllPodLabels" . | nindent 6 }}
+      {{- include "ztm.denyAllPodLabels" . | nindent 6 }}
   policyTypes:
     - Egress
   egress:

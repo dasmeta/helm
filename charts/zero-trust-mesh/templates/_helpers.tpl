@@ -61,8 +61,8 @@ app.kubernetes.io/name: {{ default .workload .service }}
 {{- end -}}
 {{- end -}}
 
-{{- define "ztm.serviceDenyAllPodLabels" -}}
-{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- define "ztm.denyAllPodLabels" -}}
+{{- $denyAll := .Values.denyAll | default (dict) -}}
 {{- if $denyAll.podLabels -}}
 {{- toYaml $denyAll.podLabels -}}
 {{- else -}}

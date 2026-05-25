@@ -1,4 +1,4 @@
-{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- $denyAll := .Values.denyAll | default (dict) -}}
 {{- $np := .Values.networkPolicy | default (dict) -}}
 {{- if and (default false $denyAll.enabled) (default true $np.enabled) }}
 apiVersion: networking.k8s.io/v1
@@ -11,7 +11,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      {{- include "ztm.serviceDenyAllPodLabels" . | nindent 6 }}
+      {{- include "ztm.denyAllPodLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
     - Egress

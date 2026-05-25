@@ -19,9 +19,6 @@ namespaceResourcesEnabled: false
 #   #   component: api
 denyAll: {}
 
-# Deprecated alias for denyAll. Prefer denyAll.
-serviceDenyAll: {}
-
 # Single typed allow list. Defaults to no service-level allow rules.
 # `type: ingress` entries open inbound traffic to the current service.
 # `type: egress` entries open outbound traffic from the current service.

@@ -1,4 +1,4 @@
-{{- $denyAll := default (.Values.serviceDenyAll | default (dict)) .Values.denyAll -}}
+{{- $denyAll := .Values.denyAll | default (dict) -}}
 {{- $istio := .Values.istio | default (dict) -}}
 {{- $ingress := list -}}
 {{- range (.Values.allowPolicies | default (list)) -}}
@@ -23,7 +23,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{- include "ztm.serviceDenyAllPodLabels" $ | nindent 6 }}
+      {{- include "ztm.denyAllPodLabels" $ | nindent 6 }}
   action: ALLOW
   rules:
     {{- if and .allowUnauthenticated (not (or .methods .paths)) }}
