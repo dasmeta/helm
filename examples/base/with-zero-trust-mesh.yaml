@@ -13,7 +13,7 @@ service:
   port: 80
   protocol: TCP
 
-# Make pod/service selectors explicit so zeroTrustMesh `workload` maps correctly.
+# Make pod/service selectors explicit so zeroTrustMesh `service` maps correctly.
 selectorLabelsOverride:
   app: nginx-curl-test
 
@@ -53,12 +53,22 @@ gatewayApi:
 
 zeroTrustMesh:
   enabled: true
-  namespaceResourcesEnabled: true
-  allowTo:
-    - service: backend
+  namespaceResourcesEnabled: false
+  service: test-service
+  denyAll:
+    enabled: true
+    podLabels:
+      app: test-service
+  allowPolicies:
+    - type: ingress
+      service: nginx
+      podLabels:
+        app: nginx
+      port: 80
+    - type: egress
+      service: backend
       port: 8080
-      methods: ["GET", "POST"]
-      paths: ["/*"]
-    - hosts:
+    - type: egress
+      hosts:
         - google.com
         - www.google.com
