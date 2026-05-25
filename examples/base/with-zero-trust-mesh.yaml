@@ -53,7 +53,7 @@ gatewayApi:
 
 zeroTrustMesh:
   enabled: true
-  namespaceResourcesEnabled: true
+  namespaceResourcesEnabled: false
   service: test-service
   denyAll:
     enabled: true
