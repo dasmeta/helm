@@ -36,12 +36,15 @@ global:
   API_URL: &apiUrl https://api.galust.ai
   API_HOST: &apiHost api.galust.ai
   APP_URL: &appUrl https://app.galust.ai
+  APP_HOST: &appHost app.galust.ai
   MCP_URL: &mcpUrl https://mcp.galust.ai
   MCP_HOST: &mcpHost mcp.galust.ai
   ADMIN_URL: &adminUrl https://api.galust.ai/admin
   OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
   OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
   ORCHESTRATOR_ENDPOINT: &orchestratorEndpoint https://api.galust.ai/orchestrator/api/galust/ask
+  ORCHESTRATOR_SSE_URL: &orchestratorSseUrl https://api.galust.ai/orchestrator/galust/ask/sse
+  ORCHESTRATOR_SUPPORT_SSE_URL: &orchestratorSupportSseUrl https://api.galust.ai/orchestrator/galust/support/sse
 
 gatewayApi:
   enabled: false
@@ -338,3 +341,57 @@ orchestrator:
         secretName: com-galust-api-tls2
         hosts:
           - *apiHost
+
+frontend:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-frontend
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-frontend-app
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets:
+    - name: ecr-secret
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-frontend
+  service:
+    type: ClusterIP
+    port: 80
+  containerPort: 80
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: *appHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 80
+    tls:
+      - clusterIssuer: letsencrypt-prod
+        secretName: com-galust-app-tls
+        hosts:
+          - *appHost
+  config:
+    NODE_ENV: production
+    API_BASE: *apiUrl
+    API_URL: *openapiBaseUrl
+    ASK_SSE_URL: *orchestratorSseUrl
+    SUPPORT_SSE_URL: *orchestratorSupportSseUrl
+    USE_CASE_RUN_URL_TEMPLATE: https://api.galust.ai/use-cases/{name}/run

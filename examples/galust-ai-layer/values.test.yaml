@@ -1,4 +1,5 @@
-# Minimal example overlay for externally reachable Galust AI layer URLs and ECR pull-secret refresh.
+# helm diff upgrade --install -n ai-layer galust-ai-layer ./charts/galust-ai-layer -f ./examples/galust-ai-layer/values.test.yaml
+# Minimal example overlay for externally reachable Galust AI layer URLs, ECR pull-secret refresh, and frontend overrides.
 imagePullSecret:
   name: &imagePullSecretName ecr-secret
 
@@ -25,3 +26,7 @@ ecrCredentialsRefresh:
 orchestrator:
   envFrom:
     secret: ai-layer-orchestrator
+
+frontend:
+  image:
+    tag: latest

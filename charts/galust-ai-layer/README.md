@@ -11,6 +11,7 @@ This chart is an umbrella chart for the Galust AI layer services. It wraps the p
 - MCP use-case service
 - MCP products service
 - Orchestrator
+- Frontend
 
 The chart manages Kubernetes workload configuration for these services. It does not provision cloud infrastructure, databases, DNS records, TLS issuers, IAM roles, ECR policies, or external secrets.
 
@@ -25,6 +26,7 @@ The chart wraps the published `dasmeta/base` chart with one alias per deployable
 | MCP use-case service | `mcpUseCase.enabled` | `true` |
 | MCP products service | `mcpProducts.enabled` | `true` |
 | Orchestrator | `orchestrator.enabled` | `true` |
+| Frontend | `frontend.enabled` | `true` |
 
 Each component can be disabled independently:
 
@@ -45,7 +47,7 @@ Before deploying, confirm the target cluster has:
 - AWS access to the target account, usually through an AWS SSO permission set and account assignment managed outside this chart.
 - Namespace access for `ai-layer`, or permission to create it.
 - Image pull access for the private ECR images.
-- ECR read access for the private repositories used by the backend, MCP, MCP use-case, MCP products and orchestrator images.
+- ECR read access for the private repositories used by the backend, MCP, MCP use-case, MCP products, orchestrator and frontend images.
 - Required application secrets already created in the namespace.
 - Database connectivity for the backend.
 - A PVC or storage class suitable for backend uploads.
@@ -144,6 +146,8 @@ global:
   OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
   OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
   ORCHESTRATOR_ENDPOINT: &orchestratorEndpoint https://api.galust.ai/orchestrator/api/galust/ask
+  ORCHESTRATOR_SSE_URL: &orchestratorSseUrl https://api.galust.ai/orchestrator/galust/ask/sse
+  ORCHESTRATOR_SUPPORT_SSE_URL: &orchestratorSupportSseUrl https://api.galust.ai/orchestrator/galust/support/sse
 ```
 
 The rest of `values.yaml` reuses these values with YAML anchors, for example:
@@ -156,6 +160,12 @@ backend:
   ingress:
     hosts:
       - host: *apiHost
+
+frontend:
+  config:
+    VITE_GALUST_API_BASE_URL: *openapiBaseUrl
+    VITE_GALUST_ORCHESTRATOR_SSE_URL: *orchestratorSseUrl
+    VITE_GALUST_ORCHESTRATOR_SUPPORT_SSE_URL: *orchestratorSupportSseUrl
 ```
 
 Important: YAML anchors are resolved before Helm merges extra values files. If you deploy with `-f examples/galust-ai-layer/values.test.yaml` and only override `global`, Helm will not recalculate aliases already resolved in `values.yaml`. To change domains for another environment, either edit the full values file or provide a values file that also overrides the component `config` and `ingress` fields.
@@ -333,6 +343,16 @@ helm upgrade --install galust-ai-layer charts/galust-ai-layer \
   --set mcpUseCase.enabled=false
 ```
 
+Override the frontend image or disable it for an environment:
+
+```bash
+helm upgrade --install galust-ai-layer charts/galust-ai-layer \
+  -n ai-layer \
+  --create-namespace \
+  --set frontend.image.tag=latest \
+  --set frontend.enabled=true
+```
+
 ## Post-Deploy Checks
 
 ```bash
@@ -350,6 +370,7 @@ Expected default service names:
 - `ai-layer-mcp-use-case`
 - `ai-layer-mcp-products`
 - `ai-layer-orchestrator`
+- `ai-layer-frontend`
 
 Expected public hosts when ingress is enabled:
 
@@ -362,6 +383,7 @@ Expected public hosts when ingress is enabled:
 helm dependency update charts/galust-ai-layer
 helm lint charts/galust-ai-layer
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer
+helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set frontend.enabled=false
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set backend.enabled=false
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml
 ```
