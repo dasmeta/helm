@@ -16,6 +16,9 @@ Enabled components:
 {{- if .Values.orchestrator.enabled }}
 - orchestrator: {{ .Values.orchestrator.fullnameOverride | default "orchestrator" }}
 {{- end }}
+{{- if .Values.frontend.enabled }}
+- frontend: {{ .Values.frontend.fullnameOverride | default "frontend" }}
+{{- end }}
 
 Image pull access:
 - By default the chart references an existing imagePullSecret named {{ include "galust-ai-layer.imagePullSecretName" . }}.

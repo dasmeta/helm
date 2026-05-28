@@ -19,3 +19,17 @@
 - [x] T007 Run `helm dependency update charts/galust-ai-layer`
 - [x] T008 Run `helm lint charts/galust-ai-layer`
 - [x] T009 Render all components and disabled-component cases with `helm template`
+
+## Phase 4: DMVP-10093 Support Frontend
+
+- [x] T010 [US1] Add frontend `base` alias dependency in `charts/galust-ai-layer/Chart.yaml`
+- [x] T011 [US1] Add frontend defaults in `charts/galust-ai-layer/values.yaml`
+- [x] T012 [US1] Update enabled component output in `charts/galust-ai-layer/templates/NOTES.txt`
+- [x] T013 [US1] Update component, prerequisite, service, and validation documentation in `charts/galust-ai-layer/README.md`
+- [x] T014 [US1] Update `examples/galust-ai-layer/values.test.yaml` to demonstrate frontend overrides
+- [x] T015 Bump `charts/galust-ai-layer/Chart.yaml` version
+- [x] T016 Run `helm dependency update charts/galust-ai-layer`
+- [x] T017 Run `helm lint charts/galust-ai-layer`
+- [x] T018 Run `helm template galust-ai-layer charts/galust-ai-layer -n ai-layer`
+- [x] T019 Run `helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set frontend.enabled=false`
+- [x] T020 Run `helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml`
