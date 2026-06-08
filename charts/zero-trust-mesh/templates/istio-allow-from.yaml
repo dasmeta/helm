@@ -13,7 +13,7 @@
 {{- $sourceWorkload := required "ingress[].service is required" (default .workload .service) -}}
 {{- $sourceNamespace := default $targetNamespace .namespace -}}
 {{- $sourceServiceAccount := default $sourceWorkload .serviceAccount -}}
-{{- $policyName := printf "allow-%s-ingress-from-%s" $targetServiceAccount $sourceServiceAccount -}}
+{{- $policyName := printf "allow-%s-ingress-from-%s" $targetServiceAccount $sourceWorkload $sourceServiceAccount -}}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
