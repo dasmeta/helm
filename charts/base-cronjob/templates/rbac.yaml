@@ -1,0 +1,25 @@
+{{- range $job := .Values.jobs }}
+{{- if and ($job.rbac) ($job.rbac.create) }}
+{{- $rbacName := default (printf "%s-role" $job.name) $job.rbac.name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: {{ ternary "ClusterRole" "Role" (default false $job.rbac.clusterWide) }}
+metadata:
+  name: {{ $rbacName | quote }}
+rules:
+{{- toYaml $job.rbac.rules | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: {{ ternary "ClusterRoleBinding" "RoleBinding" (default false $job.rbac.clusterWide) }}
+metadata:
+  name: {{ printf "%s-binding" $rbacName | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: {{ ternary "ClusterRole" "Role" (default false $job.rbac.clusterWide) }}
+  name: {{ $rbacName | quote }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ (($job.serviceAccount).name | default $job.name) | quote }}
+    namespace: {{ $.Release.Namespace | quote }}
+{{- end }}
+{{- end }}
