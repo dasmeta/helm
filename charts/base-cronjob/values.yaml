@@ -19,27 +19,27 @@ jobs:
     command: [] # (optional)
     args: [] # (optional)
 
-    restartPolicy: OnFailure # (optional)
-    startingDeadlineSeconds: 60 # (optional)
-    successfulJobsHistoryLimit: 1 # (optional)
-    failedJobsHistoryLimit: 1 # (optional)
-    suspend: false # (optional)
-    jobBackoffLimit: 1 # (optional)
-    ttlSecondsAfterFinished: null # (optional)
-    concurrencyPolicy: Forbid # (optional)
+    restartPolicy: OnFailure # (optional), pod restart policy for the cronjob pod, possible values are: "OnFailure", "Never"
+    startingDeadlineSeconds: 60 # (optional), deadline in seconds for starting the job if it misses the scheduled time
+    successfulJobsHistoryLimit: 3 # (optional), number of successful finished jobs to retain, Kubernetes default is 3
+    failedJobsHistoryLimit: 1 # (optional), number of failed finished jobs to retain, Kubernetes default is 1
+    suspend: false # (optional), when true suspends future executions, Kubernetes default is false
+    jobBackoffLimit: 6 # (optional), number of retries before marking a job failed, Kubernetes default is 6
+    ttlSecondsAfterFinished: null # (optional), seconds to keep finished jobs before cleanup, unset by default
+    concurrencyPolicy: Forbid # (optional), controls concurrent job execution, possible values are: "Allow", "Forbid", "Replace"
     timeZone: "Asia/Yerevan" # (optional), the schedule interpreted in this timezone, in most k8s setups like eks by default "Etc/UTC" being used, possible values are : "Europe/Berlin", "US/Pacific", ... For supported values check: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
-    serviceAccount: # (optional)
-      create: true
-      name: "sa-1"
-      labels: {}
-      annotations: {}
+    serviceAccount: # (optional), allows creating or using a service account for the cronjob pod
+      create: true # (optional), when true creates a ServiceAccount resource
+      name: "sa-1" # (optional), service account name used by the cronjob pod
+      labels: {} # (optional), labels applied to the created ServiceAccount
+      annotations: {} # (optional), annotations applied to the created ServiceAccount
 
     rbac: # (optional) allows creating Role/ClusterRole and binding it to the cronjob service account
-      create: false
-      clusterWide: false
-      name: ""
-      rules: []
+      create: false # (optional), when true creates RBAC resources for the cronjob service account
+      clusterWide: false # (optional), when true creates ClusterRole/ClusterRoleBinding, otherwise Role/RoleBinding
+      name: "" # (optional), RBAC role name, defaults to "<job-name>-role" when empty
+      rules: [] # (optional), Kubernetes RBAC policy rules rendered into the Role or ClusterRole
       # rules:
       #   - apiGroups:
       #       - ""
@@ -49,9 +49,9 @@ jobs:
       #       - get
       #       - list
 
-    config: # (optional) allows to configure/pass config map for cronjob which items will be used as env variables in cronjob
-      enabled: false
-      envFrom: true
+    config: # (optional) allows to configure/pass config map for cronjob
+      enabled: false # (optional), when true creates a ConfigMap resource for the cronjob
+      envFrom: true # (optional), when true imports the created ConfigMap as environment variables, set false for file-only mounts
     # config:
     #   enabled: true
     #   data: "some data here"

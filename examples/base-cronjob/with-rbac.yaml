@@ -1,0 +1,31 @@
+# helm diff upgrade --install -n default with-rbac-cronjob ./charts/base-cronjob -f ./examples/base-cronjob/with-rbac.yaml
+
+jobs:
+  - name: with-rbac-cronjob
+    schedule: "0 * * * *"
+    concurrencyPolicy: Forbid
+    restartPolicy: Never
+    image:
+      repository: bitnami/kubectl
+      tag: latest
+    command:
+      - /bin/sh
+      - -c
+      - kubectl get namespaces
+
+    serviceAccount:
+      create: true
+      name: with-rbac-cronjob
+
+    rbac:
+      create: true
+      clusterWide: true
+      name: with-rbac-cronjob-role
+      rules:
+        - apiGroups:
+            - ""
+          resources:
+            - namespaces
+          verbs:
+            - get
+            - list
