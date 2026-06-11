@@ -21,15 +21,37 @@ jobs:
 
     restartPolicy: OnFailure # (optional)
     startingDeadlineSeconds: 60 # (optional)
+    successfulJobsHistoryLimit: 1 # (optional)
+    failedJobsHistoryLimit: 1 # (optional)
+    suspend: false # (optional)
+    jobBackoffLimit: 1 # (optional)
+    ttlSecondsAfterFinished: null # (optional)
     concurrencyPolicy: Forbid # (optional)
     timeZone: "Asia/Yerevan" # (optional), the schedule interpreted in this timezone, in most k8s setups like eks by default "Etc/UTC" being used, possible values are : "Europe/Berlin", "US/Pacific", ... For supported values check: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
     serviceAccount: # (optional)
       create: true
       name: "sa-1"
+      labels: {}
+      annotations: {}
+
+    rbac: # (optional) allows creating Role/ClusterRole and binding it to the cronjob service account
+      create: false
+      clusterWide: false
+      name: ""
+      rules: []
+      # rules:
+      #   - apiGroups:
+      #       - ""
+      #     resources:
+      #       - pods
+      #     verbs:
+      #       - get
+      #       - list
 
     config: # (optional) allows to configure/pass config map for cronjob which items will be used as env variables in cronjob
       enabled: false
+      envFrom: true
     # config:
     #   enabled: true
     #   data: "some data here"

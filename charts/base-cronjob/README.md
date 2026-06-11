@@ -11,6 +11,12 @@ Public values and options are documented in [values.yaml](./values.yaml). Exampl
 | `jobs[].schedule` | Cron schedule (e.g. "0 * * * *") | required |
 | `jobs[].image.repository` | Container image | required |
 | `jobs[].image.tag` | Image tag | `latest` |
+| `jobs[].rbac` | Optional Role/ClusterRole and binding for the job ServiceAccount | disabled |
+| `jobs[].successfulJobsHistoryLimit` | Number of successful finished jobs to retain | optional |
+| `jobs[].failedJobsHistoryLimit` | Number of failed finished jobs to retain | optional |
+| `jobs[].suspend` | Suspend future CronJob runs | optional |
+| `jobs[].jobBackoffLimit` | Number of retries before marking a Job failed | optional |
+| `jobs[].ttlSecondsAfterFinished` | TTL in seconds for finished Jobs | optional |
 
 ## Easy how to
 Easiest option to deploy cronjob is:
@@ -56,10 +62,25 @@ config:
   data:
     <data>
 ```
+Set `config.envFrom: false` when the ConfigMap is mounted as files and should not be imported as environment variables.
 Specify this to create ServiceAccount resource:
 ```yaml
 serviceAccount:
   create: true
+```
+Set this to create RBAC for a job:
+```yaml
+rbac:
+  create: true
+  clusterWide: true
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - namespaces
+      verbs:
+        - get
+        - list
 ```
 Set this to have PVCs for a job:
 ```yaml

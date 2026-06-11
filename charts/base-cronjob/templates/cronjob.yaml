@@ -23,6 +23,15 @@ metadata:
 spec:
   schedule: {{ $job.schedule | quote }}
   concurrencyPolicy: {{ $job.concurrencyPolicy }}
+  {{- with $job.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with $job.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- if hasKey $job "suspend" }}
+  suspend: {{ $job.suspend }}
+  {{- end }}
   {{- with $job.startingDeadlineSeconds }}
   startingDeadlineSeconds: {{ . }}
   {{- end }}
@@ -34,6 +43,12 @@ spec:
   {{- end }}
   jobTemplate:
     spec:
+      {{- with $job.jobBackoffLimit }}
+      backoffLimit: {{ . }}
+      {{- end }}
+      {{- with $job.ttlSecondsAfterFinished }}
+      ttlSecondsAfterFinished: {{ . }}
+      {{- end }}
       template:
         metadata:
           {{- if $job.labels }}
@@ -84,6 +99,7 @@ spec:
                   cpu: {{ $job.resources.limits.cpu }}
                   memory: {{ $job.resources.limits.memory }}
               {{ end }}
+              {{- if or $job.env $job.secrets }}
               env:
               {{- range $env := $job.env }}
                 - name: {{ $env.name | quote }}
@@ -100,8 +116,10 @@ spec:
                 {{- end }}
                 {{- end }}
                 {{- end }}
+              {{- end }}
+              {{- if or (and (hasKey $job "config") (kindIs "map" $job.config) (default false ($job.config).enabled) (or (not (hasKey $job.config "envFrom")) $job.config.envFrom)) $job.envFrom $job.configMapRefs }}
               envFrom:
-              {{- if and (hasKey $job "config") (kindIs "map" $job.config) (default false ($job.config).enabled) }}
+              {{- if and (hasKey $job "config") (kindIs "map" $job.config) (default false ($job.config).enabled) (or (not (hasKey $job.config "envFrom")) $job.config.envFrom) }}
                 - configMapRef:
                     name: {{ $job.name | quote }}
               {{- with $job.envFrom }}
@@ -112,6 +130,8 @@ spec:
                 - configMapRef:
                     name: {{ $configMapRef }}
                 {{- end }}
+              {{- end }}
+              {{- if $job.volumes }}
               volumeMounts:
             {{- range $index, $element := $job.volumes }}
                 - name: {{ coalesce $element.name (add $index 1) }}
@@ -121,6 +141,7 @@ spec:
                   subPath: {{ . }}
                   {{- end }}
             {{- end }}
+              {{- end }}
             {{- with $job.lifecycle }}
               lifecycle:
                 {{- toYaml . | nindent 16 }}
