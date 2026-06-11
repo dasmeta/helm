@@ -1,5 +1,9 @@
 {{- range $job := .Values.jobs }}
 {{- if and ($job.rbac) ($job.rbac.create) }}
+{{- if not (($job.serviceAccount).create) }}
+{{- fail (printf "jobs[%s].serviceAccount.create must be true when jobs[%s].rbac.create is true" $job.name $job.name) }}
+{{- end }}
+{{- $serviceAccountName := required (printf "jobs[%s].serviceAccount.name is required when jobs[%s].rbac.create is true" $job.name $job.name) ($job.serviceAccount).name }}
 {{- $rbacName := default (printf "%s-role" $job.name) $job.rbac.name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -19,7 +23,7 @@ roleRef:
   name: {{ $rbacName | quote }}
 subjects:
   - kind: ServiceAccount
-    name: {{ (($job.serviceAccount).name | default $job.name) | quote }}
+    name: {{ $serviceAccountName | quote }}
     namespace: {{ $.Release.Namespace | quote }}
 {{- end }}
 {{- end }}

@@ -56,7 +56,8 @@ As a `base-cronjob` consumer, I can set common CronJob and Job controls from val
 ### Edge Cases
 
 - RBAC must stay disabled by default.
-- RBAC must bind to `jobs[].serviceAccount.name` when it is provided and fall back to the job name otherwise.
+- RBAC must fail rendering when `jobs[].serviceAccount.create` is not true.
+- RBAC must fail rendering when `jobs[].serviceAccount.name` is not provided; it must not fall back to the job name.
 - `config.envFrom=false` must be respected as an explicit false value, not replaced by the default true behavior.
 - Empty `env`, `envFrom`, and `volumeMounts` blocks must not render when no values require them.
 - ServiceAccount labels and annotations must be optional and render valid YAML when omitted.
@@ -70,15 +71,17 @@ As a `base-cronjob` consumer, I can set common CronJob and Job controls from val
 - **FR-003**: When `jobs[].rbac.clusterWide=true`, the chart MUST render `ClusterRole` and `ClusterRoleBinding`.
 - **FR-004**: When `jobs[].rbac.clusterWide=false`, the chart MUST render `Role` and `RoleBinding`.
 - **FR-005**: The RBAC binding subject MUST reference the configured job ServiceAccount and release namespace.
-- **FR-006**: The chart MUST render `jobs[].rbac.rules` into the generated role resource.
-- **FR-007**: The chart MUST support `jobs[].config.envFrom`, defaulting to existing env-from behavior when omitted.
-- **FR-008**: When `jobs[].config.envFrom=false`, the chart MUST NOT render the config map under `envFrom`.
-- **FR-009**: The chart MUST continue rendering ConfigMap resources when `jobs[].config.enabled=true`.
-- **FR-010**: The chart MUST support `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `suspend`, `jobBackoffLimit`, and `ttlSecondsAfterFinished`.
-- **FR-011**: The chart MUST avoid rendering empty `env`, `envFrom`, or `volumeMounts` keys.
-- **FR-012**: The chart README and `values.yaml` MUST document the new public values.
-- **FR-013**: The affected chart version MUST be bumped.
-- **FR-014**: The change MUST include render specs under `charts/base-cronjob/tests`.
+- **FR-006**: When `jobs[].rbac.create=true`, the chart MUST fail rendering unless `jobs[].serviceAccount.create=true`.
+- **FR-007**: When `jobs[].rbac.create=true`, the chart MUST fail rendering unless `jobs[].serviceAccount.name` is set.
+- **FR-008**: The chart MUST render `jobs[].rbac.rules` into the generated role resource.
+- **FR-009**: The chart MUST support `jobs[].config.envFrom`, defaulting to existing env-from behavior when omitted.
+- **FR-010**: When `jobs[].config.envFrom=false`, the chart MUST NOT render the config map under `envFrom`.
+- **FR-011**: The chart MUST continue rendering ConfigMap resources when `jobs[].config.enabled=true`.
+- **FR-012**: The chart MUST support `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `suspend`, `jobBackoffLimit`, and `ttlSecondsAfterFinished`.
+- **FR-013**: The chart MUST avoid rendering empty `env`, `envFrom`, or `volumeMounts` keys.
+- **FR-014**: The chart README and `values.yaml` MUST document the new public values.
+- **FR-015**: The affected chart version MUST be bumped.
+- **FR-016**: The change MUST include render specs under `charts/base-cronjob/tests`.
 
 ### Key Entities
 
