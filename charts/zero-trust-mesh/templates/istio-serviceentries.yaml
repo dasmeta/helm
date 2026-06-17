@@ -36,7 +36,7 @@
 {{- end -}}
 {{- end -}}
 {{- range .hosts }}
-{{- $identity := dict "kind" "ServiceEntry" "direction" "egress" "host" . "ports" $ports | toJson -}}
+{{- $identity := dict "kind" "ServiceEntry" "direction" "egress" "host" . "ports" $ports | toJson }}
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -63,7 +63,7 @@ spec:
 {{- range .ips }}
 {{- $addresses = append $addresses (include "ztm.ipCidr" .) -}}
 {{- end -}}
-{{- $identity := dict "kind" "ServiceEntry" "direction" "egress" "addresses" $addresses "ports" $ports | toJson -}}
+{{- $identity := dict "kind" "ServiceEntry" "direction" "egress" "addresses" $addresses "ports" $ports | toJson }}
 {{- $resourceName := include "ztm.resourceName" (dict "root" $ "namespace" $workloadNamespace "target" (include "ztm.workloadName" $) "purpose" "external-ip" "identity" $identity) }}
 ---
 apiVersion: networking.istio.io/v1

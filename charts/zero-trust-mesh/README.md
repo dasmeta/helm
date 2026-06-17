@@ -126,6 +126,20 @@ with its own ingress allow policy if it has `denyAll.enabled: true`.
 
 Source service account defaults to `service`, or can be set with top-level `serviceAccount`.
 
+## Resource naming
+
+Rendered resource names use this scoped pattern:
+
+```text
+<release>-<namespace>-<service>-<purpose>-<hash>
+```
+
+The readable prefix includes the Helm release, workload namespace, and target
+service/workload. The hash is derived from the full resource identity, including
+rule-specific values such as peer namespace, peer service, ports, hosts, IPs,
+and service accounts. The prefix is truncated when needed so the final name
+stays within the Kubernetes 63-character limit.
+
 If your cluster does not have an `istio-egressgateway` Service name, set:
 - `istio.egressGateway.serviceName` to your real gateway Service
 - `istio.egressGateway.selector` to labels of that gateway workload
