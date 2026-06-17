@@ -14,12 +14,12 @@
 {{- $targetService := default .workload .service -}}
 {{- if $targetService }}
 {{- $targetNamespace := default $sourceNamespace .namespace -}}
-{{- $ruleName := printf "%s-egress-to-%s-%v" $sourceWorkload $targetService (.port | default 8080) -}}
+{{- $identity := dict "kind" "NetworkPolicy" "direction" "egress" "targetNamespace" $targetNamespace "targetService" $targetService "podLabels" .podLabels "port" (.port | default 8080) "protocol" (.protocol | default "TCP") | toJson -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-{{ include "ztm.sanitizeName" $ruleName }}
+  name: {{ include "ztm.resourceName" (dict "root" $ "namespace" $sourceNamespace "target" $sourceWorkload "purpose" "egress-svc" "identity" $identity) }}
   namespace: {{ $sourceNamespace }}
 spec:
   podSelector:

@@ -10,6 +10,24 @@
 {{- regexReplaceAll "[^a-z0-9-]+" (lower .) "-" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "ztm.resourceName" -}}
+{{- $root := .root -}}
+{{- $namespace := default (include "ztm.workloadNamespace" $root) .namespace -}}
+{{- $target := default (include "ztm.workloadName" $root) .target -}}
+{{- $purpose := required "ztm.resourceName purpose is required" .purpose -}}
+{{- $identity := default "" .identity -}}
+{{- $prefix := regexReplaceAll "[^a-z0-9-]+" (lower (printf "%s-%s-%s-%s" $root.Release.Name $namespace $target $purpose)) "-" | trimSuffix "-" -}}
+{{- $hashInput := printf "%s|%s|%s|%s|%s" $root.Release.Name $namespace $target $purpose $identity -}}
+{{- $hash := $hashInput | sha256sum | trunc 10 -}}
+{{- $maxPrefixLength := sub 63 (add 1 (len $hash)) -}}
+{{- $shortPrefix := $prefix | trunc (int $maxPrefixLength) | trimSuffix "-" -}}
+{{- if $shortPrefix -}}
+{{- printf "%s-%s" $shortPrefix $hash -}}
+{{- else -}}
+{{- printf "ztm-%s" $hash -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "ztm.ipCidr" -}}
 {{- $ip := printf "%v" . -}}
 {{- if contains "/" $ip -}}

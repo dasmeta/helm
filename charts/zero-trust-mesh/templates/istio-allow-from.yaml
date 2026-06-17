@@ -13,12 +13,12 @@
 {{- $sourceWorkload := required "ingress[].service is required" (default .workload .service) -}}
 {{- $sourceNamespace := default $targetNamespace .namespace -}}
 {{- $sourceServiceAccount := default $sourceWorkload .serviceAccount -}}
-{{- $policyName := printf "allow-%s-ingress-from-%s-%s" $targetServiceAccount $sourceWorkload $sourceServiceAccount -}}
+{{- $identity := dict "kind" "AuthorizationPolicy" "direction" "ingress" "sourceNamespace" $sourceNamespace "sourceWorkload" $sourceWorkload "sourceServiceAccount" $sourceServiceAccount "targetServiceAccount" $targetServiceAccount "port" .port "methods" .methods "paths" .paths "allowUnauthenticated" .allowUnauthenticated | toJson -}}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: {{ include "ztm.sanitizeName" $policyName }}
+  name: {{ include "ztm.resourceName" (dict "root" $ "namespace" $targetNamespace "target" (include "ztm.workloadName" $) "purpose" "ingress-authz" "identity" $identity) }}
   namespace: {{ $targetNamespace }}
 spec:
   selector:

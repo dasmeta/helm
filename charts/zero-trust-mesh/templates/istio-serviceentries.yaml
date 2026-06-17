@@ -36,11 +36,12 @@
 {{- end -}}
 {{- end -}}
 {{- range .hosts }}
+{{- $identity := dict "kind" "ServiceEntry" "direction" "egress" "host" . "ports" $ports | toJson -}}
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
-  name: {{ include "ztm.sanitizeName" (include "ztm.workloadName") }}-external-{{ include "ztm.sanitizeName" . }}
+  name: {{ include "ztm.resourceName" (dict "root" $ "namespace" $workloadNamespace "target" (include "ztm.workloadName" $) "purpose" "external-host" "identity" $identity) }}
   namespace: {{ $workloadNamespace }}
 spec:
   hosts:
@@ -62,8 +63,8 @@ spec:
 {{- range .ips }}
 {{- $addresses = append $addresses (include "ztm.ipCidr" .) -}}
 {{- end -}}
-{{- $hashSource := printf "%s-%s" (join "," $addresses) (toJson $ports) -}}
-{{- $resourceName := printf "external-ip-%s" ($hashSource | sha256sum | trunc 10) }}
+{{- $identity := dict "kind" "ServiceEntry" "direction" "egress" "addresses" $addresses "ports" $ports | toJson -}}
+{{- $resourceName := include "ztm.resourceName" (dict "root" $ "namespace" $workloadNamespace "target" (include "ztm.workloadName" $) "purpose" "external-ip" "identity" $identity) }}
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry

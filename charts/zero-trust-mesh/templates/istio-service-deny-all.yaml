@@ -4,7 +4,7 @@
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: {{ include "ztm.fullname" . }}-service-deny-all
+  name: {{ include "ztm.resourceName" (dict "root" . "purpose" "service-authz-deny" "identity" "service-deny-all-authorization-policy") }}
   namespace: {{ include "ztm.workloadNamespace" . }}
   labels:
     {{- include "ztm.labels" . | nindent 4 }}

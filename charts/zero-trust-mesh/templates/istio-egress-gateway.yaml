@@ -13,11 +13,15 @@
 {{- range $egress }}
 {{- if .hosts }}
 {{- range .hosts }}
+{{- $sourceWorkload := include "ztm.workloadName" $ -}}
+{{- $gatewayIdentity := dict "kind" "Gateway" "direction" "egress" "workloadNamespace" $workloadNamespace "host" . "egressGatewayNamespace" $egwNamespace | toJson -}}
+{{- $gatewayName := include "ztm.resourceName" (dict "root" $ "namespace" $egwNamespace "target" $sourceWorkload "purpose" "egress-gw" "identity" $gatewayIdentity) -}}
+{{- $virtualServiceIdentity := dict "kind" "VirtualService" "direction" "egress" "host" . "gatewayName" $gatewayName "egressGatewayNamespace" $egwNamespace "egressGatewayServiceName" $egwServiceName | toJson -}}
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  name: egress-gateway-{{ include "ztm.sanitizeName" . }}
+  name: {{ $gatewayName }}
   namespace: {{ $egwNamespace }}
 spec:
   selector:
@@ -35,14 +39,14 @@ spec:
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: route-{{ include "ztm.sanitizeName" . }}-via-egressgateway
+  name: {{ include "ztm.resourceName" (dict "root" $ "namespace" $workloadNamespace "target" $sourceWorkload "purpose" "egress-route" "identity" $virtualServiceIdentity) }}
   namespace: {{ $workloadNamespace }}
 spec:
   hosts:
     - {{ . | quote }}
   gateways:
     - mesh
-    - {{ printf "%s/%s" $egwNamespace (printf "egress-gateway-%s" (include "ztm.sanitizeName" .)) }}
+    - {{ printf "%s/%s" $egwNamespace $gatewayName }}
   tls:
     - match:
         - gateways:
@@ -57,7 +61,7 @@ spec:
               number: 443
     - match:
         - gateways:
-            - {{ printf "%s/%s" $egwNamespace (printf "egress-gateway-%s" (include "ztm.sanitizeName" .)) }}
+            - {{ printf "%s/%s" $egwNamespace $gatewayName }}
           port: 443
           sniHosts:
             - {{ . | quote }}

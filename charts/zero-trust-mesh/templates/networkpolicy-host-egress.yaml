@@ -22,11 +22,12 @@
 {{- end }}
 {{- end }}
 {{- if $portsByKey }}
+{{- $identity := dict "kind" "NetworkPolicy" "direction" "egress" "hosts" "external" "ports" (keys $portsByKey | sortAlpha) | toJson -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-{{ include "ztm.sanitizeName" (printf "%s-egress-to-external-hosts" $sourceWorkload) }}
+  name: {{ include "ztm.resourceName" (dict "root" . "namespace" $workloadNamespace "target" $sourceWorkload "purpose" "egress-hosts" "identity" $identity) }}
   namespace: {{ $workloadNamespace }}
 spec:
   podSelector:

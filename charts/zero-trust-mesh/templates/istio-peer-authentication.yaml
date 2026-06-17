@@ -4,7 +4,7 @@
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
-  name: {{ include "ztm.fullname" . }}-strict-mtls
+  name: {{ include "ztm.resourceName" (dict "root" . "purpose" "strict-mtls" "identity" "namespace-strict-mtls-peer-authentication") }}
   namespace: {{ include "ztm.workloadNamespace" . }}
   labels:
     {{- include "ztm.labels" . | nindent 4 }}
