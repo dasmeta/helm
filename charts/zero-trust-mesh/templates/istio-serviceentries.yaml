@@ -40,7 +40,7 @@
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
-  name: external-{{ include "ztm.sanitizeName" . }}
+  name: {{ include "ztm.sanitizeName" (include "ztm.workloadName") }}-external-{{ include "ztm.sanitizeName" . }}
   namespace: {{ $workloadNamespace }}
 spec:
   hosts:
