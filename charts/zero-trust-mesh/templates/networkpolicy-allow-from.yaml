@@ -13,12 +13,12 @@
 {{- range $ingress }}
 {{- $sourceWorkload := required "ingress[].service is required" (default .workload .service) -}}
 {{- $sourceNamespace := default $targetNamespace .namespace -}}
-{{- $ruleName := printf "%s-ingress-from-%s-%v" $targetWorkload $sourceWorkload (.port | default 80) -}}
+{{- $identity := dict "kind" "NetworkPolicy" "direction" "ingress" "sourceNamespace" $sourceNamespace "sourceWorkload" $sourceWorkload "sourceIpBlocks" .sourceIpBlocks "podLabels" .podLabels "port" (.port | default 80) "protocol" (.protocol | default "TCP") | toJson -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-{{ include "ztm.sanitizeName" $ruleName }}
+  name: {{ include "ztm.resourceName" (dict "root" $ "namespace" $targetNamespace "target" $targetWorkload "purpose" "ingress-np" "identity" $identity) }}
   namespace: {{ $targetNamespace }}
 spec:
   podSelector:

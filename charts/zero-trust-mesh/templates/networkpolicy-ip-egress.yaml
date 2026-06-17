@@ -16,12 +16,12 @@
 {{- range .ips }}
 {{- $addresses = append $addresses (include "ztm.ipCidr" .) -}}
 {{- end -}}
-{{- $hashSource := printf "%s-%s" (join "," $addresses) (toJson $ports) -}}
+{{- $identity := dict "kind" "NetworkPolicy" "direction" "egress" "addresses" $addresses "ports" $ports | toJson -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-{{ include "ztm.sanitizeName" (printf "%s-to-ip-%s" $sourceWorkload ($hashSource | sha256sum | trunc 10)) }}
+  name: {{ include "ztm.resourceName" (dict "root" $ "namespace" $workloadNamespace "target" $sourceWorkload "purpose" "egress-ip" "identity" $identity) }}
   namespace: {{ $workloadNamespace }}
 spec:
   podSelector:
