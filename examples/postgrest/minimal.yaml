@@ -1,0 +1,11 @@
+# Runtime credentials and JWT keys are supplied by the platform secret-management flow.
+base:
+  fullnameOverride: example-postgrest
+  envFrom:
+    secret: example-postgrest-runtime
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi

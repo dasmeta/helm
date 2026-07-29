@@ -1,0 +1,11 @@
+# Runtime credentials are supplied by the platform secret-management flow.
+base:
+  fullnameOverride: example-metabase
+  envFrom:
+    secret: example-metabase-runtime
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
