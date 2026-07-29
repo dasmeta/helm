@@ -1,4 +1,5 @@
 base:
+  appVersion: 0.63.1
   replicaCount: 1
   image:
     repository: metabase/metabase

@@ -1,8 +1,9 @@
 # Runtime configuration is supplied by the platform secret-management flow.
+redashRuntimeSecret: &redashRuntimeSecret example-redash-runtime
+
 server:
-  fullnameOverride: example-redash-server
   envFrom:
-    secret: example-redash-runtime
+    secret: *redashRuntimeSecret
   initContainers:
     - name: create-database
       image:
@@ -13,7 +14,7 @@ server:
         - create_db
       envFrom:
         - secretRef:
-            name: example-redash-runtime
+            name: *redashRuntimeSecret
   resources:
     requests:
       cpu: 250m
@@ -22,21 +23,17 @@ server:
       memory: 1Gi
 
 scheduler:
-  fullnameOverride: example-redash-scheduler
   envFrom:
-    secret: example-redash-runtime
+    secret: *redashRuntimeSecret
 
 scheduledWorker:
-  fullnameOverride: example-redash-scheduled-worker
   envFrom:
-    secret: example-redash-runtime
+    secret: *redashRuntimeSecret
 
 adhocWorker:
-  fullnameOverride: example-redash-adhoc-worker
   envFrom:
-    secret: example-redash-runtime
+    secret: *redashRuntimeSecret
 
 defaultWorker:
-  fullnameOverride: example-redash-default-worker
   envFrom:
-    secret: example-redash-runtime
+    secret: *redashRuntimeSecret

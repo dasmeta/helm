@@ -1,4 +1,5 @@
 base:
+  appVersion: 13.0.8
   image:
     repository: postgrest/postgrest
     tag: v13.0.8
