@@ -1,4 +1,6 @@
 server:
+  # Inherited base-chart naming: keep fullnameOverride empty so the release name
+  # remains in resource names; the unique nameOverride scopes this component.
   nameOverride: redash-server
   appVersion: 26.3.0
   image:
