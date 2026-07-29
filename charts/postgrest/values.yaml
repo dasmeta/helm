@@ -1,0 +1,13 @@
+base:
+  image:
+    repository: postgrest/postgrest
+    tag: v13.0.8
+    pullPolicy: Always
+  containerPort: 3000
+  service:
+    type: ClusterIP
+    port: 3000
+  serviceAccount:
+    create: false
+  ingress:
+    enabled: false

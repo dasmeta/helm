@@ -1,0 +1,28 @@
+apiVersion: v2
+name: redash
+description: Redash topology built on DasMeta base chart dependencies
+type: application
+version: 0.1.0
+appVersion: "26.3.0"
+
+dependencies:
+  - name: base
+    alias: server
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm
+  - name: base
+    alias: scheduler
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm
+  - name: base
+    alias: scheduledWorker
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm
+  - name: base
+    alias: adhocWorker
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm
+  - name: base
+    alias: defaultWorker
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm

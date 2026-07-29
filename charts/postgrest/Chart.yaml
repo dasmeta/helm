@@ -1,0 +1,11 @@
+apiVersion: v2
+name: postgrest
+description: PostgREST deployment built on the DasMeta base chart
+type: application
+version: 0.1.0
+appVersion: "13.0.8"
+
+dependencies:
+  - name: base
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm
