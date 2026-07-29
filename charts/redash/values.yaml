@@ -1,5 +1,6 @@
 server:
-  fullnameOverride: redash-server
+  nameOverride: redash-server
+  appVersion: 26.3.0
   image:
     repository: redash/redash
     tag: 26.3.0
@@ -17,7 +18,8 @@ server:
     - server
 
 scheduler:
-  fullnameOverride: redash-scheduler
+  nameOverride: redash-scheduler
+  appVersion: 26.3.0
   image:
     repository: redash/redash
     tag: 26.3.0
@@ -30,7 +32,8 @@ scheduler:
     - scheduler
 
 scheduledWorker:
-  fullnameOverride: redash-scheduled-worker
+  nameOverride: redash-scheduled-worker
+  appVersion: 26.3.0
   image:
     repository: redash/redash
     tag: 26.3.0
@@ -41,9 +44,13 @@ scheduledWorker:
     create: false
   args:
     - worker
+  extraEnv:
+    QUEUES: scheduled_queries,schemas
+    WORKERS_COUNT: "1"
 
 adhocWorker:
-  fullnameOverride: redash-adhoc-worker
+  nameOverride: redash-adhoc-worker
+  appVersion: 26.3.0
   image:
     repository: redash/redash
     tag: 26.3.0
@@ -54,9 +61,13 @@ adhocWorker:
     create: false
   args:
     - worker
+  extraEnv:
+    QUEUES: queries
+    WORKERS_COUNT: "2"
 
 defaultWorker:
-  fullnameOverride: redash-default-worker
+  nameOverride: redash-default-worker
+  appVersion: 26.3.0
   image:
     repository: redash/redash
     tag: 26.3.0
@@ -67,3 +78,6 @@ defaultWorker:
     create: false
   args:
     - worker
+  extraEnv:
+    QUEUES: periodic,emails,default
+    WORKERS_COUNT: "1"

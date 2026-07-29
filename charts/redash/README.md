@@ -24,15 +24,15 @@ The referenced Secret is created by the platform secret-management flow. Do not 
 
 ## Components and key values
 
-| Component | Values key | Native command |
-| --- | --- | --- |
-| Web server | `server` | `server` |
-| Scheduler | `scheduler` | `scheduler` |
-| Scheduled worker | `scheduledWorker` | `worker` |
-| Ad-hoc worker | `adhocWorker` | `worker` |
-| Default worker | `defaultWorker` | `worker` |
+| Component | Values key | Native command | Default queues |
+| --- | --- | --- | --- |
+| Web server | `server` | `server` | — |
+| Scheduler | `scheduler` | `scheduler` | — |
+| Scheduled worker | `scheduledWorker` | `worker` | `scheduled_queries,schemas` |
+| Ad-hoc worker | `adhocWorker` | `worker` | `queries` |
+| Default worker | `defaultWorker` | `worker` | `periodic,emails,default` |
 
-Each component has its own `envFrom`, `resources`, `replicaCount`, and scheduling values. Only `server.ingress` exposes a Service by default. The Redash image entrypoint receives the native command through the component's `args` value.
+Each component has its own `envFrom`, `resources`, `replicaCount`, and scheduling values. Only `server.ingress` exposes a Service by default. The Redash image entrypoint receives the native command through the component's `args` value. Resource names include the Helm release name, so separate releases do not collide in one namespace.
 
 ## Validate locally
 
