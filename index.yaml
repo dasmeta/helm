@@ -2089,6 +2089,21 @@ entries:
     urls:
     - https://github.com/dasmeta/helm/releases/download/kubernetes-events-exporter-enriched-0.1.0/kubernetes-events-exporter-enriched-0.1.0.tgz
     version: 0.1.0
+  metabase:
+  - apiVersion: v2
+    appVersion: 0.63.1
+    created: "2026-07-29T11:52:00.57906057Z"
+    dependencies:
+    - name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    description: Metabase deployment built on the DasMeta base chart
+    digest: 4752fe06c1ab9bdbee6a0edb1e9b44b00ea8ff503469b00dbfa91b69e99200ce
+    name: metabase
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/metabase-0.1.0/metabase-0.1.0.tgz
+    version: 0.1.0
   mongodb-backup-aws:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -2279,6 +2294,21 @@ entries:
     type: application
     urls:
     - https://github.com/dasmeta/helm/releases/download/pgcat-0.1.0/pgcat-0.1.0.tgz
+    version: 0.1.0
+  postgrest:
+  - apiVersion: v2
+    appVersion: 13.0.8
+    created: "2026-07-29T11:52:00.805306318Z"
+    dependencies:
+    - name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    description: PostgREST deployment built on the DasMeta base chart
+    digest: f1e49717b9027c8b4c3251a14fe2ac691de7ee1e474c3dc7266ee2e8fd421b26
+    name: postgrest
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/postgrest-0.1.0/postgrest-0.1.0.tgz
     version: 0.1.0
   proxysql:
   - apiVersion: v2
@@ -2500,6 +2530,38 @@ entries:
     type: application
     urls:
     - https://github.com/dasmeta/helm/releases/download/proxysql-0.1.0/proxysql-0.1.0.tgz
+    version: 0.1.0
+  redash:
+  - apiVersion: v2
+    appVersion: 26.3.0
+    created: "2026-07-29T11:52:00.988655044Z"
+    dependencies:
+    - alias: server
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    - alias: scheduler
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    - alias: scheduledWorker
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    - alias: adhocWorker
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    - alias: defaultWorker
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.31
+    description: Redash topology built on DasMeta base chart dependencies
+    digest: bc5c698bdbe6fa6c44924445371624dcf255802e59c6edebd89dc8e221f52f8f
+    name: redash
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/redash-0.1.0/redash-0.1.0.tgz
     version: 0.1.0
   resource:
   - apiVersion: v2
