@@ -1,0 +1,59 @@
+server:
+  fullnameOverride: redash-server
+  image:
+    repository: redash/redash
+    tag: 26.3.0
+    pullPolicy: Always
+  replicaCount: 1
+  containerPort: 5000
+  service:
+    type: ClusterIP
+    port: 5000
+  serviceAccount:
+    create: false
+  ingress:
+    enabled: false
+
+scheduler:
+  fullnameOverride: redash-scheduler
+  image:
+    repository: redash/redash
+    tag: 26.3.0
+    pullPolicy: Always
+  service:
+    enabled: false
+  serviceAccount:
+    create: false
+
+scheduledWorker:
+  fullnameOverride: redash-scheduled-worker
+  image:
+    repository: redash/redash
+    tag: 26.3.0
+    pullPolicy: Always
+  service:
+    enabled: false
+  serviceAccount:
+    create: false
+
+adhocWorker:
+  fullnameOverride: redash-adhoc-worker
+  image:
+    repository: redash/redash
+    tag: 26.3.0
+    pullPolicy: Always
+  service:
+    enabled: false
+  serviceAccount:
+    create: false
+
+defaultWorker:
+  fullnameOverride: redash-default-worker
+  image:
+    repository: redash/redash
+    tag: 26.3.0
+    pullPolicy: Always
+  service:
+    enabled: false
+  serviceAccount:
+    create: false

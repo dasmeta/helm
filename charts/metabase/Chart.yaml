@@ -1,0 +1,11 @@
+apiVersion: v2
+name: metabase
+description: Metabase deployment built on the DasMeta base chart
+type: application
+version: 0.1.0
+appVersion: "0.63.1"
+
+dependencies:
+  - name: base
+    version: 0.3.31
+    repository: https://dasmeta.github.io/helm

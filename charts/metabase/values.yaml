@@ -1,0 +1,14 @@
+base:
+  replicaCount: 1
+  image:
+    repository: metabase/metabase
+    tag: v0.63.1.12
+    pullPolicy: Always
+  containerPort: 3000
+  service:
+    type: ClusterIP
+    port: 3000
+  serviceAccount:
+    create: false
+  ingress:
+    enabled: false
