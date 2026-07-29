@@ -13,6 +13,8 @@ server:
     create: false
   ingress:
     enabled: false
+  args:
+    - server
 
 scheduler:
   fullnameOverride: redash-scheduler
@@ -24,6 +26,8 @@ scheduler:
     enabled: false
   serviceAccount:
     create: false
+  args:
+    - scheduler
 
 scheduledWorker:
   fullnameOverride: redash-scheduled-worker
@@ -35,6 +39,8 @@ scheduledWorker:
     enabled: false
   serviceAccount:
     create: false
+  args:
+    - worker
 
 adhocWorker:
   fullnameOverride: redash-adhoc-worker
@@ -46,6 +52,8 @@ adhocWorker:
     enabled: false
   serviceAccount:
     create: false
+  args:
+    - worker
 
 defaultWorker:
   fullnameOverride: redash-default-worker
@@ -57,3 +65,5 @@ defaultWorker:
     enabled: false
   serviceAccount:
     create: false
+  args:
+    - worker

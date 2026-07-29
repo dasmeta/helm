@@ -1,0 +1,42 @@
+# Runtime configuration is supplied by the platform secret-management flow.
+server:
+  fullnameOverride: example-redash-server
+  envFrom:
+    secret: example-redash-runtime
+  initContainers:
+    - name: create-database
+      image:
+        repository: redash/redash
+        tag: 26.3.0
+        pullPolicy: IfNotPresent
+      args:
+        - create_db
+      envFrom:
+        - secretRef:
+            name: example-redash-runtime
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+scheduler:
+  fullnameOverride: example-redash-scheduler
+  envFrom:
+    secret: example-redash-runtime
+
+scheduledWorker:
+  fullnameOverride: example-redash-scheduled-worker
+  envFrom:
+    secret: example-redash-runtime
+
+adhocWorker:
+  fullnameOverride: example-redash-adhoc-worker
+  envFrom:
+    secret: example-redash-runtime
+
+defaultWorker:
+  fullnameOverride: example-redash-default-worker
+  envFrom:
+    secret: example-redash-runtime
