@@ -39,6 +39,8 @@ global:
   APP_HOST: &appHost app.galust.ai
   MCP_URL: &mcpUrl https://mcp.galust.ai
   MCP_HOST: &mcpHost mcp.galust.ai
+  MCP_PRODUCTS_URL: &mcpProductsUrl https://mcp-products.galust.ai
+  MCP_PRODUCTS_HOST: &mcpProductsHost mcp-products.galust.ai
   ADMIN_URL: &adminUrl https://api.galust.ai/admin
   OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
   OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
@@ -192,47 +194,34 @@ mcp:
   envFrom:
     secret: ai-layer-mcp
   config:
-    DEBUG_MCP_HEADER_FLOW: "true"
-    OPENAPI_BASE_URL: *openapiBaseUrl
-    OPENAPI_SPEC_URL: *openapiSpecUrl
-
-mcpUseCase:
-  enabled: true
-  gatewayApi:
-    enabled: false
-  zeroTrustMesh:
-    enabled: false
-    allowTo: []
-  fullnameOverride: ai-layer-mcp-use-case
-  version: 0.0.1
-  appVersion: 0.0.1
-  image:
-    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp-use-case
-    tag: latest
-    pullPolicy: Always
-  imagePullSecrets:
-    - name: ecr-secret
-  replicaCount: 1
-  labels:
-    version:
-      name: app-version
-      value: v0.0.1
-    app:
-      name: app
-      value: ai-layer-mcp-use-case
-  service:
-    type: ClusterIP
-    port: 4002
-  containerPort: 4002
-  envFrom:
-    secret: ai-layer-mcp-use-case
-  config:
-    DEBUG_MCP_HEADER_FLOW: "true"
-    DEBUG_MCP_USE_CASE: "true"
-    DEBUG_MCP_USE_CASE_API: "true"
-    DEBUG_MCP_TOOL_CALL_HEADERS: "true"
-    AI_LAYER_BACKEND_URL: *apiUrl
-    ORCHESTRATOR_ENDPOINT: *orchestratorEndpoint
+    MCP_SSE_HEARTBEAT_MS: "20000"
+    OPENAPI_BASE_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/api
+    OPENAPI_SPEC_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/documentation/openapi.json
+    AI_LAYER_BACKEND_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337
+    ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      nginx.ingress.kubernetes.io/upstream-hash-by: "$http_mcp_session_id"
+    hosts:
+      - host: *mcpHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 4002
+    tls:
+      - clusterIssuer: letsencrypt-prod
+        secretName: com-galust-mcp-tls2
+        hosts:
+          - *mcpHost
 
 mcpProducts:
   enabled: true
@@ -250,7 +239,11 @@ mcpProducts:
     pullPolicy: Always
   imagePullSecrets:
     - name: ecr-secret
-  replicaCount: 1
+  replicaCount: 2
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "4002"
+    prometheus.io/path: "/metrics"
   labels:
     version:
       name: app-version
@@ -262,14 +255,68 @@ mcpProducts:
     type: ClusterIP
     port: 4002
   containerPort: 4002
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1536Mi
+  startupProbe:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 5
+    failureThreshold: 18
+    timeoutSeconds: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 3
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 10
+    failureThreshold: 3
+    timeoutSeconds: 3
   envFrom:
     secret: ai-layer-mcp-products
   config:
     NODE_ENV: production
-    DEBUG_MCP_HEADER_FLOW: "true"
-    DEBUG_MCP_PRODUCTS: "true"
-    DEBUG_MCP_PRODUCTS_API: "true"
+    NODE_OPTIONS: "--max-old-space-size=1024"
+    DEBUG_MCP_PRODUCTS_API: "false"
+    MCP_SSE_HEARTBEAT_MS: "20000"
+    MCP_PRODUCTS_MAX_SESSIONS: "32"
+    MCP_PRODUCTS_SESSION_TTL_MS: "900000"
     AI_LAYER_BACKEND_URL: *apiUrl
+    ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
+    MCP_PRODUCTS_MAX_SPEC_BYTES: "20971520"
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/upstream-hash-by: "$http_mcp_session_id"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    hosts:
+      - host: *mcpProductsHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 4002
+    tls:
+      - clusterIssuer: letsencrypt-prod
+        secretName: com-galust-mcp-products-tls2
+        hosts:
+          - *mcpProductsHost
 
 orchestrator:
   enabled: true
