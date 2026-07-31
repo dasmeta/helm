@@ -162,6 +162,10 @@ backend:
               NODE_ENV: production
               PUBLIC_URL: *apiUrl
               STRAPI_ADMIN_BACKEND_URL: *apiUrl
+              MCP_BASE_URL: http://ai-layer-mcp/mcp
+              MCP_PRODUCTS_BASE_URL: http://ai-layer-mcp-products/mcp
+              EVENT_MANAGER_BACKEND_HOST: http://event-manager.em.svc.cluster.local
+              AI_LAYER_BOOTSTRAP_CREATE_API_TOKEN: "false"
 
 mcp:
   enabled: true
@@ -335,6 +339,11 @@ orchestrator:
   imagePullSecrets:
     - name: ecr-secret
   replicaCount: 1
+  terminationGracePeriodSeconds: 330
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   labels:
     version:
       name: app-version
@@ -354,17 +363,24 @@ orchestrator:
     minReplicas: 2
     maxReplicas: 5
   envFrom:
-    # Existing Kubernetes Secret loaded as environment variables by the orchestrator.
-    # Override this name when secrets are managed outside this chart under a different name.
     secret: ai-layer-orchestrator
   config:
     NODE_ENV: production
     OPENAI_MODEL: gpt-4o-mini
+    QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
+    REDIS_URL: redis://redis:6379/0
     LANGFUSE_HOST: https://cloud.langfuse.com
+    PROMPT_SOURCE: backend
+    CLOUDBROWSER_URL: https://app.dasmeta.com
     GLOBAL_PREFIX: orchestrator
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
-    AI_LAYER_BACKEND_URL: *apiUrl
+    AI_LAYER_BACKEND_URL: http://ai-layer-strapi:1337
     PORTKEY_PROVIDER: dm-openai
+    DEBUG_MCP_HEADER_FLOW: "true"
+    PERSIST_CONVERSATION_TOOL_CALLS: "true"
+    SCHEDULED_TRIGGERS_ENABLED: "false"
+    MCP_CORE_BASE_URL: https://mcp.galust.ai/mcp
+    MCP_PRODUCTS_BASE_URL: https://mcp-products.galust.ai/mcp
   ingress:
     enabled: true
     class: nginx
@@ -375,7 +391,7 @@ orchestrator:
       nginx.ingress.kubernetes.io/cors-allow-origin: *appUrl
       nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
       nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id
+      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id, X-Dexatel-Key
     hosts:
       - host: *apiHost
         paths:
@@ -388,6 +404,60 @@ orchestrator:
         secretName: com-galust-api-tls2
         hosts:
           - *apiHost
+
+orchestratorScheduler:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-orchestrator-scheduler
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-orchestrator
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets:
+    - name: ecr-secret
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-orchestrator-scheduler
+  service:
+    type: ClusterIP
+    port: 3000
+  containerPort: 3000
+  resources:
+    requests:
+      cpu: 500m
+  autoscaling:
+    enabled: false
+  envFrom:
+    secret: ai-layer-orchestrator
+  config:
+    NODE_ENV: production
+    OPENAI_MODEL: gpt-4o-mini
+    QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
+    REDIS_URL: redis://redis:6379/0
+    LANGFUSE_HOST: https://cloud.langfuse.com
+    PROMPT_SOURCE: backend
+    CLOUDBROWSER_URL: https://app.dasmeta.com
+    GLOBAL_PREFIX: orchestrator
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
+    AI_LAYER_BACKEND_URL: http://ai-layer-strapi:1337
+    PORTKEY_PROVIDER: dm-openai
+    DEBUG_MCP_HEADER_FLOW: "true"
+    PERSIST_CONVERSATION_TOOL_CALLS: "true"
+    SCHEDULED_TRIGGERS_ENABLED: "true"
+    SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
+  ingress:
+    enabled: false
 
 frontend:
   enabled: true
