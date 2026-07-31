@@ -5,19 +5,19 @@ Enabled components:
 - strapi (backend): {{ .Values.backend.fullnameOverride | default "ai-layer-strapi" }}
 {{- end }}
 {{- if .Values.mcp.enabled }}
-- mcp: {{ .Values.mcp.fullnameOverride | default "mcp" }}
-{{- end }}
-{{- if .Values.mcpUseCase.enabled }}
-- mcp-use-case: {{ .Values.mcpUseCase.fullnameOverride | default "mcp-use-case" }}
+- mcp: {{ .Values.mcp.fullnameOverride | default "ai-layer-mcp" }}
 {{- end }}
 {{- if .Values.mcpProducts.enabled }}
-- mcp-products: {{ .Values.mcpProducts.fullnameOverride | default "mcp-products" }}
+- mcp-products: {{ .Values.mcpProducts.fullnameOverride | default "ai-layer-mcp-products" }}
 {{- end }}
 {{- if .Values.orchestrator.enabled }}
-- orchestrator: {{ .Values.orchestrator.fullnameOverride | default "orchestrator" }}
+- orchestrator: {{ .Values.orchestrator.fullnameOverride | default "ai-layer-orchestrator" }}
+{{- end }}
+{{- if .Values.orchestratorScheduler.enabled }}
+- orchestrator-scheduler: {{ .Values.orchestratorScheduler.fullnameOverride | default "ai-layer-orchestrator-scheduler" }}
 {{- end }}
 {{- if .Values.frontend.enabled }}
-- frontend: {{ .Values.frontend.fullnameOverride | default "frontend" }}
+- frontend: {{ .Values.frontend.fullnameOverride | default "ai-layer-frontend" }}
 {{- end }}
 
 Image pull access:

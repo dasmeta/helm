@@ -2,8 +2,8 @@ apiVersion: v2
 name: galust-ai-layer
 description: Galust AI layer umbrella chart for Kubernetes clusters
 type: application
-version: 0.1.6
-appVersion: "0.1.6"
+version: 0.2.0
+appVersion: "0.2.0"
 
 dependencies:
   - name: strapi
@@ -17,11 +17,6 @@ dependencies:
     repository: https://dasmeta.github.io/helm
     condition: mcp.enabled
   - name: base
-    alias: mcpUseCase
-    version: 0.3.30
-    repository: https://dasmeta.github.io/helm
-    condition: mcpUseCase.enabled
-  - name: base
     alias: mcpProducts
     version: 0.3.30
     repository: https://dasmeta.github.io/helm
@@ -31,6 +26,11 @@ dependencies:
     version: 0.3.30
     repository: https://dasmeta.github.io/helm
     condition: orchestrator.enabled
+  - name: base
+    alias: orchestratorScheduler
+    version: 0.3.30
+    repository: https://dasmeta.github.io/helm
+    condition: orchestratorScheduler.enabled
   - name: base
     alias: frontend
     version: 0.3.30
