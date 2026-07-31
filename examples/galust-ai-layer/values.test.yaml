@@ -9,6 +9,8 @@ global:
   APP_URL: &appUrl https://app.galust.ai
   MCP_URL: &mcpUrl https://mcp.galust.ai
   MCP_HOST: &mcpHost mcp.galust.ai
+  MCP_PRODUCTS_URL: &mcpProductsUrl https://mcp-products.galust.ai
+  MCP_PRODUCTS_HOST: &mcpProductsHost mcp-products.galust.ai
   ADMIN_URL: &adminUrl https://api.galust.ai/admin
   OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
   OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
@@ -26,6 +28,9 @@ ecrCredentialsRefresh:
 orchestrator:
   envFrom:
     secret: ai-layer-orchestrator
+
+orchestratorScheduler:
+  enabled: true
 
 frontend:
   image:
