@@ -35,6 +35,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `service.type` | Service type | `ClusterIP` |
 | `ingress.enabled` | Enable Ingress | `false` |
 | `config` | Env vars for main container (map) | example in values.yaml |
+| `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
 
 ### Examples
@@ -753,3 +754,7 @@ rolloutStrategy:
       - We have introduced new `configs` field for passing config map data, the old `config` still supported
       - The external secret operator resource default `apiVersion` got changed from "external-secrets.io/v1alpha1" to "external-secrets.io/v1beta1", as `v1alpha1` got deprecated and we already support the new `v1beta1` in k8s/eks setups. It is is still possible to set old version via `externalSecretsApiVersion` config variable
       - the ingress class setting via `ingressClassName` field is default on. Before this it was set via "kubernetes.io/ingress.class" annotation, which is deprecated. It is still possible to switch ingress class setting from `ingressClassName` field back to "kubernetes.io/ingress.class" annotation via config variable `setIngressClassByField: false`
+  - Version 0.3.32:
+    The external secret operator resource default `apiVersion` got changed from "external-secrets.io/v1beta1" to the stable "external-secrets.io/v1", as `v1beta1` got deprecated and the operator versions installed by the dasmeta eks module serve `v1`.
+      - This only changes the `apiVersion` of the generated `ExternalSecret`; its spec is unchanged, so no values need to be touched.
+      - The target cluster must run an external secret operator that serves `external-secrets.io/v1`. If it does not, the `ExternalSecret` will be rejected on apply - keep the old version by setting `externalSecretsApiVersion: external-secrets.io/v1beta1`.
