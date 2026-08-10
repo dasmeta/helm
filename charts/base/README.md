@@ -35,6 +35,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `service.type` | Service type | `ClusterIP` |
 | `ingress.enabled` | Enable Ingress | `false` |
 | `config` | Env vars for main container (map) | example in values.yaml |
+| `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
 
 ### Examples

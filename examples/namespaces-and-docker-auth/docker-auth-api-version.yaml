@@ -1,0 +1,9 @@
+# helm diff upgrade --install -n localhost namespaces-docker-auth-api-version ./charts/namespaces-and-docker-auth/ -f ./examples/namespaces-and-docker-auth/docker-auth-api-version.yaml
+# Pin the External Secrets API version used by the generated ClusterSecretStore/ClusterExternalSecret.
+# The default is external-secrets.io/v1; set v1beta1 only while the cluster's external secret operator does not serve v1.
+list:
+  - dev
+dockerAuth:
+  enabled: true
+  serviceAccountRoleArn: arn:aws:iam::111122223333:role/docker-registry-auth
+  externalSecretsApiVersion: external-secrets.io/v1beta1
