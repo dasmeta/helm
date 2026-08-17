@@ -264,6 +264,10 @@ mcpProducts:
   service:
     type: ClusterIP
     port: 4002
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800
   containerPort: 4002
   resources:
     requests:
@@ -470,18 +474,6 @@ orchestratorScheduler:
     SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
   ingress:
     enabled: false
-
-# dasmeta/base cannot set Service sessionAffinity. Streamable HTTP sessions
-# are pod-local, so in-cluster orchestrator traffic needs ClientIP stickiness
-# on ai-layer-mcp-products. A Helm hook Job patches the Service after install/upgrade
-# (same as ai-layer/mcp-products/helm/ensure-session-affinity.sh).
-mcpProductsSessionAffinity:
-  enabled: true
-  timeoutSeconds: 10800
-  image:
-    repository: alpine/kubectl
-    tag: "1.31.0"
-    pullPolicy: IfNotPresent
 
 frontend:
   enabled: true

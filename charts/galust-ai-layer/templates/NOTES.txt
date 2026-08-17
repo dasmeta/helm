@@ -24,5 +24,4 @@ Image pull access:
 - By default the chart references an existing imagePullSecret named {{ include "galust-ai-layer.imagePullSecretName" . }}.
 - Set imagePullSecret.create=true with dockerConfigJson or dockerConfigJsonBase64 to render that Secret from this chart.
 - Set ecrCredentialsRefresh.enabled=true to render a CronJob that refreshes the ECR docker registry secret.
-- When mcp-products is enabled, a post-install/post-upgrade hook patches Service {{ .Values.mcpProducts.fullnameOverride | default "ai-layer-mcp-products" }} with ClientIP sessionAffinity (override with mcpProductsSessionAffinity.enabled=false).
 - AWS IAM trust, ECR repository policy, and external secret provisioning are outside this chart.

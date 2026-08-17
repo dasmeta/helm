@@ -33,6 +33,8 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `containerPort` | Main container port | set per app |
 | `service.enabled` | Create Service | `true` |
 | `service.type` | Service type | `ClusterIP` |
+| `service.sessionAffinity` | Service session affinity (`None` or `ClientIP`) | unset / no affinity |
+| `service.sessionAffinityConfig` | Optional `sessionAffinityConfig` (e.g. ClientIP timeout) | `{}` |
 | `ingress.enabled` | Enable Ingress | `false` |
 | `config` | Env vars for main container (map) | example in values.yaml |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |

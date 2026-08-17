@@ -52,10 +52,3 @@ Service account name used by the optional ECR credentials refresh job.
 {{- define "galust-ai-layer.ecrCredentialsRefreshServiceAccountName" -}}
 {{- default (include "galust-ai-layer.ecrCredentialsRefreshName" .) .Values.ecrCredentialsRefresh.serviceAccount.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
-
-{{/*
-Name used for the mcp-products ClientIP session-affinity hook resources.
-*/}}
-{{- define "galust-ai-layer.mcpProductsSessionAffinityName" -}}
-{{- printf "%s-mcp-products-affinity" (include "galust-ai-layer.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
