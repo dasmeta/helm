@@ -244,6 +244,12 @@ mcpProducts:
   imagePullSecrets:
     - name: ecr-secret
   replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 70
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "4002"
@@ -293,7 +299,7 @@ mcpProducts:
     NODE_OPTIONS: "--max-old-space-size=1024"
     DEBUG_MCP_PRODUCTS_API: "false"
     MCP_SSE_HEARTBEAT_MS: "20000"
-    MCP_PRODUCTS_MAX_SESSIONS: "32"
+    MCP_PRODUCTS_MAX_SESSIONS: "80"
     MCP_PRODUCTS_SESSION_TTL_MS: "900000"
     AI_LAYER_BACKEND_URL: *apiUrl
     ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
@@ -304,7 +310,7 @@ mcpProducts:
     annotations:
       kubernetes.io/tls-acme: "true"
       cert-manager.io/cluster-issuer: letsencrypt-prod
-      nginx.ingress.kubernetes.io/upstream-hash-by: "$http_mcp_session_id"
+      nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-buffering: "off"
@@ -379,8 +385,14 @@ orchestrator:
     DEBUG_MCP_HEADER_FLOW: "true"
     PERSIST_CONVERSATION_TOOL_CALLS: "true"
     SCHEDULED_TRIGGERS_ENABLED: "false"
-    MCP_CORE_BASE_URL: https://mcp.galust.ai/mcp
-    MCP_PRODUCTS_BASE_URL: https://mcp-products.galust.ai/mcp
+    EVALUATION_EXECUTION_ENABLED: "true"
+    EVALUATION_JUDGE_MODEL: gpt-4o-mini
+    EVALUATION_JUDGE_TIMEOUT_MS: "60000"
+    EVALUATION_TARGET_TIMEOUT_MS: "300000"
+    EVALUATION_STALE_RUN_TIMEOUT_MS: "900000"
+    EVALUATION_CONCURRENCY: "2"
+    MCP_CORE_BASE_URL: http://ai-layer-mcp/mcp
+    MCP_PRODUCTS_BASE_URL: http://ai-layer-mcp-products/mcp
   ingress:
     enabled: true
     class: nginx
@@ -391,7 +403,7 @@ orchestrator:
       nginx.ingress.kubernetes.io/cors-allow-origin: *appUrl
       nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
       nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id, X-Dexatel-Key
+      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id, X-Dexatel-Key, X-Product-Uid, X-Mcp-Upstream-Authorization, X-Galust-Evaluation-Source, X-Galust-UI-Capabilities
     hosts:
       - host: *apiHost
         paths:
@@ -458,6 +470,18 @@ orchestratorScheduler:
     SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
   ingress:
     enabled: false
+
+# dasmeta/base cannot set Service sessionAffinity. Streamable HTTP sessions
+# are pod-local, so in-cluster orchestrator traffic needs ClientIP stickiness
+# on ai-layer-mcp-products. A Helm hook Job patches the Service after install/upgrade
+# (same as ai-layer/mcp-products/helm/ensure-session-affinity.sh).
+mcpProductsSessionAffinity:
+  enabled: true
+  timeoutSeconds: 10800
+  image:
+    repository: alpine/kubectl
+    tag: "1.31.0"
+    pullPolicy: IfNotPresent
 
 frontend:
   enabled: true

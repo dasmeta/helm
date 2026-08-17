@@ -267,6 +267,27 @@ kubectl create job \
   galust-ai-layer-ecr-refresh-manual
 ```
 
+## MCP products session affinity
+
+Streamable HTTP MCP sessions are stored in the pod process. External clients are pinned by ingress `upstream-hash-by: $remote_addr`. In-cluster orchestrator traffic uses ClusterIP URLs (`http://ai-layer-mcp/mcp` and `http://ai-layer-mcp-products/mcp`) and needs Service `sessionAffinity: ClientIP`.
+
+`dasmeta/base` 0.3.x cannot set `sessionAffinity`, so this chart renders a Helm hook Job (default `mcpProductsSessionAffinity.enabled=true`) that patches `ai-layer-mcp-products` after install/upgrade. Disable the hook with:
+
+```bash
+helm upgrade --install galust-ai-layer charts/galust-ai-layer \
+  -n ai-layer \
+  --set mcpProductsSessionAffinity.enabled=false
+```
+
+Verify after deploy:
+
+```bash
+kubectl -n ai-layer get svc ai-layer-mcp-products \
+  -o jsonpath='{.spec.sessionAffinity} {.spec.sessionAffinityConfig.clientIP.timeoutSeconds}{"\n"}'
+```
+
+Expected: `ClientIP 10800`.
+
 ## Backend Notes
 
 The backend values use the existing Galust Strapi image and runtime defaults from `ai-layer/backend/helm/strapi.yaml`, but this umbrella chart does not provision AWS IAM or a managed database. Database secrets are created outside this chart. By default the backend expects:
@@ -401,6 +422,8 @@ If pods are stuck in `ImagePullBackOff`, check the `ecr-secret` secret and ECR a
 If the backend fails to start, check the `ai-layer-strapi` and `db-ai-layer-strapi` secrets, plus database reachability from the namespace.
 
 If ingress does not work, confirm the ingress controller, DNS records, TLS secret or cert-manager issuer, and rendered ingress hosts.
+
+If orchestrator nested MCP tools fail with `Session not found` (`-32001`), confirm `MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL` are in-cluster Service URLs and that `ai-layer-mcp-products` has `sessionAffinity: ClientIP`.
 
 If URL overrides do not appear in rendered manifests, remember that YAML anchors are not dynamic Helm templates. Render locally with:
 
