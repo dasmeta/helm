@@ -39,6 +39,8 @@ global:
   APP_HOST: &appHost app.galust.ai
   MCP_URL: &mcpUrl https://mcp.galust.ai
   MCP_HOST: &mcpHost mcp.galust.ai
+  MCP_PRODUCTS_URL: &mcpProductsUrl https://mcp-products.galust.ai
+  MCP_PRODUCTS_HOST: &mcpProductsHost mcp-products.galust.ai
   ADMIN_URL: &adminUrl https://api.galust.ai/admin
   OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
   OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
@@ -160,6 +162,10 @@ backend:
               NODE_ENV: production
               PUBLIC_URL: *apiUrl
               STRAPI_ADMIN_BACKEND_URL: *apiUrl
+              MCP_BASE_URL: http://ai-layer-mcp/mcp
+              MCP_PRODUCTS_BASE_URL: http://ai-layer-mcp-products/mcp
+              EVENT_MANAGER_BACKEND_HOST: http://event-manager.em.svc.cluster.local
+              AI_LAYER_BOOTSTRAP_CREATE_API_TOKEN: "false"
 
 mcp:
   enabled: true
@@ -192,47 +198,34 @@ mcp:
   envFrom:
     secret: ai-layer-mcp
   config:
-    DEBUG_MCP_HEADER_FLOW: "true"
-    OPENAPI_BASE_URL: *openapiBaseUrl
-    OPENAPI_SPEC_URL: *openapiSpecUrl
-
-mcpUseCase:
-  enabled: true
-  gatewayApi:
-    enabled: false
-  zeroTrustMesh:
-    enabled: false
-    allowTo: []
-  fullnameOverride: ai-layer-mcp-use-case
-  version: 0.0.1
-  appVersion: 0.0.1
-  image:
-    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-mcp-use-case
-    tag: latest
-    pullPolicy: Always
-  imagePullSecrets:
-    - name: ecr-secret
-  replicaCount: 1
-  labels:
-    version:
-      name: app-version
-      value: v0.0.1
-    app:
-      name: app
-      value: ai-layer-mcp-use-case
-  service:
-    type: ClusterIP
-    port: 4002
-  containerPort: 4002
-  envFrom:
-    secret: ai-layer-mcp-use-case
-  config:
-    DEBUG_MCP_HEADER_FLOW: "true"
-    DEBUG_MCP_USE_CASE: "true"
-    DEBUG_MCP_USE_CASE_API: "true"
-    DEBUG_MCP_TOOL_CALL_HEADERS: "true"
-    AI_LAYER_BACKEND_URL: *apiUrl
-    ORCHESTRATOR_ENDPOINT: *orchestratorEndpoint
+    MCP_SSE_HEARTBEAT_MS: "20000"
+    OPENAPI_BASE_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/api
+    OPENAPI_SPEC_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/documentation/openapi.json
+    AI_LAYER_BACKEND_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337
+    ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      nginx.ingress.kubernetes.io/upstream-hash-by: "$http_mcp_session_id"
+    hosts:
+      - host: *mcpHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 4002
+    tls:
+      - clusterIssuer: letsencrypt-prod
+        secretName: com-galust-mcp-tls2
+        hosts:
+          - *mcpHost
 
 mcpProducts:
   enabled: true
@@ -250,7 +243,17 @@ mcpProducts:
     pullPolicy: Always
   imagePullSecrets:
     - name: ecr-secret
-  replicaCount: 1
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 70
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "4002"
+    prometheus.io/path: "/metrics"
   labels:
     version:
       name: app-version
@@ -261,15 +264,73 @@ mcpProducts:
   service:
     type: ClusterIP
     port: 4002
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800
   containerPort: 4002
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1536Mi
+  startupProbe:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 5
+    failureThreshold: 18
+    timeoutSeconds: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 3
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 10
+    failureThreshold: 3
+    timeoutSeconds: 3
   envFrom:
     secret: ai-layer-mcp-products
   config:
     NODE_ENV: production
-    DEBUG_MCP_HEADER_FLOW: "true"
-    DEBUG_MCP_PRODUCTS: "true"
-    DEBUG_MCP_PRODUCTS_API: "true"
+    NODE_OPTIONS: "--max-old-space-size=1024"
+    DEBUG_MCP_PRODUCTS_API: "false"
+    MCP_SSE_HEARTBEAT_MS: "20000"
+    MCP_PRODUCTS_MAX_SESSIONS: "80"
+    MCP_PRODUCTS_SESSION_TTL_MS: "900000"
     AI_LAYER_BACKEND_URL: *apiUrl
+    ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
+    MCP_PRODUCTS_MAX_SPEC_BYTES: "20971520"
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    hosts:
+      - host: *mcpProductsHost
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 4002
+    tls:
+      - clusterIssuer: letsencrypt-prod
+        secretName: com-galust-mcp-products-tls2
+        hosts:
+          - *mcpProductsHost
 
 orchestrator:
   enabled: true
@@ -288,6 +349,11 @@ orchestrator:
   imagePullSecrets:
     - name: ecr-secret
   replicaCount: 1
+  terminationGracePeriodSeconds: 330
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   labels:
     version:
       name: app-version
@@ -307,17 +373,30 @@ orchestrator:
     minReplicas: 2
     maxReplicas: 5
   envFrom:
-    # Existing Kubernetes Secret loaded as environment variables by the orchestrator.
-    # Override this name when secrets are managed outside this chart under a different name.
     secret: ai-layer-orchestrator
   config:
     NODE_ENV: production
     OPENAI_MODEL: gpt-4o-mini
+    QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
+    REDIS_URL: redis://redis:6379/0
     LANGFUSE_HOST: https://cloud.langfuse.com
+    PROMPT_SOURCE: backend
+    CLOUDBROWSER_URL: https://app.dasmeta.com
     GLOBAL_PREFIX: orchestrator
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
-    AI_LAYER_BACKEND_URL: *apiUrl
+    AI_LAYER_BACKEND_URL: http://ai-layer-strapi:1337
     PORTKEY_PROVIDER: dm-openai
+    DEBUG_MCP_HEADER_FLOW: "true"
+    PERSIST_CONVERSATION_TOOL_CALLS: "true"
+    SCHEDULED_TRIGGERS_ENABLED: "false"
+    EVALUATION_EXECUTION_ENABLED: "true"
+    EVALUATION_JUDGE_MODEL: gpt-4o-mini
+    EVALUATION_JUDGE_TIMEOUT_MS: "60000"
+    EVALUATION_TARGET_TIMEOUT_MS: "300000"
+    EVALUATION_STALE_RUN_TIMEOUT_MS: "900000"
+    EVALUATION_CONCURRENCY: "2"
+    MCP_CORE_BASE_URL: http://ai-layer-mcp/mcp
+    MCP_PRODUCTS_BASE_URL: http://ai-layer-mcp-products/mcp
   ingress:
     enabled: true
     class: nginx
@@ -328,7 +407,7 @@ orchestrator:
       nginx.ingress.kubernetes.io/cors-allow-origin: *appUrl
       nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
       nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id
+      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id, X-Dexatel-Key, X-Product-Uid, X-Mcp-Upstream-Authorization, X-Galust-Evaluation-Source, X-Galust-UI-Capabilities
     hosts:
       - host: *apiHost
         paths:
@@ -341,6 +420,60 @@ orchestrator:
         secretName: com-galust-api-tls2
         hosts:
           - *apiHost
+
+orchestratorScheduler:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  fullnameOverride: ai-layer-orchestrator-scheduler
+  version: 0.0.1
+  appVersion: 0.0.1
+  image:
+    repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-orchestrator
+    tag: latest
+    pullPolicy: Always
+  imagePullSecrets:
+    - name: ecr-secret
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v0.0.1
+    app:
+      name: app
+      value: ai-layer-orchestrator-scheduler
+  service:
+    type: ClusterIP
+    port: 3000
+  containerPort: 3000
+  resources:
+    requests:
+      cpu: 500m
+  autoscaling:
+    enabled: false
+  envFrom:
+    secret: ai-layer-orchestrator
+  config:
+    NODE_ENV: production
+    OPENAI_MODEL: gpt-4o-mini
+    QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
+    REDIS_URL: redis://redis:6379/0
+    LANGFUSE_HOST: https://cloud.langfuse.com
+    PROMPT_SOURCE: backend
+    CLOUDBROWSER_URL: https://app.dasmeta.com
+    GLOBAL_PREFIX: orchestrator
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
+    AI_LAYER_BACKEND_URL: http://ai-layer-strapi:1337
+    PORTKEY_PROVIDER: dm-openai
+    DEBUG_MCP_HEADER_FLOW: "true"
+    PERSIST_CONVERSATION_TOOL_CALLS: "true"
+    SCHEDULED_TRIGGERS_ENABLED: "true"
+    SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
+  ingress:
+    enabled: false
 
 frontend:
   enabled: true

@@ -8,24 +8,24 @@ This chart is an umbrella chart for the Galust AI layer services. It wraps the p
 
 - Strapi backend
 - MCP
-- MCP use-case service
 - MCP products service
 - Orchestrator
+- Orchestrator scheduler
 - Frontend
 
 The chart manages Kubernetes workload configuration for these services. It does not provision cloud infrastructure, databases, DNS records, TLS issuers, IAM roles, ECR policies, or external secrets.
 
 ## Components
 
-The chart wraps the published `dasmeta/base` chart with one alias per deployable component:
+The chart wraps the published `dasmeta/base` chart with one alias per deployable component (backend uses TrueCharts `strapi`):
 
 | Component | Values key | Default |
 | --- | --- | --- |
 | Strapi backend | `backend.enabled` | `true` |
 | MCP | `mcp.enabled` | `true` |
-| MCP use-case service | `mcpUseCase.enabled` | `true` |
 | MCP products service | `mcpProducts.enabled` | `true` |
 | Orchestrator | `orchestrator.enabled` | `true` |
+| Orchestrator scheduler | `orchestratorScheduler.enabled` | `true` |
 | Frontend | `frontend.enabled` | `true` |
 
 Each component can be disabled independently:
@@ -34,7 +34,7 @@ Each component can be disabled independently:
 helm upgrade --install galust-ai-layer ./charts/galust-ai-layer \
   -n ai-layer \
   --create-namespace \
-  --set mcpUseCase.enabled=false
+  --set orchestratorScheduler.enabled=false
 ```
 
 ## Prerequisites
@@ -47,7 +47,7 @@ Before deploying, confirm the target cluster has:
 - AWS access to the target account, usually through an AWS SSO permission set and account assignment managed outside this chart.
 - Namespace access for `ai-layer`, or permission to create it.
 - Image pull access for the private ECR images.
-- ECR read access for the private repositories used by the backend, MCP, MCP use-case, MCP products, orchestrator and frontend images.
+- ECR read access for the private repositories used by the backend, MCP, MCP products, orchestrator and frontend images.
 - Required application secrets already created in the namespace.
 - Database connectivity for the backend.
 - A PVC or storage class suitable for backend uploads.
@@ -59,7 +59,7 @@ If AWS access is managed through the Terraform SSO/RBAC modules, create or assig
 
 - Read private ECR repositories and get ECR authorization tokens.
 - Access the target EKS cluster and update Kubernetes resources in the `ai-layer` namespace.
-- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-use-case`, `ai-layer-mcp-products` and `ai-layer-orchestrator`.
+- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-products` and `ai-layer-orchestrator` (shared by API orchestrator and scheduler).
 - If `ecrCredentialsRefresh.enabled=true`, provide an AWS identity for the refresh job with `ecr:GetAuthorizationToken`.
 
 Required default Kubernetes objects:
@@ -73,9 +73,8 @@ Required default Kubernetes objects:
 | Backend DB password secret | `db-ai-layer-strapi`, key `password` | backend |
 | Backend uploads PVC | `ai-layer-strapi-uploads` | backend |
 | MCP secret | `ai-layer-mcp` | MCP |
-| MCP use-case secret | `ai-layer-mcp-use-case` | MCP use-case |
 | MCP products secret | `ai-layer-mcp-products` | MCP products |
-| Orchestrator secret | `ai-layer-orchestrator` | orchestrator |
+| Orchestrator secret | `ai-layer-orchestrator` | orchestrator and orchestrator scheduler |
 
 External dependencies such as Redis, Qdrant, Langfuse, OpenAI credentials, database provisioning, External Secrets, IAM trust, and DNS are handled outside this chart.
 
@@ -101,9 +100,11 @@ This means every key in the `ai-layer-orchestrator` Secret is exposed to the orc
 | `CLOUDBROWSER_API_TOKEN` | Cloud browser access |
 | `FIRECRAWL_API_KEY` | Firecrawl API access |
 | `SENTRY_DSN` | Sentry project DSN |
-| `AI_LAYER_BACKEND_API_TOKEN` | Backend API token |
-| `MCP_USE_CASE_AUTH_TOKEN` | MCP use-case auth token |
-| `SUPPORT_CHAT_CORE_PRODUCT_UID` | Support chat core product UID |
+| `AI_LAYER_BACKEND_API_TOKEN` | Backend API token (same value as Strapi/mcp-products) |
+| `CORE_PRODUCT_UID` | Platform Core product UID |
+| `SUPPORT_CHAT_CORE_PRODUCT_UID` | Support chat core product UID (optional) |
+
+The same secret is mounted by `orchestratorScheduler` via `envFrom.secret`.
 
 Create or update the secret before deploying:
 
@@ -117,7 +118,7 @@ kubectl create secret generic ai-layer-orchestrator \
   --from-literal=FIRECRAWL_API_KEY='<firecrawl-api-key>' \
   --from-literal=SENTRY_DSN='<sentry-dsn>' \
   --from-literal=AI_LAYER_BACKEND_API_TOKEN='<backend-api-token>' \
-  --from-literal=MCP_USE_CASE_AUTH_TOKEN='<mcp-use-case-auth-token>' \
+  --from-literal=CORE_PRODUCT_UID='<core-product-uid>' \
   --from-literal=SUPPORT_CHAT_CORE_PRODUCT_UID='<support-chat-core-product-uid>' \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
@@ -142,6 +143,8 @@ global:
   APP_URL: &appUrl https://app.galust.ai
   MCP_URL: &mcpUrl https://mcp.galust.ai
   MCP_HOST: &mcpHost mcp.galust.ai
+  MCP_PRODUCTS_URL: &mcpProductsUrl https://mcp-products.galust.ai
+  MCP_PRODUCTS_HOST: &mcpProductsHost mcp-products.galust.ai
   ADMIN_URL: &adminUrl https://api.galust.ai/admin
   OPENAPI_BASE_URL: &openapiBaseUrl https://api.galust.ai/api
   OPENAPI_SPEC_URL: &openapiSpecUrl https://api.galust.ai/documentation/openapi.json
@@ -264,6 +267,30 @@ kubectl create job \
   galust-ai-layer-ecr-refresh-manual
 ```
 
+## MCP products session affinity
+
+Streamable HTTP MCP sessions are stored in the pod process. External clients are pinned by ingress `upstream-hash-by: $remote_addr`. In-cluster orchestrator traffic uses ClusterIP URLs (`http://ai-layer-mcp/mcp` and `http://ai-layer-mcp-products/mcp`) and needs Service `sessionAffinity: ClientIP`.
+
+`dasmeta/base` 0.3.33+ renders this from values (no post-install patch):
+
+```yaml
+mcpProducts:
+  service:
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800
+```
+
+Verify after deploy:
+
+```bash
+kubectl -n ai-layer get svc ai-layer-mcp-products \
+  -o jsonpath='{.spec.sessionAffinity} {.spec.sessionAffinityConfig.clientIP.timeoutSeconds}{"\n"}'
+```
+
+Expected: `ClientIP 10800`.
+
 ## Backend Notes
 
 The backend values use the existing Galust Strapi image and runtime defaults from `ai-layer/backend/helm/strapi.yaml`, but this umbrella chart does not provision AWS IAM or a managed database. Database secrets are created outside this chart. By default the backend expects:
@@ -340,7 +367,7 @@ Disable a component:
 helm upgrade --install galust-ai-layer charts/galust-ai-layer \
   -n ai-layer \
   --create-namespace \
-  --set mcpUseCase.enabled=false
+  --set orchestratorScheduler.enabled=false
 ```
 
 Override the frontend image or disable it for an environment:
@@ -367,15 +394,17 @@ Expected default service names:
 
 - `ai-layer-strapi`
 - `ai-layer-mcp`
-- `ai-layer-mcp-use-case`
 - `ai-layer-mcp-products`
 - `ai-layer-orchestrator`
+- `ai-layer-orchestrator-scheduler`
 - `ai-layer-frontend`
 
 Expected public hosts when ingress is enabled:
 
 - `api.galust.ai`
+- `app.galust.ai`
 - `mcp.galust.ai`
+- `mcp-products.galust.ai`
 
 ## Local Validation
 
@@ -384,6 +413,7 @@ helm dependency update charts/galust-ai-layer
 helm lint charts/galust-ai-layer
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set frontend.enabled=false
+helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set orchestratorScheduler.enabled=false
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set backend.enabled=false
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml
 ```
@@ -395,6 +425,8 @@ If pods are stuck in `ImagePullBackOff`, check the `ecr-secret` secret and ECR a
 If the backend fails to start, check the `ai-layer-strapi` and `db-ai-layer-strapi` secrets, plus database reachability from the namespace.
 
 If ingress does not work, confirm the ingress controller, DNS records, TLS secret or cert-manager issuer, and rendered ingress hosts.
+
+If orchestrator nested MCP tools fail with `Session not found` (`-32001`), confirm `MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL` are in-cluster Service URLs and that `ai-layer-mcp-products` has `sessionAffinity: ClientIP` (set via `mcpProducts.service.sessionAffinity`).
 
 If URL overrides do not appear in rendered manifests, remember that YAML anchors are not dynamic Helm templates. Render locally with:
 

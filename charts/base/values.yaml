@@ -105,6 +105,14 @@ service:
   #     targetPort: 8080
   #     protocol: TCP
   #     name: http-second
+  # ClientIP stickiness for in-process/sessionful apps (e.g. Streamable HTTP MCP).
+  # Omit or set None for the Kubernetes default (no affinity).
+  # sessionAffinity: ClientIP
+  # sessionAffinityConfig:
+  #   clientIP:
+  #     timeoutSeconds: 10800
+  sessionAffinity: ""
+  sessionAffinityConfig: {}
 
 # The ingress class setting by "kubernetes.io/ingress.class" annotation is deprecated and we have setIngressClassByField option for backward compatibility for now, check doc here https://kubernetes.io/docs/concepts/services-networking/ingress/#deprecated-annotation
 # have 'setIngressClassByField: true' to set ingress class by spec.ingressClassName,
