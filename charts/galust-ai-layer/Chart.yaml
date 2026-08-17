@@ -13,26 +13,26 @@ dependencies:
     condition: backend.enabled
   - name: base
     alias: mcp
-    version: 0.3.33
+    version: 0.3.32
     repository: https://dasmeta.github.io/helm
     condition: mcp.enabled
   - name: base
     alias: mcpProducts
-    version: 0.3.33
+    version: 0.3.32
     repository: https://dasmeta.github.io/helm
     condition: mcpProducts.enabled
   - name: base
     alias: orchestrator
-    version: 0.3.33
+    version: 0.3.32
     repository: https://dasmeta.github.io/helm
     condition: orchestrator.enabled
   - name: base
     alias: orchestratorScheduler
-    version: 0.3.33
+    version: 0.3.32
     repository: https://dasmeta.github.io/helm
     condition: orchestratorScheduler.enabled
   - name: base
     alias: frontend
-    version: 0.3.33
+    version: 0.3.32
     repository: https://dasmeta.github.io/helm
     condition: frontend.enabled
