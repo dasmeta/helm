@@ -2,6 +2,7 @@ list: [] # the list of namespaces to create
 labels: {} # the labels map to set for all namespaces in list, NOTE: the dockerAuth.namespaceSelector.matchLabels will be set automatically for created namespaces
 dockerAuth:
   enabled: false
+  externalSecretsApiVersion: external-secrets.io/v1 # the api version used for the generated ClusterSecretStore/ClusterExternalSecret resources, the stable "external-secrets.io/v1" is served by the external secret operator versions the dasmeta eks module installs, the older "external-secrets.io/v1beta1" and "external-secrets.io/v1alpha1" are deprecated. Set this back to "external-secrets.io/v1beta1" if the target cluster still runs an operator that does not serve v1
   serviceAccountRoleArn: # (required) the service account role arn which has access to aws secret manager secret named by .Values.dockerAuth.secretManagerSecretName, this role should be created externally and its arn provided here
   region: eu-central-1 # aws region
   refreshTime: 3m # how often to check and make sure that the ExternalSecrets exist in the matching namespaces

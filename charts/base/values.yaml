@@ -159,7 +159,7 @@ ingress:
 
 secrets: []
 secretsDefaultEngine: "ExternalSecrets"
-externalSecretsApiVersion: external-secrets.io/v1beta1 # the new version "external-secrets.io/v1beta1" is already available in external-secret operator(the new dasmeta eks module already uses the new one), the old/deprecated version was "external-secrets.io/v1alpha1" and it was deprecated
+externalSecretsApiVersion: external-secrets.io/v1 # the stable "external-secrets.io/v1" is served by the external secret operator versions the dasmeta eks module installs, the older "external-secrets.io/v1beta1" and "external-secrets.io/v1alpha1" are deprecated. Set this back to "external-secrets.io/v1beta1" if the target cluster still runs an operator that does not serve v1
 secretsEnvsBySecretKeyRef: false # by default we point to secret using `envFrom.secretRef` option and pull all items under, by setting this option we force to use `env.*.valueFrom.secretKeyRef` construction to pull only env variable items(omit volume ones), setting this to true is useful for cases when we have volume secret items and don't want to have them in env variables(having file/volume items in env actually should not bring issues, but just pollute env space with unnecessary long items)
 # secrets:
 #   - external-secret-1

@@ -12,6 +12,7 @@ Public values: [values.yaml](./values.yaml). Examples: [examples/namespaces-and-
 | `dockerAuth.serviceAccountRoleArn` | IAM role ARN for Secret Manager access | required when dockerAuth enabled |
 | `dockerAuth.secretManagerSecretName` | AWS Secret Manager secret name | `account` |
 | `dockerAuth.region` | AWS region | `eu-central-1` |
+| `dockerAuth.externalSecretsApiVersion` | API version of the generated `ClusterSecretStore`/`ClusterExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 
 ## to install the chart use the command
 ```sh

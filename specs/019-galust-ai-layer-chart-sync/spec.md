@@ -1,6 +1,6 @@
 # Feature Specification: Galust AI Layer Chart Sync
 
-**Feature Branch**: `018-galust-ai-layer-chart-sync`  
+**Feature Branch**: `019-galust-ai-layer-chart-sync`  
 **Created**: 2026-07-31  
 **Status**: Implemented  
 **Input**: Sync `charts/galust-ai-layer` with current `ai-layer/*/helm` production-shaped values, make the umbrella the canonical deploy chart, and add native Service `sessionAffinity` on `charts/base` so mcp-products does not need a post-install patch Job.
@@ -89,7 +89,7 @@ As an operator, I can read the umbrella README and example overlay and know the 
 - **FR-007**: `charts/base` MUST render `spec.sessionAffinity` and `spec.sessionAffinityConfig` from values when set.
 - **FR-008**: `galust-ai-layer` mcp-products MUST set `service.sessionAffinity: ClientIP` and timeout 10800 via base values, not a hook Job.
 - **FR-009**: Chart README, NOTES, and `examples/galust-ai-layer/values.test.yaml` MUST reflect the new component set and MCP products host.
-- **FR-010**: `galust-ai-layer` MUST bump to at least `0.2.0` (component-set change). `charts/base` MUST bump to `0.3.32` for the Service field addition.
+- **FR-010**: `galust-ai-layer` MUST bump to at least `0.2.0` (component-set change). `charts/base` MUST bump to `0.3.33` for the Service field addition.
 - **FR-011**: Sensitive values MUST remain in external Kubernetes Secrets.
 - **FR-012**: `examples/base/with-session-affinity.yaml` MUST demonstrate the new base Service fields.
 

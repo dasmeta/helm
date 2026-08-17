@@ -1,6 +1,6 @@
 # Tasks: Galust AI Layer Chart Sync
 
-**Input**: Design documents from `/specs/018-galust-ai-layer-chart-sync/`  
+**Input**: Design documents from `/specs/019-galust-ai-layer-chart-sync/`  
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/render-contract.md`, `quickstart.md`
 
 **Tests**: Helm lint/template plus focused string assertions on rendered YAML.
@@ -9,7 +9,7 @@
 
 ## Phase 1: Setup
 
-- [x] T001 Capture current `ai-layer/*/helm` values and ingress as the sync source in `specs/018-galust-ai-layer-chart-sync/research.md`
+- [x] T001 Capture current `ai-layer/*/helm` values and ingress as the sync source in `specs/019-galust-ai-layer-chart-sync/research.md`
 - [x] T002 Confirm `charts/base/templates/service.yaml` has no `sessionAffinity` fields before the change
 
 ---
@@ -48,9 +48,9 @@
 ## Phase 5: User Story 3 - Native sessionAffinity (P1)
 
 - [x] T013 [US3] Add `sessionAffinity` / `sessionAffinityConfig` to `charts/base/templates/service.yaml` and `charts/base/values.yaml`
-- [x] T014 [US3] Bump `charts/base` to `0.3.32` in `charts/base/Chart.yaml`
+- [x] T014 [US3] Bump `charts/base` to `0.3.33` in `charts/base/Chart.yaml`
 - [x] T015 [US3] Add `examples/base/with-session-affinity.yaml` and document keys in `charts/base/README.md`
-- [x] T016 [US3] Set mcp-products `service.sessionAffinity` in umbrella values; vendor `base-0.3.32.tgz`
+- [x] T016 [US3] Set mcp-products `service.sessionAffinity` in umbrella values; vendor `base-0.3.33.tgz`
 - [x] T017 [US3] Remove umbrella patch Job template, helpers, and `mcpProductsSessionAffinity` values
 
 **Checkpoint**: Affinity is on the Service spec; no hook Job.
@@ -61,7 +61,7 @@
 
 - [x] T018 [US4] Update `charts/galust-ai-layer/README.md` component table, secrets, hosts, session-affinity section
 - [x] T019 [US4] Refresh `examples/galust-ai-layer/values.test.yaml`
-- [x] T020 [US4] Move Speckit artifacts to `specs/018-galust-ai-layer-chart-sync/` (replace `docs/superpowers/` copies)
+- [x] T020 [US4] Move Speckit artifacts to `specs/019-galust-ai-layer-chart-sync/` (replace `docs/superpowers/` copies)
 
 **Checkpoint**: Operators can install from README; specs live in Speckit layout.
 
@@ -71,9 +71,9 @@
 
 - [x] T021 `helm lint ./charts/base` and `helm lint ./charts/galust-ai-layer`
 - [x] T022 `helm template` per `quickstart.md` (defaults, disable toggles, examples)
-- [x] T023 Confirm `charts/galust-ai-layer` version `0.2.1` and `charts/base` version `0.3.32`
+- [x] T023 Confirm `charts/galust-ai-layer` version `0.2.1` and `charts/base` version `0.3.33`
 
 ## Dependencies & Execution Order
 
 - Setup → Foundational (blocks stories) → US1 → US2 → US3 (needs US2 mcp-products values) → US4 → Polish
-- US3 can conceptually ship as its own chart change (`base` 0.3.32) before umbrella consumes it
+- US3 can conceptually ship as its own chart change (`base` 0.3.33) before umbrella consumes it

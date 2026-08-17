@@ -271,7 +271,7 @@ kubectl create job \
 
 Streamable HTTP MCP sessions are stored in the pod process. External clients are pinned by ingress `upstream-hash-by: $remote_addr`. In-cluster orchestrator traffic uses ClusterIP URLs (`http://ai-layer-mcp/mcp` and `http://ai-layer-mcp-products/mcp`) and needs Service `sessionAffinity: ClientIP`.
 
-`dasmeta/base` 0.3.32+ renders this from values (no post-install patch):
+`dasmeta/base` 0.3.33+ renders this from values (no post-install patch):
 
 ```yaml
 mcpProducts:

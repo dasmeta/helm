@@ -35,5 +35,5 @@
 ## Compatibility Notes
 
 - `base` sessionAffinity is additive; empty string / empty config render nothing.
-- Existing base consumers are unchanged at 0.3.32 defaults.
+- Existing base consumers are unchanged at 0.3.33 defaults (sessionAffinity omitted). 0.3.32 on main already shipped ExternalSecret v1.
 - Umbrella 0.2.x is a breaking component-set change versus 0.1.x (`mcpUseCase` removed).
