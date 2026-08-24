@@ -57,8 +57,6 @@ zeroTrustMesh:
 # Strapi backend (TrueCharts: oci://oci.trueforge.org/truecharts/strapi)
 backend:
   enabled: true
-  global:
-    fullnameOverride: ai-layer-strapi
   image:
     repository: 565580475168.dkr.ecr.eu-central-1.amazonaws.com/ai-layer-backend
     tag: latest
@@ -162,8 +160,8 @@ backend:
               NODE_ENV: production
               PUBLIC_URL: *apiUrl
               STRAPI_ADMIN_BACKEND_URL: *apiUrl
-              MCP_BASE_URL: http://ai-layer-mcp/mcp
-              MCP_PRODUCTS_BASE_URL: http://ai-layer-mcp-products/mcp
+              MCP_BASE_URL: "http://{{ .Release.Name }}-mcp/mcp"
+              MCP_PRODUCTS_BASE_URL: "http://{{ .Release.Name }}-mcp-products/mcp"
               EVENT_MANAGER_BACKEND_HOST: http://event-manager.em.svc.cluster.local
               AI_LAYER_BOOTSTRAP_CREATE_API_TOKEN: "false"
 
@@ -174,7 +172,7 @@ mcp:
   zeroTrustMesh:
     enabled: false
     allowTo: []
-  fullnameOverride: ai-layer-mcp
+  nameOverride: mcp
   version: 0.0.1
   appVersion: 0.0.1
   image:
@@ -197,13 +195,11 @@ mcp:
   containerPort: 4002
   envFrom:
     secret: ai-layer-mcp
+  externalConfigmap:
+    name: galust-incluster-urls
   config:
     PORT: "4002"
     MCP_SSE_HEARTBEAT_MS: "20000"
-    OPENAPI_BASE_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/api
-    OPENAPI_SPEC_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/documentation/openapi.json
-    AI_LAYER_BACKEND_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337
-    ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
   ingress:
     enabled: true
     class: nginx
@@ -235,7 +231,7 @@ mcpProducts:
   zeroTrustMesh:
     enabled: false
     allowTo: []
-  fullnameOverride: ai-layer-mcp-products
+  nameOverride: mcp-products
   version: 0.0.1
   appVersion: 0.0.1
   image:
@@ -299,6 +295,8 @@ mcpProducts:
     timeoutSeconds: 3
   envFrom:
     secret: ai-layer-mcp-products
+  externalConfigmap:
+    name: galust-incluster-urls
   config:
     PORT: "4002"
     NODE_ENV: production
@@ -307,8 +305,6 @@ mcpProducts:
     MCP_SSE_HEARTBEAT_MS: "20000"
     MCP_PRODUCTS_MAX_SESSIONS: "80"
     MCP_PRODUCTS_SESSION_TTL_MS: "900000"
-    AI_LAYER_BACKEND_URL: *apiUrl
-    ORCHESTRATOR_ENDPOINT: http://ai-layer-orchestrator/orchestrator/galust/ask
     MCP_PRODUCTS_MAX_SPEC_BYTES: "20971520"
   ingress:
     enabled: true
@@ -341,7 +337,7 @@ orchestrator:
   zeroTrustMesh:
     enabled: false
     allowTo: []
-  fullnameOverride: ai-layer-orchestrator
+  nameOverride: orchestrator
   version: 0.0.1
   appVersion: 0.0.1
   image:
@@ -376,6 +372,8 @@ orchestrator:
     maxReplicas: 5
   envFrom:
     secret: ai-layer-orchestrator
+  externalConfigmap:
+    name: galust-incluster-urls
   config:
     NODE_ENV: production
     OPENAI_MODEL: gpt-4o-mini
@@ -386,7 +384,6 @@ orchestrator:
     CLOUDBROWSER_URL: https://app.dasmeta.com
     GLOBAL_PREFIX: orchestrator
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
-    AI_LAYER_BACKEND_URL: http://ai-layer-strapi:1337
     PORTKEY_PROVIDER: dm-openai
     DEBUG_MCP_HEADER_FLOW: "true"
     PERSIST_CONVERSATION_TOOL_CALLS: "true"
@@ -397,8 +394,6 @@ orchestrator:
     EVALUATION_TARGET_TIMEOUT_MS: "300000"
     EVALUATION_STALE_RUN_TIMEOUT_MS: "900000"
     EVALUATION_CONCURRENCY: "2"
-    MCP_CORE_BASE_URL: http://ai-layer-mcp/mcp
-    MCP_PRODUCTS_BASE_URL: http://ai-layer-mcp-products/mcp
   ingress:
     enabled: true
     class: nginx
@@ -430,7 +425,7 @@ orchestratorScheduler:
   zeroTrustMesh:
     enabled: false
     allowTo: []
-  fullnameOverride: ai-layer-orchestrator-scheduler
+  nameOverride: orchestrator-scheduler
   version: 0.0.1
   appVersion: 0.0.1
   image:
@@ -458,6 +453,8 @@ orchestratorScheduler:
     enabled: false
   envFrom:
     secret: ai-layer-orchestrator
+  externalConfigmap:
+    name: galust-incluster-urls
   config:
     NODE_ENV: production
     OPENAI_MODEL: gpt-4o-mini
@@ -468,7 +465,6 @@ orchestratorScheduler:
     CLOUDBROWSER_URL: https://app.dasmeta.com
     GLOBAL_PREFIX: orchestrator
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://localhost:4318/v1/traces
-    AI_LAYER_BACKEND_URL: http://ai-layer-strapi:1337
     PORTKEY_PROVIDER: dm-openai
     DEBUG_MCP_HEADER_FLOW: "true"
     PERSIST_CONVERSATION_TOOL_CALLS: "true"
@@ -484,7 +480,7 @@ frontend:
   zeroTrustMesh:
     enabled: false
     allowTo: []
-  fullnameOverride: ai-layer-frontend
+  nameOverride: frontend
   version: 0.0.1
   appVersion: 0.0.1
   image:

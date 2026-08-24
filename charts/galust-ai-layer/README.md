@@ -15,6 +15,8 @@ This chart is an umbrella chart for the Galust AI layer services. It wraps the p
 
 The chart manages Kubernetes workload configuration for these services. It does not provision cloud infrastructure, databases, DNS records, TLS issuers, IAM roles, ECR policies, or external secrets.
 
+In-cluster Service names are `{release}-{component}` (for example `ai-layer-backend` when the Helm release is `ai-layer`). MCP, MCP products, orchestrator, and scheduler load OpenAPI and sibling URLs from ConfigMap `galust-incluster-urls` using those short names (same-namespace DNS). Kubernetes Secret names such as `ai-layer-strapi` stay as configured.
+
 ## Components
 
 The chart wraps the published `dasmeta/base` chart with one alias per deployable component (backend uses TrueCharts `strapi`):
@@ -269,7 +271,7 @@ kubectl create job \
 
 ## MCP products session affinity
 
-Streamable HTTP MCP sessions are stored in the pod process. External clients are pinned by ingress `upstream-hash-by: $remote_addr`. In-cluster orchestrator traffic uses ClusterIP URLs (`http://ai-layer-mcp/mcp` and `http://ai-layer-mcp-products/mcp`) and needs Service `sessionAffinity: ClientIP`.
+Streamable HTTP MCP sessions are stored in the pod process. External clients are pinned by ingress `upstream-hash-by: $remote_addr`. In-cluster orchestrator traffic uses ClusterIP URLs from ConfigMap `galust-incluster-urls` (`MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL`) and needs Service `sessionAffinity: ClientIP`.
 
 `dasmeta/base` 0.3.33+ renders this from values (no post-install patch):
 
@@ -426,7 +428,7 @@ If the backend fails to start, check the `ai-layer-strapi` and `db-ai-layer-stra
 
 If ingress does not work, confirm the ingress controller, DNS records, TLS secret or cert-manager issuer, and rendered ingress hosts.
 
-If orchestrator nested MCP tools fail with `Session not found` (`-32001`), confirm `MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL` are in-cluster Service URLs and that `ai-layer-mcp-products` has `sessionAffinity: ClientIP` (set via `mcpProducts.service.sessionAffinity`).
+If orchestrator nested MCP tools fail with `Session not found` (`-32001`), confirm `MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL` on ConfigMap `galust-incluster-urls` match `{release}-mcp` / `{release}-mcp-products` in the install namespace, and that the MCP products Service has `sessionAffinity: ClientIP` (set via `mcpProducts.service.sessionAffinity`).
 
 If URL overrides do not appear in rendered manifests, remember that YAML anchors are not dynamic Helm templates. Render locally with:
 
