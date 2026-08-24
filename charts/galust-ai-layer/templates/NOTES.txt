@@ -1,24 +1,26 @@
 Galust AI layer chart rendered for namespace {{ .Release.Namespace }}.
 
-Enabled components:
+Enabled components (Service names are {release}-{component} in {{ .Release.Namespace }}):
 {{- if .Values.backend.enabled }}
-- strapi (backend): {{ .Values.backend.fullnameOverride | default "ai-layer-strapi" }}
+- backend: {{ printf "%s-backend" .Release.Name }}
 {{- end }}
 {{- if .Values.mcp.enabled }}
-- mcp: {{ .Values.mcp.fullnameOverride | default "ai-layer-mcp" }}
+- mcp: {{ printf "%s-mcp" .Release.Name }}
 {{- end }}
 {{- if .Values.mcpProducts.enabled }}
-- mcp-products: {{ .Values.mcpProducts.fullnameOverride | default "ai-layer-mcp-products" }}
+- mcp-products: {{ printf "%s-mcp-products" .Release.Name }}
 {{- end }}
 {{- if .Values.orchestrator.enabled }}
-- orchestrator: {{ .Values.orchestrator.fullnameOverride | default "ai-layer-orchestrator" }}
+- orchestrator: {{ printf "%s-orchestrator" .Release.Name }}
 {{- end }}
 {{- if .Values.orchestratorScheduler.enabled }}
-- orchestrator-scheduler: {{ .Values.orchestratorScheduler.fullnameOverride | default "ai-layer-orchestrator-scheduler" }}
+- orchestrator-scheduler: {{ printf "%s-orchestrator-scheduler" .Release.Name }}
 {{- end }}
 {{- if .Values.frontend.enabled }}
-- frontend: {{ .Values.frontend.fullnameOverride | default "ai-layer-frontend" }}
+- frontend: {{ printf "%s-frontend" .Release.Name }}
 {{- end }}
+
+In-cluster OpenAPI / MCP / backend URLs are in ConfigMap {{ include "galust-ai-layer.inclusterUrlsConfigMapName" . }}.
 
 Image pull access:
 - By default the chart references an existing imagePullSecret named {{ include "galust-ai-layer.imagePullSecretName" . }}.

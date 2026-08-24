@@ -52,3 +52,14 @@ Service account name used by the optional ECR credentials refresh job.
 {{- define "galust-ai-layer.ecrCredentialsRefreshServiceAccountName" -}}
 {{- default (include "galust-ai-layer.ecrCredentialsRefreshName" .) .Values.ecrCredentialsRefresh.serviceAccount.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+In-cluster Service hostname: {release}-{component} (same-namespace kube-dns).
+*/}}
+{{- define "galust-ai-layer.inclusterHost" -}}
+{{- printf "%s-%s" .root.Release.Name .component -}}
+{{- end }}
+
+{{- define "galust-ai-layer.inclusterUrlsConfigMapName" -}}
+galust-incluster-urls
+{{- end }}

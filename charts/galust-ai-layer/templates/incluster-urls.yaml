@@ -1,0 +1,17 @@
+{{- $backend := include "galust-ai-layer.inclusterHost" (dict "root" . "component" "backend") }}
+{{- $mcp := include "galust-ai-layer.inclusterHost" (dict "root" . "component" "mcp") }}
+{{- $mcpProducts := include "galust-ai-layer.inclusterHost" (dict "root" . "component" "mcp-products") }}
+{{- $orchestrator := include "galust-ai-layer.inclusterHost" (dict "root" . "component" "orchestrator") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "galust-ai-layer.inclusterUrlsConfigMapName" . }}
+  labels:
+    {{- include "galust-ai-layer.labels" . | nindent 4 }}
+data:
+  OPENAPI_BASE_URL: {{ printf "http://%s:1337/api" $backend | quote }}
+  OPENAPI_SPEC_URL: {{ printf "http://%s:1337/documentation/openapi.json" $backend | quote }}
+  AI_LAYER_BACKEND_URL: {{ printf "http://%s:1337" $backend | quote }}
+  ORCHESTRATOR_ENDPOINT: {{ printf "http://%s:3000/orchestrator/galust/ask" $orchestrator | quote }}
+  MCP_CORE_BASE_URL: {{ printf "http://%s/mcp" $mcp | quote }}
+  MCP_PRODUCTS_BASE_URL: {{ printf "http://%s/mcp" $mcpProducts | quote }}
