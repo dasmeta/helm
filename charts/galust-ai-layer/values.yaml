@@ -193,11 +193,12 @@ mcp:
       value: ai-layer-mcp
   service:
     type: ClusterIP
-    port: 4002
+    port: 80
   containerPort: 4002
   envFrom:
     secret: ai-layer-mcp
   config:
+    PORT: "4002"
     MCP_SSE_HEARTBEAT_MS: "20000"
     OPENAPI_BASE_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/api
     OPENAPI_SPEC_URL: http://ai-layer-strapi.ai-layer.svc.cluster.local:1337/documentation/openapi.json
@@ -220,7 +221,7 @@ mcp:
           - path: /
             pathType: Prefix
             backend:
-              servicePort: 4002
+              servicePort: 80
     tls:
       - clusterIssuer: letsencrypt-prod
         secretName: com-galust-mcp-tls2
@@ -263,7 +264,7 @@ mcpProducts:
       value: ai-layer-mcp-products
   service:
     type: ClusterIP
-    port: 4002
+    port: 80
     sessionAffinity: ClientIP
     sessionAffinityConfig:
       clientIP:
@@ -299,6 +300,7 @@ mcpProducts:
   envFrom:
     secret: ai-layer-mcp-products
   config:
+    PORT: "4002"
     NODE_ENV: production
     NODE_OPTIONS: "--max-old-space-size=1024"
     DEBUG_MCP_PRODUCTS_API: "false"
@@ -325,7 +327,7 @@ mcpProducts:
           - path: /
             pathType: Prefix
             backend:
-              servicePort: 4002
+              servicePort: 80
     tls:
       - clusterIssuer: letsencrypt-prod
         secretName: com-galust-mcp-products-tls2
