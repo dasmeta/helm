@@ -762,3 +762,4 @@ rolloutStrategy:
       - The target cluster must run an external secret operator that serves `external-secrets.io/v1`. If it does not, the `ExternalSecret` will be rejected on apply - keep the old version by setting `externalSecretsApiVersion: external-secrets.io/v1beta1`.
   - Version 0.3.33:
     Service `sessionAffinity` and `sessionAffinityConfig` can be set from values. Empty string / empty object omit the fields so existing consumers stay unchanged.
+
