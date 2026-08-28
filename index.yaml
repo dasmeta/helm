@@ -1231,6 +1231,16 @@ entries:
     version: 0.1.6
   base-cronjob:
   - apiVersion: v2
+    appVersion: 0.1.40
+    created: "2026-08-28T10:06:52.858277583Z"
+    description: A Base Helm chart for Kubernetes CronJob
+    digest: bf6b04740d9d2851b95de7b55e06d3366a0cde73331ff43c519a9fb5fcb0a79e
+    name: base-cronjob
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/base-cronjob-0.1.40/base-cronjob-0.1.40.tgz
+    version: 0.1.40
+  - apiVersion: v2
     appVersion: 0.1.39
     created: "2026-06-11T12:37:30.81321644Z"
     description: A Base Helm chart for Kubernetes CronJob
