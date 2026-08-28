@@ -12,6 +12,7 @@ Public values and options are documented in [values.yaml](./values.yaml). Exampl
 | `jobs[].image.repository` | Container image | required |
 | `jobs[].image.tag` | Image tag | `latest` |
 | `jobs[].rbac` | Optional Role/ClusterRole and binding for the job ServiceAccount | disabled |
+| `jobs[].securityContext` | Optional container security context | `{}` |
 | `jobs[].successfulJobsHistoryLimit` | Number of successful finished jobs to retain | optional |
 | `jobs[].failedJobsHistoryLimit` | Number of failed finished jobs to retain | optional |
 | `jobs[].suspend` | Suspend future CronJob runs | optional |
