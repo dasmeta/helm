@@ -78,6 +78,10 @@ spec:
             - name: {{ $job.name | quote }}
               image: {{ $image | quote }}
               imagePullPolicy: {{ $job.imagePullPolicy | default "IfNotPresent" | quote }}
+              {{- with $job.securityContext }}
+              securityContext:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
               {{- if $job.command }}
               command:
                 {{- range $cmd := $job.command }}

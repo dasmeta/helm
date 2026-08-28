@@ -108,6 +108,11 @@ jobs:
 
     podAnnotations: {} # optional
     lifecycle: {} # optional
+    securityContext: {} # optional container security context
+    # securityContext:
+    #   privileged: true
+    #   capabilities:
+    #     add: ["SYS_ADMIN"]
     nodeSelector: {} # optional
     # nodeSelector:
     #   nodetype: "spot"
