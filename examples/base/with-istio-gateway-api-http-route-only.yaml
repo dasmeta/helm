@@ -33,12 +33,13 @@ gatewayApi:
           # namespace defaults to "istio-system"
           # kind and group have defaults (Gateway, gateway.networking.k8s.io)
       hostnames:
-        - http-echo-gw.localhost
+        # - http-echo-gw.localhost
+        - "{{ .Values.global.environment }}.http-echo-gw.localhost"
       rules:
         - matches:
             - path:
                 type: PathPrefix
                 value: /ping
           backendRefs:
-            - name: http-route-only
+            - name: "{{ .Values.global.environment }}.http-route-only"
               port: 80
