@@ -269,29 +269,25 @@ kubectl create job \
   galust-ai-layer-ecr-refresh-manual
 ```
 
-## MCP products session affinity
+## MCP products (stateless)
 
-Streamable HTTP MCP sessions are stored in the pod process. External clients are pinned by ingress `upstream-hash-by: $remote_addr`. In-cluster orchestrator traffic uses ClusterIP URLs from ConfigMap `galust-incluster-urls` (`MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL`) and needs Service `sessionAffinity: ClientIP`.
-
-`dasmeta/base` 0.3.33+ renders this from values (no post-install patch):
+`mcp-products` on current ai-layer main uses **stateless** Streamable HTTP, so any healthy replica can serve a request. Defaults:
 
 ```yaml
 mcpProducts:
   service:
-    sessionAffinity: ClientIP
-    sessionAffinityConfig:
-      clientIP:
-        timeoutSeconds: 10800
+    sessionAffinity: None
 ```
 
-Verify after deploy:
+Do not re-enable ClientIP affinity or ingress `upstream-hash-by: $remote_addr` unless you deliberately run an older stateful image.
 
-```bash
-kubectl -n ai-layer get svc ai-layer-mcp-products \
-  -o jsonpath='{.spec.sessionAffinity} {.spec.sessionAffinityConfig.clientIP.timeoutSeconds}{"\n"}'
-```
+Core MCP (`mcp`) remains stateful and still pins external traffic with ingress `upstream-hash-by: $http_mcp_session_id`.
 
-Expected: `ClientIP 10800`.
+Orchestrator → MCP traffic should keep using in-cluster URLs from ConfigMap `galust-incluster-urls` (`MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL`).
+
+## MCP development credentials
+
+`MCP_DEVELOPMENT_CREDENTIALS_ENABLED` defaults to `"false"` on backend, orchestrator, orchestrator scheduler, and mcp-products. Keep the same value on all four. To enable later, also put `MCP_DEVELOPMENT_CREDENTIAL_ENCRYPTION_KEY` in the `ai-layer-strapi` secret (and wire it into backend env) and follow the ai-layer runbook `docs/runbooks/mcp-development-credentials.md`.
 
 ## Backend Notes
 
@@ -428,7 +424,7 @@ If the backend fails to start, check the `ai-layer-strapi` and `db-ai-layer-stra
 
 If ingress does not work, confirm the ingress controller, DNS records, TLS secret or cert-manager issuer, and rendered ingress hosts.
 
-If orchestrator nested MCP tools fail with `Session not found` (`-32001`), confirm `MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL` on ConfigMap `galust-incluster-urls` match `{release}-mcp` / `{release}-mcp-products` in the install namespace, and that the MCP products Service has `sessionAffinity: ClientIP` (set via `mcpProducts.service.sessionAffinity`).
+If orchestrator nested MCP tools fail with `Session not found` (`-32001`) against **core** MCP, confirm `MCP_CORE_BASE_URL` on ConfigMap `galust-incluster-urls` matches `{release}-mcp` and that core MCP ingress still hashes by `$http_mcp_session_id`. For **mcp-products**, prefer a current stateless image; sticky ClientIP / `$remote_addr` hashing is obsolete for that service.
 
 If URL overrides do not appear in rendered manifests, remember that YAML anchors are not dynamic Helm templates. Render locally with:
 

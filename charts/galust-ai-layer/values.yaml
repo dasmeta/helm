@@ -164,6 +164,7 @@ backend:
               MCP_PRODUCTS_BASE_URL: "http://{{ .Release.Name }}-mcp-products/mcp"
               EVENT_MANAGER_BACKEND_HOST: http://event-manager.em.svc.cluster.local
               AI_LAYER_BOOTSTRAP_CREATE_API_TOKEN: "false"
+              MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
 
 mcp:
   enabled: true
@@ -261,10 +262,8 @@ mcpProducts:
   service:
     type: ClusterIP
     port: 80
-    sessionAffinity: ClientIP
-    sessionAffinityConfig:
-      clientIP:
-        timeoutSeconds: 10800
+    # Stateless Streamable HTTP (ai-layer main): any healthy replica can serve requests.
+    sessionAffinity: None
   containerPort: 4002
   resources:
     requests:
@@ -302,17 +301,14 @@ mcpProducts:
     NODE_ENV: production
     NODE_OPTIONS: "--max-old-space-size=1024"
     DEBUG_MCP_PRODUCTS_API: "false"
-    MCP_SSE_HEARTBEAT_MS: "20000"
-    MCP_PRODUCTS_MAX_SESSIONS: "80"
-    MCP_PRODUCTS_SESSION_TTL_MS: "900000"
     MCP_PRODUCTS_MAX_SPEC_BYTES: "20971520"
+    MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
   ingress:
     enabled: true
     class: nginx
     annotations:
       kubernetes.io/tls-acme: "true"
       cert-manager.io/cluster-issuer: letsencrypt-prod
-      nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
       nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
       nginx.ingress.kubernetes.io/proxy-buffering: "off"
@@ -394,6 +390,7 @@ orchestrator:
     EVALUATION_TARGET_TIMEOUT_MS: "300000"
     EVALUATION_STALE_RUN_TIMEOUT_MS: "900000"
     EVALUATION_CONCURRENCY: "2"
+    MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
   ingress:
     enabled: true
     class: nginx
@@ -404,7 +401,7 @@ orchestrator:
       nginx.ingress.kubernetes.io/cors-allow-origin: *appUrl
       nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
       nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id, X-Dexatel-Key, X-Product-Uid, X-Mcp-Upstream-Authorization, X-Galust-Evaluation-Source, X-Galust-UI-Capabilities
+      nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, Content-Type, Origin, Accept, X-Requested-With, MCP-Protocol-Version, Mcp-Session-Id, Mcp-Instance-Id, X-Dexatel-Key, X-Product-Uid, X-Mcp-Upstream-Authorization, X-Galust-Evaluation-Source, X-Galust-UI-Capabilities
     hosts:
       - host: *apiHost
         paths:
@@ -470,6 +467,7 @@ orchestratorScheduler:
     PERSIST_CONVERSATION_TOOL_CALLS: "true"
     SCHEDULED_TRIGGERS_ENABLED: "true"
     SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
+    MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
   ingress:
     enabled: false
 
