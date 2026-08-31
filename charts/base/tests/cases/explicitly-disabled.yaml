@@ -1,0 +1,5 @@
+#@ desc: explicitly disabled -> no budget and no error (FR-012)
+#@ assert-no-pdb
+replicaCount: 3
+pdb:
+  enabled: false

@@ -1,0 +1,6 @@
+#@ desc: an explicit valid minAvailable renders unchanged (FR-011)
+#@ assert: .spec.minAvailable == 2
+#@ assert: .spec | has("maxUnavailable") | not
+replicaCount: 3
+pdb:
+  minAvailable: 2

@@ -39,6 +39,73 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `config` | Env vars for main container (map) | example in values.yaml |
 | `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
+| `pdb.enabled` | Create a PodDisruptionBudget. Leave unset for the safe default: created automatically when the effective replica floor is 2 or more, omitted below that. `true` at a floor below 2 is refused | unset (derived) |
+| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `1` (applied by the template) |
+| `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
+| `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
+| `terminationGracePeriodSeconds` | Time Kubernetes waits for the pod to shut down before killing it. Must exceed the `defaultLifecycle.preStop` sleep | unset (Kubernetes default `30`) |
+
+## Upgrading to 0.4.0
+
+This release changes rendered output. Read this before bumping.
+
+### PodDisruptionBudgets are now created by default
+
+A budget is created automatically when the **effective replica floor** is 2 or
+more, defaulting to `maxUnavailable: 1`. The effective replica floor is
+`autoscaling.minReplicas` when autoscaling is enabled, and `replicaCount`
+otherwise. Below a floor of 2 no budget is created, because a budget over a
+single replica either blocks every drain or protects nothing.
+
+Previously `pdb.enabled` defaulted to `false`, so most services had no budget at
+all and a node drain could evict every replica at once, emptying the service's
+endpoints for one to two minutes.
+
+### Budgets that permit zero evictions are now refused
+
+The chart now **fails to render** any budget that permits no voluntary eviction
+at the replica floor. This is deliberate and it is the more important half of the
+change.
+
+Such a budget blocks every drain-based operation: node consolidation stalls,
+reclaimed-capacity (spot) replacement stalls, and managed node group upgrades
+fail on pod eviction. The reported symptom is that node scaling or the cluster
+upgrade is stuck, which sends the investigation somewhere other than the service
+that caused it.
+
+Refused configurations:
+
+| Configuration | Why |
+| --- | --- |
+| `minAvailable` >= effective replica floor | permits nothing |
+| `maxUnavailable: 0` | permits nothing |
+| a percentage resolving to 0 permitted evictions | Kubernetes rounds `maxUnavailable` percentages **down**, so `25%` at a floor of 2 resolves to 0 |
+| both `minAvailable` and `maxUnavailable` set | the Kubernetes API accepts only one |
+| `pdb.enabled: true` at a replica floor below 2 | no budget over a single replica is both safe and useful |
+
+### The most common breakage
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 1
+pdb:
+  enabled: true
+  minAvailable: 1     # equals the replica floor -> permits zero evictions
+```
+
+This renders a drain-blocking budget on 0.3.x and is refused on 0.4.0. It was the
+pattern in this repository's own examples, so it is widespread.
+
+**Fix**: delete the `pdb` block. The chart now does the right thing on its own —
+no budget at a floor of 1, and a safe one at 2 or more. If you genuinely need a
+budget, raise the replica floor to 2 or more first.
+
+To tune a budget deliberately, see `examples/base/with-pdb-tuned.yaml`.
+
+### Opting out
+
+`pdb.enabled: false` still disables the budget entirely and is never refused.
 
 ### Examples
 

@@ -1,0 +1,48 @@
+# helm diff upgrade --install -n localhost with-pdb-tuned ./charts/base/ -f ./examples/base/with-pdb-tuned.yaml
+
+# Explicitly tuning the PodDisruptionBudget.
+#
+# Most services need nothing here: with a replica floor of 2 or more the chart
+# creates a safe budget on its own. Set these values only when the default of
+# "one replica at a time" drains too slowly for a large deployment.
+#
+# The rule the chart enforces: the budget must always permit at least one
+# eviction at the effective replica floor. A budget permitting none blocks node
+# drains, node consolidation and cluster upgrades, so the chart refuses to
+# render one.
+
+image:
+  repository: mendhak/http-https-echo
+  tag: 34
+
+containerPort: 8080
+
+# Effective replica floor is 6, because autoscaling is enabled.
+autoscaling:
+  enabled: true
+  minReplicas: 6
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 80
+
+pdb:
+  # Allow a quarter of the fleet to move at once so a drain of a large
+  # deployment does not crawl. Kubernetes rounds maxUnavailable percentages
+  # DOWN: floor(0.25 x 6) = 1, so this permits 1 eviction at the floor and more
+  # as the autoscaler scales out.
+  #
+  # Note this would be REFUSED at a replica floor of 2, where floor(0.25 x 2)
+  # rounds down to 0 and the budget would permit nothing.
+  maxUnavailable: "25%"
+
+  # The alternative form. Mutually exclusive with maxUnavailable, so only one of
+  # the two may be set. Must stay strictly below the replica floor:
+  #   minAvailable: 5   # valid at floor 6, permits 1 eviction
+  #   minAvailable: 6   # REFUSED, permits nothing
+  # Never set this to autoscaling.minReplicas.
+
+readinessProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 1
+  httpGet:
+    path: /health
+    port: http

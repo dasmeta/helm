@@ -1,10 +1,24 @@
-{{- if .Values.pdb.enabled -}}
+{{- /* Validation runs first and unconditionally: an invalid budget must be refused
+       even in the cases where no budget would be rendered. See specs/020-base-chart-pdb-safety. */ -}}
+{{- include "base.pdb.validate" . -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- $floorVal := int (include "base.pdb.floor" .) -}}
+{{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
+{{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
+{{- $enabled := ternary $pdb.enabled (ge $floorVal 2) (hasKey $pdb "enabled") -}}
+{{- if and $enabled (ge $floorVal 2) -}}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ .Values.pdb.pdbName | default (include "base.fullname" .) }}
+  name: {{ $pdb.pdbName | default (include "base.fullname" .) }}
 spec:
-  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- if $hasMin }}
+  minAvailable: {{ $pdb.minAvailable }}
+  {{- else if $hasMax }}
+  maxUnavailable: {{ $pdb.maxUnavailable }}
+  {{- else }}
+  maxUnavailable: 1
+  {{- end }}
   selector:
     matchLabels:
       {{- include "base.selectorLabels" . | nindent 6 }}

@@ -393,3 +393,107 @@ User-provided extraEnv can still override predefined items.
 {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+PodDisruptionBudget safety helpers.
+
+A PodDisruptionBudget that permits zero voluntary evictions blocks every
+drain-based operation: node consolidation, reclaimed-capacity replacement, and
+managed node group upgrades, which fail on pod eviction. The failure surfaces as
+the node scaling or the cluster upgrade being stuck, far from the workload that
+caused it. These helpers make that configuration unrepresentable.
+*/}}
+
+{{/* Which value the effective replica floor was taken from, for error messages. */}}
+{{- define "base.pdb.floorSource" -}}
+{{- if (.Values.autoscaling | default dict).enabled -}}
+autoscaling.minReplicas
+{{- else -}}
+replicaCount
+{{- end -}}
+{{- end -}}
+
+{{/*
+The effective replica floor: the smallest replica count the workload is expected
+to run at. When autoscaling is on, the deployment omits `replicas` entirely and
+the autoscaler minimum is the only lower bound, so that is the number to use.
+Coerced through int64 because values may arrive as strings, where a lexical
+comparison would rank "10" below "2".
+*/}}
+{{- define "base.pdb.floor" -}}
+{{- $as := .Values.autoscaling | default dict -}}
+{{- if $as.enabled -}}
+{{- if hasKey $as "minReplicas" }}{{ $as.minReplicas | int64 }}{{ else }}1{{ end -}}
+{{- else -}}
+{{- if hasKey .Values "replicaCount" }}{{ .Values.replicaCount | int64 }}{{ else }}1{{ end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Evictions a budget permits at the effective replica floor, following Kubernetes'
+own rounding: minAvailable percentages round UP, maxUnavailable percentages round
+DOWN. Applying one direction to both would either reject safe configurations or
+admit blocking ones.
+Args: dict "floor" <int> "field" <minAvailable|maxUnavailable> "value" <any>
+*/}}
+{{- define "base.pdb.permitted" -}}
+{{- $floorVal := .floor -}}
+{{- $field := .field -}}
+{{- $value := .value -}}
+{{- if hasSuffix "%" (toString $value) -}}
+  {{- $pct := float64 (trimSuffix "%" (toString $value)) -}}
+  {{- $raw := divf (mulf $pct (float64 $floorVal)) 100.0 -}}
+  {{- if eq $field "minAvailable" -}}
+    {{- sub $floorVal (int (ceil $raw)) -}}
+  {{- else -}}
+    {{- int (floor $raw) -}}
+  {{- end -}}
+{{- else -}}
+  {{- if eq $field "minAvailable" -}}
+    {{- sub $floorVal (int64 $value) -}}
+  {{- else -}}
+    {{- int64 $value -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Refuse any budget that permits zero voluntary evictions. Called unconditionally
+from pdb.yaml, before the enabled check, because the most dangerous case is the
+one where no budget would be rendered at all: a budget explicitly enabled at a
+replica floor below 2.
+*/}}
+{{- define "base.pdb.validate" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- $floorVal := int (include "base.pdb.floor" .) -}}
+{{- $src := include "base.pdb.floorSource" . -}}
+{{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
+{{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
+{{- $explicitlyDisabled := and (hasKey $pdb "enabled") (not $pdb.enabled) -}}
+{{- if not $explicitlyDisabled -}}
+
+  {{- if and $hasMin $hasMax -}}
+    {{- fail "base chart: pdb.minAvailable and pdb.maxUnavailable are mutually exclusive; the Kubernetes PodDisruptionBudget API accepts only one. Set exactly one of them." -}}
+  {{- end -}}
+
+  {{- if and (hasKey $pdb "enabled") $pdb.enabled (lt $floorVal 2) -}}
+    {{- fail (printf "base chart: pdb.enabled=true but the replica floor is %d (from %s). A budget over a single replica either blocks every drain or protects nothing. Raise the replica floor to 2 or more, or remove pdb.enabled." $floorVal $src) -}}
+  {{- end -}}
+
+  {{- if ge $floorVal 2 -}}
+    {{- $field := ternary "minAvailable" "maxUnavailable" $hasMin -}}
+    {{- $value := 1 -}}
+    {{- if $hasMin -}}{{- $value = $pdb.minAvailable -}}{{- else if $hasMax -}}{{- $value = $pdb.maxUnavailable -}}{{- end -}}
+    {{- $permitted := int (include "base.pdb.permitted" (dict "floor" $floorVal "field" $field "value" $value)) -}}
+    {{- if le $permitted 0 -}}
+      {{- if hasSuffix "%" (toString $value) -}}
+        {{- $rounding := ternary "up" "down" (eq $field "minAvailable") -}}
+        {{- fail (printf "base chart: pdb.%s=%s resolves to 0 permitted evictions at replica floor %d (from %s), because Kubernetes rounds %s percentages %s. Set an absolute value, or choose a percentage that leaves at least one eviction." $field (toString $value) $floorVal $src $field $rounding) -}}
+      {{- else -}}
+        {{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). A budget that permits nothing blocks node drains, node consolidation and cluster upgrades. Set pdb.minAvailable below %d, or use pdb.maxUnavailable of 1 or more." $field (toString $value) $floorVal $src $floorVal) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+{{- end -}}
+{{- end -}}

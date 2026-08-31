@@ -1,0 +1,6 @@
+#@ desc: minAvailable above the floor can never be satisfied
+#@ expect-fail: permits no voluntary eviction at replica floor 2
+replicaCount: 2
+pdb:
+  enabled: true
+  minAvailable: 5

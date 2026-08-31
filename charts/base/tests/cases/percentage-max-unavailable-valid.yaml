@@ -1,0 +1,5 @@
+#@ desc: percentage maxUnavailable, rounds down to 2 of 4, permits 2 evictions
+#@ assert: .spec.maxUnavailable == "50%"
+replicaCount: 4
+pdb:
+  maxUnavailable: "50%"

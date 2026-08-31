@@ -489,10 +489,52 @@ volumes: []
 env: dev
 product: application
 
+# PodDisruptionBudget. Controls how much of this workload may be voluntarily
+# removed at once, which is what protects it during node drains: node
+# consolidation, reclaimed-capacity (spot) replacement, and cluster/node-group
+# upgrades all drain nodes and all honour this budget.
+#
+# A budget that permits ZERO evictions blocks all of the above indefinitely, and
+# the symptom looks like the node scaling or the cluster upgrade being stuck
+# rather than a problem with this service. The chart therefore refuses to render
+# such a budget, including when it is set explicitly.
 pdb:
-  enabled: false
-  minAvailable: 1
+  # Leave unset to get the safe default: a budget is created automatically when
+  # the effective replica floor is 2 or more, and omitted below that (a budget
+  # over a single replica either blocks every drain or protects nothing).
+  # Set to false to opt out entirely. Setting true when the replica floor is
+  # below 2 is refused.
+  # enabled:
+
+  # Ceiling on simultaneously-unavailable replicas. This is the chart default and
+  # the recommended form: it always permits exactly one eviction regardless of
+  # replica count, so it can never become a zero-eviction budget.
+  # Accepts an absolute number or a percentage string. Kubernetes rounds
+  # maxUnavailable percentages DOWN, so "25%" at a replica floor of 2 resolves to
+  # 0 and is refused.
+  #
+  # Left unset here on purpose: the default is applied by the template, not by
+  # this file. A literal value here would survive values merging and collide with
+  # minAvailable whenever a service sets that instead.
+  # maxUnavailable: 1
+
+  # Floor on available replicas. Mutually exclusive with maxUnavailable.
+  # Must stay BELOW the effective replica floor, otherwise it permits nothing.
+  # Do NOT set this to autoscaling.minReplicas: at the floor that permits zero
+  # evictions and blocks every drain. Accepts an absolute number or a percentage
+  # string; Kubernetes rounds minAvailable percentages UP.
+  # minAvailable:
+
   pdbName:
+
+# Maximum time Kubernetes waits for this pod to shut down before killing it.
+# Unset means the Kubernetes default of 30 seconds applies.
+#
+# This budget covers the preStop hook below PLUS the application's own shutdown.
+# If preStop sleeps for N seconds, this must exceed N or the pod is killed mid-
+# shutdown and in-flight requests are cut off. Relevant during any node drain,
+# where the node is waiting on exactly this before it can go away.
+# terminationGracePeriodSeconds: 30
 
 # the default lifecycle rule to apply which allows to have some kind of graceful shutdown by waiting/sleep for 5 seconds, even if there is no sleep command in os this will not produce issues and container will get shuted down
 defaultLifecycle:
