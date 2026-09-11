@@ -430,10 +430,11 @@ comparison would rank "10" below "2".
 {{- end -}}
 
 {{/*
-Evictions a budget permits at the effective replica floor, following Kubernetes'
-own rounding: minAvailable percentages round UP, maxUnavailable percentages round
-DOWN. Applying one direction to both would either reject safe configurations or
-admit blocking ones.
+Evictions a budget permits at the effective replica floor, following the rounding the DISRUPTION
+controller actually uses: it resolves BOTH minAvailable and maxUnavailable percentages with roundUp=true
+(pkg/controller/disruption/disruption.go). This is not the same as a Deployment rolling update, where
+maxUnavailable rounds DOWN -- mixing the two up rejects safe configurations, because "25%" of 2 is 1
+permitted eviction under PDB rules and 0 under rollout rules.
 Args: dict "floor" <int> "field" <minAvailable|maxUnavailable> "value" <any>
 */}}
 {{- define "base.pdb.permitted" -}}
@@ -446,7 +447,7 @@ Args: dict "floor" <int> "field" <minAvailable|maxUnavailable> "value" <any>
   {{- if eq $field "minAvailable" -}}
     {{- sub $floorVal (int (ceil $raw)) -}}
   {{- else -}}
-    {{- int (floor $raw) -}}
+    {{- int (ceil $raw) -}}
   {{- end -}}
 {{- else -}}
   {{- if eq $field "minAvailable" -}}
@@ -469,16 +470,16 @@ replica floor below 2.
 {{- $src := include "base.pdb.floorSource" . -}}
 {{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
 {{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
-{{- $explicitlyDisabled := and (hasKey $pdb "enabled") (not $pdb.enabled) -}}
+{{- $explicitlyDisabled := and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "false") -}}
 {{- /* Deliberate opt-in to a budget that permits nothing. See values.yaml for when this is legitimate. */ -}}
-{{- $allowBlocking := and (hasKey $pdb "allowZeroEvictions") $pdb.allowZeroEvictions -}}
+{{- $allowBlocking := eq (include "base.toBool" $pdb.allowZeroEvictions) "true" -}}
 {{- if not $explicitlyDisabled -}}
 
   {{- if and $hasMin $hasMax -}}
     {{- fail "base chart: pdb.minAvailable and pdb.maxUnavailable are mutually exclusive; the Kubernetes PodDisruptionBudget API accepts only one. Set exactly one of them." -}}
   {{- end -}}
 
-  {{- if and (hasKey $pdb "enabled") $pdb.enabled (lt $floorVal 2) -}}
+  {{- if and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "true") (lt $floorVal 2) -}}
     {{- fail (printf "base chart: pdb.enabled=true but the replica floor is %d (from %s). A budget over a single replica either blocks every drain or protects nothing. Raise the replica floor to 2 or more, or remove pdb.enabled." $floorVal $src) -}}
   {{- end -}}
 
@@ -486,6 +487,7 @@ replica floor below 2.
     {{- $field := ternary "minAvailable" "maxUnavailable" $hasMin -}}
     {{- $value := include "base.pdb.defaultMaxUnavailable" . -}}
     {{- if $hasMin -}}{{- $value = $pdb.minAvailable -}}{{- else if $hasMax -}}{{- $value = $pdb.maxUnavailable -}}{{- end -}}
+    {{- include "base.pdb.validateDomain" (dict "field" $field "value" $value) -}}
     {{- $permitted := int (include "base.pdb.permitted" (dict "floor" $floorVal "field" $field "value" $value)) -}}
     {{- if and (le $permitted 0) (not $allowBlocking) -}}
       {{- if hasSuffix "%" (toString $value) -}}
@@ -507,7 +509,7 @@ Used by pdb.yaml to annotate the object and by NOTES.txt to warn on every instal
 */}}
 {{- define "base.pdb.isDeliberatelyBlocking" -}}
 {{- $pdb := .Values.pdb | default dict -}}
-{{- if and (hasKey $pdb "allowZeroEvictions") $pdb.allowZeroEvictions -}}
+{{- if eq (include "base.toBool" $pdb.allowZeroEvictions) "true" -}}
   {{- $floorVal := int (include "base.pdb.floor" .) -}}
   {{- if ge $floorVal 2 -}}
     {{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
@@ -523,23 +525,92 @@ true
 {{- end -}}
 
 {{/*
-The default maxUnavailable: "25%" once the replica floor reaches 4, otherwise an absolute 1.
+The default maxUnavailable: "25%", at every replica floor.
 
-Why a percentage rather than a number computed here. A number is fixed at template time from the replica
-FLOOR, and then never moves: a service with minReplicas 10 running 20 pods would permit the same 2
-evictions it permits at 10, and the same 2 at 100. Kubernetes resolves a percentage at runtime against the
-CURRENT expected pod count instead, so the budget tracks the deployment as the autoscaler moves it -- 2 at
-10 replicas, 5 at 20, 25 at 100. For anything with a wide autoscaling range that is the whole difference.
+A percentage rather than a number computed here, because kubernetes resolves it at RUNTIME against the
+current expected pod count while a number is fixed at template time from the FLOOR and never moves. For
+minReplicas 10 / maxReplicas 100 that is the whole difference: a number permits the same 2 evictions at 10
+pods, 20 and 100, where "25%" gives 2, 5 and 25.
 
-25% is not an arbitrary fraction: it is what a Deployment rollout already does by default, so draining
-paces at a rate the service demonstrably tolerates every time it is deployed.
+25% is what a Deployment rollout already does by default, so draining paces at a rate the service
+demonstrably tolerates every time it is deployed.
 
-Why the floor of 4. Kubernetes rounds maxUnavailable percentages DOWN, so "25%" resolves to 0 permitted
-evictions at 2 or 3 pods -- the exact zero-eviction budget this chart refuses. An absolute 1 is used below
-4 instead. The switch is safe because the autoscaler never goes below minReplicas, so a floor of 4 or more
-guarantees the runtime count is 4 or more and the percentage can never resolve to zero.
+It needs no lower boundary. The disruption controller rounds maxUnavailable percentages UP, so "25%" is 1
+permitted eviction at a floor of 2 or 3, never 0. Only "0%" can resolve to zero.
 */}}
 {{- define "base.pdb.defaultMaxUnavailable" -}}
-{{- $floor := int (include "base.pdb.floor" .) -}}
-{{- if ge $floor 4 -}}25%{{- else -}}1{{- end -}}
+25%
+{{- end -}}
+
+{{/*
+Read a value as a boolean, refusing anything that is not one.
+
+Go templates treat ANY non-empty string as true, so `--set-string pdb.allowZeroEvictions=false` -- or a
+quoted "false" in a values file -- would otherwise authorise a zero-eviction budget and annotate it as
+deliberate. A safety flag that turns on when you write "false" is worse than no flag. Returns "true",
+"false", or fails.
+*/}}
+{{- define "base.toBool" -}}
+{{- if kindIs "invalid" . -}}false
+{{- else if kindIs "bool" . -}}{{ ternary "true" "false" . }}
+{{- else if kindIs "string" . -}}
+  {{- if has (lower .) (list "true" "yes" "on" "1") -}}true
+  {{- else if has (lower .) (list "false" "no" "off" "0" "") -}}false
+  {{- else -}}{{- fail (printf "base chart: expected a boolean, got the string %q. Quote-free true/false, or drop --set-string for this key." .) -}}
+  {{- end -}}
+{{- else -}}{{- fail (printf "base chart: expected a boolean, got %s" (kindOf .)) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether this release may create a PodDisruptionBudget WITHOUT being asked to.
+
+Automatic creation is only safe where the chart owns both the workload and the selector. Three cases where
+it does not, and an unrequested budget is wrong rather than merely useless:
+
+  workloadType != Deployment  -- the workload template does not render, so the budget would select nothing.
+  selectorLabelsOverride set  -- the release deliberately points at ANOTHER release's pods (see
+                                 examples/base/with-second-deployment). Two releases would then render two
+                                 budgets over the same pods, and the eviction API refuses to evict a pod
+                                 covered by more than one PDB -- turning a feature meant to protect drains
+                                 into one that blocks them outright.
+  flagger rolloutStrategy     -- the serving workload is the flagger-generated `-primary`, whose replica
+                                 count comes from rolloutStrategy.configs.primaryScalerMinReplicas and
+                                 whose selector carries a -primary suffix. This chart's floor and selector
+                                 both describe the canary, so a budget here would protect the wrong pods.
+
+An explicit `pdb.enabled: true` still wins in all three: the author has taken ownership, and a budget they
+asked for is their decision to make. Returns "true" or "".
+*/}}
+{{- define "base.pdb.mayAutoCreate" -}}
+{{- $flagger := and .Values.rolloutStrategy.enabled (eq (.Values.rolloutStrategy.operator | default "") "flagger") -}}
+{{- if and (eq (.Values.workloadType | default "Deployment") "Deployment") (not .Values.selectorLabelsOverride) (not $flagger) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Reject values outside the Kubernetes IntOrString domain for a disruption budget.
+
+Without this, arithmetic coercion quietly accepts things the API server does not: "150%" renders straight
+through, and "-1" or "abc" coerce to 0 and then fail with a message about permitting no evictions, which
+blames the wrong thing and sends the reader looking for a replica-count problem. Worse, either would slip
+past entirely under pdb.allowZeroEvictions.
+Args: dict "field" <name> "value" <any>
+*/}}
+{{- define "base.pdb.validateDomain" -}}
+{{- $field := .field -}}
+{{- $raw := toString .value -}}
+{{- if hasSuffix "%" $raw -}}
+  {{- if not (regexMatch "^[0-9]+%$" $raw) -}}
+    {{- fail (printf "base chart: pdb.%s=%s is not a valid percentage. Use a whole number followed by %%, for example \"25%%\"." $field $raw) -}}
+  {{- end -}}
+  {{- if gt (int (trimSuffix "%" $raw)) 100 -}}
+    {{- fail (printf "base chart: pdb.%s=%s exceeds 100%%. A budget cannot describe more replicas than exist." $field $raw) -}}
+  {{- end -}}
+{{- else -}}
+  {{- if not (regexMatch "^[0-9]+$" $raw) -}}
+    {{- fail (printf "base chart: pdb.%s=%s is neither a non-negative whole number nor a percentage. The Kubernetes API accepts only those two forms." $field $raw) -}}
+  {{- end -}}
+{{- end -}}
 {{- end -}}

@@ -1,6 +1,0 @@
-#@ desc: 25% of floor 2 rounds DOWN to 0 permitted evictions (research D2/D3)
-#@ expect-fail: resolves to 0 permitted evictions
-replicaCount: 2
-pdb:
-  enabled: true
-  maxUnavailable: "25%"

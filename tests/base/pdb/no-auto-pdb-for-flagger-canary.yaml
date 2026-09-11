@@ -1,0 +1,15 @@
+#@ desc: under flagger the serving workload is the generated -primary, which this chart cannot select
+#@ assert-no-pdb
+#
+# The floor here describes the canary and the selector carries no -primary suffix, so an auto budget would
+# protect the wrong pods while looking like protection. Left to an explicit opt-in until the chart can
+# derive both from rolloutStrategy.configs.
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 3
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10

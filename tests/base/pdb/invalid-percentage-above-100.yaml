@@ -1,0 +1,9 @@
+#@ desc: a percentage above 100 is outside the IntOrString domain and must be named as such
+#@ expect-fail: exceeds 100%
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: "150%"

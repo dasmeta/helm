@@ -513,23 +513,22 @@ pdb:
   # maxUnavailable percentages DOWN, so "25%" at a replica floor of 2 resolves to
   # 0 and is refused.
   #
-  # The default is "25%" once the effective replica floor reaches 4, and an
-  # absolute 1 below that.
+  # The default is "25%", at every replica floor.
   #
   # A percentage rather than a number, because kubernetes resolves it at RUNTIME
-  # against the current expected pod count, while a number computed here is fixed
-  # at template time from the FLOOR and never moves. For minReplicas 10 /
-  # maxReplicas 100 that is the whole difference: a number permits the same 2
-  # evictions at 10 pods, at 20 and at 100, whereas "25%" gives 2, 5 and 25.
+  # against the current expected pod count, while a number is fixed at template
+  # time from the FLOOR and never moves. For minReplicas 10 / maxReplicas 100 that
+  # is the whole difference: a number permits the same 2 evictions at 10 pods, at
+  # 20 and at 100, whereas "25%" gives 2, 5 and 25.
   #
   # 25% is what a Deployment rollout already does by default, so draining paces at
   # a rate the service demonstrably tolerates every time it is deployed.
   #
-  # The floor of 4 exists because kubernetes rounds maxUnavailable percentages
-  # DOWN: "25%" is 0 permitted evictions at 2 or 3 pods, which is the zero-eviction
-  # budget this chart refuses. The switch is safe because the autoscaler never goes
-  # below minReplicas, so a floor of 4 or more guarantees a runtime count of 4 or
-  # more.
+  # ROUNDING. The disruption controller resolves BOTH minAvailable and
+  # maxUnavailable percentages rounding UP. This is not the same as a Deployment
+  # rolling update, where maxUnavailable rounds DOWN -- so "25%" is 1 permitted
+  # eviction at a floor of 2 under budget rules and 0 under rollout rules. Only
+  # "0%" can resolve to zero, which is why no lower boundary is needed here.
   #
   # Note this paces DRAINING, not rollouts. A Deployment rollout deletes pods
   # directly and never goes through the Eviction API, so it is governed by
@@ -545,7 +544,7 @@ pdb:
   # Must stay BELOW the effective replica floor, otherwise it permits nothing.
   # Do NOT set this to autoscaling.minReplicas: at the floor that permits zero
   # evictions and blocks every drain. Accepts an absolute number or a percentage
-  # string; Kubernetes rounds minAvailable percentages UP.
+  # string; percentages round UP, the same as maxUnavailable under budget rules.
   # minAvailable:
 
   # Escape hatch for workloads that are rolled BY HAND, pod by pod, and must never

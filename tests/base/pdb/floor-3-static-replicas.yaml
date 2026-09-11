@@ -1,5 +1,5 @@
 #@ desc: floor derives from replicaCount when autoscaling is disabled
-#@ assert: .spec.maxUnavailable == 1
+#@ assert: .spec.maxUnavailable == "25%"
 replicaCount: 3
 autoscaling:
   enabled: false

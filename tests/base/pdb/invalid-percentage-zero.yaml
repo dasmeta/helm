@@ -1,0 +1,9 @@
+#@ desc: "0%" is the only percentage that can still resolve to zero permitted evictions
+#@ expect-fail: resolves to 0 permitted evictions
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: "0%"

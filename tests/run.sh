@@ -20,6 +20,7 @@
 #   #@ assert-no-pdb                 no PodDisruptionBudget may be rendered
 #   #@ assert: <yq expression>       must evaluate to true against the rendered PDB
 #   #@ expect-fail: <substring>      render must fail and print this substring
+#   #@ kube-version: <semver>        render against this kubernetes version rather than helm's default
 #
 # A case whose filename starts with `invalid-` is a negative case: the render is
 # required to fail. Every other case is positive and the render must succeed.
@@ -118,7 +119,12 @@ for case_file in "${CASE_FILES[@]}"; do
   fi
   name="${chart}/${ability}/$(basename "${case_file}" .yaml)"
   desc="$(directive desc "${case_file}")"
-  out="$(helm template testrelease "${CHART_DIR}" -f "${case_file}" 2>&1)"
+  kubever="$(directive kube-version "${case_file}")"
+  if [ -n "${kubever}" ]; then
+    out="$(helm template testrelease "${CHART_DIR}" -f "${case_file}" --kube-version "${kubever}" 2>&1)"
+  else
+    out="$(helm template testrelease "${CHART_DIR}" -f "${case_file}" 2>&1)"
+  fi
   rc=$?
   ok=1
   reason=""

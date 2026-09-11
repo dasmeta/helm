@@ -40,7 +40,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
 | `pdb.enabled` | Create a PodDisruptionBudget. Leave unset for the safe default: created automatically when the effective replica floor is 2 or more, omitted below that. `true` at a floor below 2 is refused | unset (derived) |
-| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `"25%"` at floor >= 4, else `1` (applied by the template) |
+| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `"25%"` (applied by the template) |
 | `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
 | `pdb.allowZeroEvictions` | Allow a budget that permits zero voluntary evictions, for a workload rolled by hand that automation must never evict. Renders with a warning and an annotation rather than being refused | `false` |
 | `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
@@ -80,7 +80,8 @@ Refused configurations:
 | --- | --- |
 | `minAvailable` >= effective replica floor | permits nothing |
 | `maxUnavailable: 0` | permits nothing |
-| a percentage resolving to 0 permitted evictions | Kubernetes rounds `maxUnavailable` percentages **down**, so `25%` at a floor of 2 resolves to 0 |
+| a percentage resolving to 0 permitted evictions | only `"0%"` can, since budget percentages round **up** |
+| a value outside the `IntOrString` domain | negative numbers, percentages above 100, and anything that is neither |
 | both `minAvailable` and `maxUnavailable` set | the Kubernetes API accepts only one |
 | `pdb.enabled: true` at a replica floor below 2 | no budget over a single replica is both safe and useful |
 
@@ -113,8 +114,7 @@ that it was a decision.
 
 ### The default budget tracks the current replica count
 
-`maxUnavailable` defaults to `"25%"` once the effective replica floor reaches 4, and to an absolute `1`
-below that.
+`maxUnavailable` defaults to `"25%"` at every replica floor.
 
 A **percentage** rather than a number computed by the chart, because Kubernetes resolves a percentage at
 runtime against the *current* expected pod count, while a number is fixed at template time from the *floor*
@@ -129,10 +129,10 @@ and never moves. For a service with `minReplicas: 10, maxReplicas: 100`:
 25% is not arbitrary: it is what a Deployment rollout already does by default, so draining paces at a rate
 the service demonstrably tolerates every time it is deployed.
 
-**Why the floor of 4.** Kubernetes rounds `maxUnavailable` percentages **down**, so `"25%"` resolves to 0
-permitted evictions at 2 or 3 pods — the exact zero-eviction budget this chart refuses. An absolute `1` is
-used below 4. The switch is safe because the autoscaler never goes below `minReplicas`, so a floor of 4 or
-more guarantees a runtime count of 4 or more.
+**Rounding.** The disruption controller resolves *both* `minAvailable` and `maxUnavailable` percentages
+rounding **up**. That is not the same as a Deployment rolling update, where `maxUnavailable` rounds **down**
+— so `"25%"` is 1 permitted eviction at a floor of 2 under budget rules and 0 under rollout rules. Only
+`"0%"` can resolve to zero.
 
 **This paces draining, not rollouts.** A Deployment rollout deletes pods directly and never uses the
 Eviction API, so its speed comes from `strategy.rollingUpdate` (Kubernetes defaults to 25% unavailable /
@@ -140,6 +140,25 @@ Eviction API, so its speed comes from `strategy.rollingUpdate` (Kubernetes defau
 reclaimed-capacity replacement, and cluster upgrades.
 
 Override in either direction — an absolute number to pin it regardless of scale, or a different percentage.
+
+### When the chart does NOT create a budget for you
+
+Automatic creation needs the chart to own both the workload and the selector. It stands down where it does
+not, because an unrequested budget there is wrong rather than merely useless:
+
+| situation | why |
+| --- | --- |
+| `workloadType` is not `Deployment` | the workload template does not render, so the budget would select nothing |
+| `selectorLabelsOverride` is set | the release points at *another* release's pods. Two budgets over one pod makes it un-evictable, because the eviction API refuses a pod covered by more than one |
+| `rolloutStrategy` uses Flagger | the serving workload is the generated `-primary`, whose floor comes from `rolloutStrategy.configs.primaryScalerMinReplicas` and whose selector carries a `-primary` suffix. This chart's floor and selector both describe the canary |
+
+Setting `pdb.enabled: true` still creates one in all three — the author has taken ownership, and the guards
+above only govern what happens *unasked*.
+
+### Kubernetes version
+
+`policy/v1` is served from Kubernetes 1.21. Below that the budget renders `policy/v1beta1`, so the 1.18+
+support this chart documents still holds now that budgets are created without being asked for.
 
 ### The most common breakage
 

@@ -1,0 +1,11 @@
+#@ desc: below kubernetes 1.21 the budget renders policy/v1beta1, which is all those versions serve
+#@ kube-version: 1.20.0
+#@ assert: .apiVersion == "policy/v1beta1"
+#
+# The chart documents support for 1.18+. Creating budgets automatically means a 1.18-1.20 consumer that
+# never asked for one would newly fail on apply, so the api version follows the cluster the way
+# ingress.yaml already does.
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10
