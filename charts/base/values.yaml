@@ -513,6 +513,20 @@ pdb:
   # maxUnavailable percentages DOWN, so "25%" at a replica floor of 2 resolves to
   # 0 and is refused.
   #
+  # NOTE ON LARGE DEPLOYMENTS. The default of 1 does not scale with replica count:
+  # a 20-replica service still permits one eviction at a time. That does NOT slow
+  # down a rollout -- a Deployment rollout deletes pods directly and never goes
+  # through the Eviction API, so it is governed by `strategy.rollingUpdate`, not by
+  # this. What it does slow down is DRAINING: a cluster upgrade moving node after
+  # node can only take one pod of this service at a time, cluster-wide.
+  #
+  # For a large service that can genuinely lose several replicas at once, set a
+  # percentage here -- "10%" or "25%" -- and drains proceed in proportion. The
+  # default stays absolute because a percentage can round DOWN to zero at a small
+  # replica floor ("25%" of 2 is 0), which is the failure this guard exists to
+  # prevent; 1 is safe at every size, which is why it is the default rather than
+  # the best choice for every service.
+  #
   # Left unset here on purpose: the default is applied by the template, not by
   # this file. A literal value here would survive values merging and collide with
   # minAvailable whenever a service sets that instead.

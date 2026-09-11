@@ -111,6 +111,27 @@ eviction, and the node stops receiving AMI patches until someone moves the workl
 those consequences are intended, and the annotation is what tells whoever finds the stuck drain months later
 that it was a decision.
 
+### Large deployments should raise `maxUnavailable`
+
+The default of `1` does not scale with replica count. A 20-replica service still permits one eviction at a
+time, which is conservative for something that can comfortably lose several.
+
+This does **not** slow rollouts. A Deployment rollout deletes pods directly and never uses the Eviction API,
+so its speed comes from `strategy.rollingUpdate` (Kubernetes defaults to 25% unavailable / 25% surge), not
+from the budget. What the budget paces is **draining** -- a cluster upgrade moving node after node can take
+only one pod of that service at a time.
+
+For a large service, set a percentage:
+
+```yaml
+pdb:
+  maxUnavailable: "25%"   # 5 of 20, drains proceed in proportion
+```
+
+The default stays absolute because a percentage can round **down** to zero at a small replica floor (`25%`
+of 2 is 0), which is the failure the guard exists to prevent. `1` is safe at every size, which makes it the
+right default and not the right answer for every service.
+
 ### The most common breakage
 
 ```yaml
