@@ -34,7 +34,7 @@ credentials, no Helm unit-test plugin.
 
 ### Task 1: Test harness and case matrix
 
-**Files:** `charts/base/tests/run.sh`, `charts/base/tests/cases/*.yaml`
+**Files:** `tests/run.sh`, `tests/base/pdb/*.yaml`
 
 - [x] Write the runner: one values file per case, positive cases assert on
       rendered output, negative cases assert non-zero exit plus a message substring

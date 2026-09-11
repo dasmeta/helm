@@ -4,6 +4,10 @@ name: Chart Tests
 # set continue-on-error: the PodDisruptionBudget guard exists to stop a
 # drain-blocking configuration reaching a cluster, and a guard that only reports
 # is not a guard.
+#
+# The suite lives at tests/, laid out as tests/<chart>/<ability>/<case>.yaml the
+# way examples/ is laid out per chart. ./tests/run.sh with no arguments runs every
+# case for every chart, so adding a chart or an ability needs no change here.
 
 on:
   pull_request:
@@ -11,8 +15,8 @@ on:
     branches: [main, master]
 
 jobs:
-  base-chart:
-    name: base chart validation
+  charts:
+    name: chart validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,8 +42,8 @@ jobs:
       - name: Render with default values
         run: helm template ci ./charts/base > /dev/null
 
-      - name: PodDisruptionBudget validation suite
-        run: ./charts/base/tests/run.sh
+      - name: Chart validation suite
+        run: ./tests/run.sh
 
       - name: Example regression
         run: |

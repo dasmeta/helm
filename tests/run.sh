@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 #
-# Validation suite for the base chart PodDisruptionBudget behaviour.
+# Validation suite for this repository's charts.
 #
-# Renders the chart with helm template across a matrix of values files and asserts
+# Renders a chart with helm template across a matrix of values files and asserts
 # on the result. Requires no Kubernetes cluster and no cloud credentials.
 #
-# Case files live in ./cases/ and carry their assertions as `#@` directives:
+# Layout mirrors examples/: one directory per chart, one per ability inside it.
+#
+#   tests/<chart>/<ability>/<case>.yaml
+#   tests/base/pdb/floor-2-default.yaml
+#
+# Every case under tests/<chart>/ is rendered against charts/<chart>. Adding an
+# ability is adding a directory; adding a chart is adding one level up. Nothing
+# in the runner needs to change for either.
+#
+# Case files carry their assertions as `#@` directives:
 #
 #   #@ desc: human readable description
 #   #@ assert-no-pdb                 no PodDisruptionBudget may be rendered
@@ -16,8 +25,10 @@
 # required to fail. Every other case is positive and the render must succeed.
 #
 # Usage:
-#   ./charts/base/tests/run.sh                 run against the working tree
-#   ./charts/base/tests/run.sh --baseline main run against an unmodified ref
+#   ./tests/run.sh                        every chart
+#   ./tests/run.sh base                   one chart
+#   ./tests/run.sh base pdb               one ability
+#   ./tests/run.sh --baseline main        render from an unmodified ref
 #
 # Baseline mode exists to satisfy SC-006: every assertion must be shown to fail
 # against the chart as it exists today, otherwise it is asserting nothing.
@@ -25,9 +36,10 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CASES_DIR="${SCRIPT_DIR}/cases"
-CHART_DIR="${SCRIPT_DIR}/.."
 REPO_ROOT="$(git -C "${SCRIPT_DIR}" rev-parse --show-toplevel)"
+CHARTS_ROOT="${REPO_ROOT}/charts"
+FILTER_CHART=""
+FILTER_ABILITY=""
 BASELINE_REF=""
 WORKTREE=""
 TMPPARENT=""
@@ -44,7 +56,14 @@ while [ $# -gt 0 ]; do
       shift 2
       ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "error: unknown argument '$1'" >&2; usage >&2; exit 2 ;;
+    -*) echo "error: unknown argument '$1'" >&2; usage >&2; exit 2 ;;
+    *)
+      if [ -z "${FILTER_CHART}" ]; then FILTER_CHART="$1"
+      elif [ -z "${FILTER_ABILITY}" ]; then FILTER_ABILITY="$1"
+      else echo "error: unexpected argument '$1'" >&2; usage >&2; exit 2
+      fi
+      shift
+      ;;
   esac
 done
 
@@ -63,8 +82,8 @@ if [ -n "${BASELINE_REF}" ]; then
     echo "error: could not create worktree for ref '${BASELINE_REF}'" >&2
     exit 2
   fi
-  CHART_DIR="${WORKTREE}/charts/base"
-  echo "BASELINE MODE: chart rendered from ref '${BASELINE_REF}', cases from working tree"
+  CHARTS_ROOT="${WORKTREE}/charts"
+  echo "BASELINE MODE: charts rendered from ref '${BASELINE_REF}', cases from working tree"
   echo
 fi
 
@@ -77,16 +96,34 @@ pass=0
 fail=0
 declare -a failures=()
 
-shopt -s nullglob
-for case_file in "${CASES_DIR}"/*.yaml; do
-  name="$(basename "${case_file}" .yaml)"
+# find rather than a glob: the wildcards have to survive being optional, and a quoted glob stays literal.
+mapfile -t CASE_FILES < <(
+  find "${SCRIPT_DIR}" -mindepth 3 -maxdepth 3 -name '*.yaml' \
+    -path "${SCRIPT_DIR}/${FILTER_CHART:-*}/${FILTER_ABILITY:-*}/*" | sort
+)
+
+if [ ${#CASE_FILES[@]} -eq 0 ]; then
+  echo "error: no cases matched${FILTER_CHART:+ chart '${FILTER_CHART}'}${FILTER_ABILITY:+ ability '${FILTER_ABILITY}'}" >&2
+  exit 2
+fi
+
+for case_file in "${CASE_FILES[@]}"; do
+  # tests/<chart>/<ability>/<case>.yaml -- the chart is two directories up.
+  ability="$(basename "$(dirname "${case_file}")")"
+  chart="$(basename "$(dirname "$(dirname "${case_file}")")")"
+  CHART_DIR="${CHARTS_ROOT}/${chart}"
+  if [ ! -d "${CHART_DIR}" ]; then
+    echo "error: case ${case_file} names chart '${chart}', which does not exist" >&2
+    exit 2
+  fi
+  name="${chart}/${ability}/$(basename "${case_file}" .yaml)"
   desc="$(directive desc "${case_file}")"
-  out="$(helm template pdbtest "${CHART_DIR}" -f "${case_file}" 2>&1)"
+  out="$(helm template testrelease "${CHART_DIR}" -f "${case_file}" 2>&1)"
   rc=$?
   ok=1
   reason=""
 
-  if [[ "${name}" == invalid-* ]]; then
+  if [[ "$(basename "${case_file}")" == invalid-* ]]; then
     expect="$(directive expect-fail "${case_file}")"
     if [ -z "${expect}" ]; then
       ok=0; reason="negative case has no '#@ expect-fail:' directive"
@@ -121,11 +158,11 @@ for case_file in "${CASES_DIR}"/*.yaml; do
 
   if [ ${ok} -eq 1 ]; then
     pass=$((pass + 1))
-    printf 'PASS  %-44s %s\n' "${name}" "${desc}"
+    printf 'PASS  %-52s %s\n' "${name}" "${desc}"
   else
     fail=$((fail + 1))
     failures+=("${name}: ${reason}")
-    printf 'FAIL  %-44s %s\n' "${name}" "${desc}"
+    printf 'FAIL  %-52s %s\n' "${name}" "${desc}"
     printf '        -> %s\n' "${reason}"
   fi
 done

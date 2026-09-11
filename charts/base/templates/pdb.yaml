@@ -11,6 +11,12 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ $pdb.pdbName | default (include "base.fullname" .) }}
+  {{- if include "base.pdb.isDeliberatelyBlocking" . }}
+  annotations:
+    # Recorded on the object so `kubectl describe pdb` explains a disruptionsAllowed of 0, rather than
+    # leaving whoever finds a stuck drain to guess whether it is deliberate.
+    dasmeta.io/zero-evictions: "deliberate, pdb.allowZeroEvictions=true; this workload is rolled by hand"
+  {{- end }}
 spec:
   {{- if $hasMin }}
   minAvailable: {{ $pdb.minAvailable }}

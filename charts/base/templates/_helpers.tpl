@@ -470,6 +470,8 @@ replica floor below 2.
 {{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
 {{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
 {{- $explicitlyDisabled := and (hasKey $pdb "enabled") (not $pdb.enabled) -}}
+{{- /* Deliberate opt-in to a budget that permits nothing. See values.yaml for when this is legitimate. */ -}}
+{{- $allowBlocking := and (hasKey $pdb "allowZeroEvictions") $pdb.allowZeroEvictions -}}
 {{- if not $explicitlyDisabled -}}
 
   {{- if and $hasMin $hasMax -}}
@@ -485,15 +487,37 @@ replica floor below 2.
     {{- $value := 1 -}}
     {{- if $hasMin -}}{{- $value = $pdb.minAvailable -}}{{- else if $hasMax -}}{{- $value = $pdb.maxUnavailable -}}{{- end -}}
     {{- $permitted := int (include "base.pdb.permitted" (dict "floor" $floorVal "field" $field "value" $value)) -}}
-    {{- if le $permitted 0 -}}
+    {{- if and (le $permitted 0) (not $allowBlocking) -}}
       {{- if hasSuffix "%" (toString $value) -}}
         {{- $rounding := ternary "up" "down" (eq $field "minAvailable") -}}
-        {{- fail (printf "base chart: pdb.%s=%s resolves to 0 permitted evictions at replica floor %d (from %s), because Kubernetes rounds %s percentages %s. Set an absolute value, or choose a percentage that leaves at least one eviction." $field (toString $value) $floorVal $src $field $rounding) -}}
+        {{- fail (printf "base chart: pdb.%s=%s resolves to 0 permitted evictions at replica floor %d (from %s), because Kubernetes rounds %s percentages %s. Set an absolute value, or choose a percentage that leaves at least one eviction. If this workload is rolled by hand on purpose and must never be evicted automatically, set pdb.allowZeroEvictions=true to say so." $field (toString $value) $floorVal $src $field $rounding) -}}
       {{- else -}}
-        {{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). A budget that permits nothing blocks node drains, node consolidation and cluster upgrades. Set pdb.minAvailable below %d, or use pdb.maxUnavailable of 1 or more." $field (toString $value) $floorVal $src $floorVal) -}}
+        {{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). A budget that permits nothing blocks node drains, node consolidation and cluster upgrades. Set pdb.minAvailable below %d, or use pdb.maxUnavailable of 1 or more. If this workload is rolled by hand on purpose and must never be evicted automatically, set pdb.allowZeroEvictions=true to say so." $field (toString $value) $floorVal $src $floorVal) -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
 
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether the rendered budget permits zero voluntary evictions AND the author opted into that deliberately.
+Used by pdb.yaml to annotate the object and by NOTES.txt to warn on every install and upgrade. Returns
+"true" or "".
+*/}}
+{{- define "base.pdb.isDeliberatelyBlocking" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- if and (hasKey $pdb "allowZeroEvictions") $pdb.allowZeroEvictions -}}
+  {{- $floorVal := int (include "base.pdb.floor" .) -}}
+  {{- if ge $floorVal 2 -}}
+    {{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
+    {{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
+    {{- $field := ternary "minAvailable" "maxUnavailable" $hasMin -}}
+    {{- $value := 1 -}}
+    {{- if $hasMin -}}{{- $value = $pdb.minAvailable -}}{{- else if $hasMax -}}{{- $value = $pdb.maxUnavailable -}}{{- end -}}
+    {{- if le (int (include "base.pdb.permitted" (dict "floor" $floorVal "field" $field "value" $value))) 0 -}}
+true
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 {{- end -}}

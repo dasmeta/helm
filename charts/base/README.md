@@ -42,6 +42,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `pdb.enabled` | Create a PodDisruptionBudget. Leave unset for the safe default: created automatically when the effective replica floor is 2 or more, omitted below that. `true` at a floor below 2 is refused | unset (derived) |
 | `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `1` (applied by the template) |
 | `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
+| `pdb.allowZeroEvictions` | Allow a budget that permits zero voluntary evictions, for a workload rolled by hand that automation must never evict. Renders with a warning and an annotation rather than being refused | `false` |
 | `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
 | `terminationGracePeriodSeconds` | Time Kubernetes waits for the pod to shut down before killing it. Must exceed the `defaultLifecycle.preStop` sleep | unset (Kubernetes default `30`) |
 
@@ -82,6 +83,33 @@ Refused configurations:
 | a percentage resolving to 0 permitted evictions | Kubernetes rounds `maxUnavailable` percentages **down**, so `25%` at a floor of 2 resolves to 0 |
 | both `minAvailable` and `maxUnavailable` set | the Kubernetes API accepts only one |
 | `pdb.enabled: true` at a replica floor below 2 | no budget over a single replica is both safe and useful |
+
+Every message above names `pdb.allowZeroEvictions` as the way through, so the escape hatch is discoverable
+from the failure rather than from this document.
+
+### When a zero-eviction budget is correct
+
+Some workloads are rolled by hand, pod by pod, after cooling an internal process down first, and must never
+be evicted by automation. For those, a budget permitting nothing is the right answer rather than a mistake:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 3
+pdb:
+  enabled: true
+  minAvailable: 3            # equals the floor, permits nothing -- deliberately
+  allowZeroEvictions: true   # say so, and the chart renders it
+podAnnotations:
+  karpenter.sh/do-not-disrupt: "true"   # stop the autoscaler retrying a drain it cannot finish
+```
+
+The chart then renders the budget, annotates it `dasmeta.io/zero-evictions`, and prints a warning on every
+install and upgrade. Nothing is silenced: node drains still block, node group upgrades still fail on
+eviction, and the node stops receiving AMI patches until someone moves the workload. The flag records that
+those consequences are intended, and the annotation is what tells whoever finds the stuck drain months later
+that it was a decision.
 
 ### The most common breakage
 

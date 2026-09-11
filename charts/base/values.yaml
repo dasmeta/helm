@@ -525,6 +525,25 @@ pdb:
   # string; Kubernetes rounds minAvailable percentages UP.
   # minAvailable:
 
+  # Escape hatch for workloads that are rolled BY HAND, pod by pod, and must never
+  # be evicted by automation -- typically after cooling an internal process down
+  # first. Setting this to true allows a budget that permits zero voluntary
+  # evictions, which the chart otherwise refuses.
+  #
+  # It is not a way to silence the error. Understand what you are taking on:
+  # node drains block on these pods, consolidation and reclaimed-capacity
+  # replacement stall, an EKS managed node group upgrade FAILS on pod eviction,
+  # and the node stops receiving AMI patches until someone moves the workload
+  # deliberately. The symptom appears as node scaling or the cluster upgrade
+  # being stuck, nowhere near this release.
+  #
+  # When you do set it, also set karpenter.sh/do-not-disrupt on the pods, so the
+  # autoscaler stops retrying a drain it can never complete.
+  #
+  # The budget is annotated and a warning is printed on every install and upgrade,
+  # so the choice stays visible to whoever finds the stuck drain later.
+  # allowZeroEvictions: false
+
   pdbName:
 
 # Maximum time Kubernetes waits for this pod to shut down before killing it.
