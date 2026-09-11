@@ -513,27 +513,31 @@ pdb:
   # maxUnavailable percentages DOWN, so "25%" at a replica floor of 2 resolves to
   # 0 and is refused.
   #
-  # The default SCALES with the effective replica floor: max(1, floor / 4).
+  # The default is "25%" once the effective replica floor reaches 4, and an
+  # absolute 1 below that.
   #
-  #   floor 2-7 -> 1     floor 8-11 -> 2     floor 12-15 -> 3     floor 20 -> 5
+  # A percentage rather than a number, because kubernetes resolves it at RUNTIME
+  # against the current expected pod count, while a number computed here is fixed
+  # at template time from the FLOOR and never moves. For minReplicas 10 /
+  # maxReplicas 100 that is the whole difference: a number permits the same 2
+  # evictions at 10 pods, at 20 and at 100, whereas "25%" gives 2, 5 and 25.
   #
-  # A quarter is not arbitrary: it is what a Deployment rollout already does by
-  # default (maxUnavailable 25%), so draining paces at a rate the service
-  # demonstrably tolerates every time it is deployed.
+  # 25% is what a Deployment rollout already does by default, so draining paces at
+  # a rate the service demonstrably tolerates every time it is deployed.
   #
-  # It is computed as an absolute number rather than emitted as "25%" because
-  # kubernetes rounds maxUnavailable percentages DOWN, so a literal "25%" resolves
-  # to 0 permitted evictions at any floor below 4 -- the exact zero-eviction budget
-  # this chart refuses. max(1, ...) makes that unrepresentable.
+  # The floor of 4 exists because kubernetes rounds maxUnavailable percentages
+  # DOWN: "25%" is 0 permitted evictions at 2 or 3 pods, which is the zero-eviction
+  # budget this chart refuses. The switch is safe because the autoscaler never goes
+  # below minReplicas, so a floor of 4 or more guarantees a runtime count of 4 or
+  # more.
   #
   # Note this paces DRAINING, not rollouts. A Deployment rollout deletes pods
   # directly and never goes through the Eviction API, so it is governed by
   # `strategy.rollingUpdate` and a budget has no say in it. What this paces is a
   # node drain: consolidation, reclaimed-capacity replacement, cluster upgrades.
   #
-  # Set a value here to override the scaling, in either direction: 1 to drain
-  # strictly one at a time, or a percentage string if you prefer kubernetes to do
-  # the arithmetic (mind the rounding above at small floors).
+  # Override in either direction: an absolute number to pin it regardless of scale,
+  # or a different percentage.
   #
   # maxUnavailable: 1
 

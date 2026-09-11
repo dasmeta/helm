@@ -1,0 +1,6 @@
+#@ desc: below floor 4 an absolute 1 is used, because 25% of 2 or 3 rounds down to zero permitted evictions
+#@ assert: .spec.maxUnavailable == 1
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10

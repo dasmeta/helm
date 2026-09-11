@@ -40,7 +40,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
 | `pdb.enabled` | Create a PodDisruptionBudget. Leave unset for the safe default: created automatically when the effective replica floor is 2 or more, omitted below that. `true` at a floor below 2 is refused | unset (derived) |
-| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `max(1, floor / 4)` (applied by the template) |
+| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `"25%"` at floor >= 4, else `1` (applied by the template) |
 | `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
 | `pdb.allowZeroEvictions` | Allow a budget that permits zero voluntary evictions, for a workload rolled by hand that automation must never evict. Renders with a warning and an annotation rather than being refused | `false` |
 | `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
@@ -111,34 +111,35 @@ eviction, and the node stops receiving AMI patches until someone moves the workl
 those consequences are intended, and the annotation is what tells whoever finds the stuck drain months later
 that it was a decision.
 
-### The default budget scales with the replica floor
+### The default budget tracks the current replica count
 
-`maxUnavailable` defaults to `max(1, floor / 4)`, not to a flat `1`:
+`maxUnavailable` defaults to `"25%"` once the effective replica floor reaches 4, and to an absolute `1`
+below that.
 
-| effective replica floor | permitted evictions |
-| --- | --- |
-| 2–7 | 1 |
-| 8–11 | 2 |
-| 12–15 | 3 |
-| 20 | 5 |
-| 40 | 10 |
+A **percentage** rather than a number computed by the chart, because Kubernetes resolves a percentage at
+runtime against the *current* expected pod count, while a number is fixed at template time from the *floor*
+and never moves. For a service with `minReplicas: 10, maxReplicas: 100`:
 
-A quarter is not an arbitrary fraction: it is exactly what a Deployment rollout already does by default
-(`maxUnavailable: 25%`), so draining paces at a rate the service demonstrably tolerates every time it is
-deployed.
+| running replicas | absolute `2` | `"25%"` |
+| --- | --- | --- |
+| 10 | 2 | 2 |
+| 20 | 2 | **5** |
+| 100 | 2 | **25** |
 
-It is computed as an **absolute number** rather than emitted as the string `"25%"`, and that matters:
-Kubernetes rounds `maxUnavailable` percentages **down**, so a literal `"25%"` resolves to 0 permitted
-evictions at any floor below 4 — the exact zero-eviction budget this chart refuses. `max(1, ...)` makes that
-unrepresentable.
+25% is not arbitrary: it is what a Deployment rollout already does by default, so draining paces at a rate
+the service demonstrably tolerates every time it is deployed.
+
+**Why the floor of 4.** Kubernetes rounds `maxUnavailable` percentages **down**, so `"25%"` resolves to 0
+permitted evictions at 2 or 3 pods — the exact zero-eviction budget this chart refuses. An absolute `1` is
+used below 4. The switch is safe because the autoscaler never goes below `minReplicas`, so a floor of 4 or
+more guarantees a runtime count of 4 or more.
 
 **This paces draining, not rollouts.** A Deployment rollout deletes pods directly and never uses the
 Eviction API, so its speed comes from `strategy.rollingUpdate` (Kubernetes defaults to 25% unavailable /
 25% surge) and a PodDisruptionBudget has no say in it. What the budget paces is node drains: consolidation,
 reclaimed-capacity replacement, and cluster upgrades.
 
-Override in either direction — `maxUnavailable: 1` to drain strictly one at a time, or a percentage string
-if you would rather Kubernetes did the arithmetic.
+Override in either direction — an absolute number to pin it regardless of scale, or a different percentage.
 
 ### The most common breakage
 

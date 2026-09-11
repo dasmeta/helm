@@ -1,6 +1,0 @@
-#@ desc: below floor 4 a literal 25% would round DOWN to zero; the computed default cannot
-#@ assert: .spec.maxUnavailable == 1
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 10

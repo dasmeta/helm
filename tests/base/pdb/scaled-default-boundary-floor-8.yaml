@@ -1,6 +1,0 @@
-#@ desc: the first floor above 1 is 8, where a quarter reaches 2
-#@ assert: .spec.maxUnavailable == 2
-autoscaling:
-  enabled: true
-  minReplicas: 8
-  maxReplicas: 20

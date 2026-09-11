@@ -484,7 +484,7 @@ replica floor below 2.
 
   {{- if ge $floorVal 2 -}}
     {{- $field := ternary "minAvailable" "maxUnavailable" $hasMin -}}
-    {{- $value := 1 -}}
+    {{- $value := include "base.pdb.defaultMaxUnavailable" . -}}
     {{- if $hasMin -}}{{- $value = $pdb.minAvailable -}}{{- else if $hasMax -}}{{- $value = $pdb.maxUnavailable -}}{{- end -}}
     {{- $permitted := int (include "base.pdb.permitted" (dict "floor" $floorVal "field" $field "value" $value)) -}}
     {{- if and (le $permitted 0) (not $allowBlocking) -}}
@@ -513,7 +513,7 @@ Used by pdb.yaml to annotate the object and by NOTES.txt to warn on every instal
     {{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
     {{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
     {{- $field := ternary "minAvailable" "maxUnavailable" $hasMin -}}
-    {{- $value := 1 -}}
+    {{- $value := include "base.pdb.defaultMaxUnavailable" . -}}
     {{- if $hasMin -}}{{- $value = $pdb.minAvailable -}}{{- else if $hasMax -}}{{- $value = $pdb.maxUnavailable -}}{{- end -}}
     {{- if le (int (include "base.pdb.permitted" (dict "floor" $floorVal "field" $field "value" $value))) 0 -}}
 true
@@ -523,22 +523,23 @@ true
 {{- end -}}
 
 {{/*
-The default maxUnavailable, scaled to the effective replica floor: max(1, floor / 4).
+The default maxUnavailable: "25%" once the replica floor reaches 4, otherwise an absolute 1.
 
-A flat 1 is safe at every size but needlessly conservative above a handful of replicas -- a 20-replica
-service could lose 5 during a drain without noticing, and pacing it at one pod at a time makes a cluster
-upgrade crawl. A quarter is not an arbitrary fraction: it is exactly what a Deployment rollout already does
-by default (maxUnavailable 25%), so draining paces at a rate the service demonstrably tolerates every time
-it is deployed.
+Why a percentage rather than a number computed here. A number is fixed at template time from the replica
+FLOOR, and then never moves: a service with minReplicas 10 running 20 pods would permit the same 2
+evictions it permits at 10, and the same 2 at 100. Kubernetes resolves a percentage at runtime against the
+CURRENT expected pod count instead, so the budget tracks the deployment as the autoscaler moves it -- 2 at
+10 replicas, 5 at 20, 25 at 100. For anything with a wide autoscaling range that is the whole difference.
 
-Computed as an ABSOLUTE number rather than emitted as the string "25%", which matters: kubernetes rounds
-maxUnavailable percentages DOWN, so "25%" resolves to 0 permitted evictions at any floor below 4 -- the
-exact zero-eviction budget this chart refuses. Taking max(1, ...) here makes that unrepresentable.
+25% is not an arbitrary fraction: it is what a Deployment rollout already does by default, so draining
+paces at a rate the service demonstrably tolerates every time it is deployed.
 
-  floor  2-7  -> 1        floor 8-11 -> 2        floor 12-15 -> 3
-  floor 20    -> 5        floor 40   -> 10
+Why the floor of 4. Kubernetes rounds maxUnavailable percentages DOWN, so "25%" resolves to 0 permitted
+evictions at 2 or 3 pods -- the exact zero-eviction budget this chart refuses. An absolute 1 is used below
+4 instead. The switch is safe because the autoscaler never goes below minReplicas, so a floor of 4 or more
+guarantees the runtime count is 4 or more and the percentage can never resolve to zero.
 */}}
 {{- define "base.pdb.defaultMaxUnavailable" -}}
 {{- $floor := int (include "base.pdb.floor" .) -}}
-{{- max 1 (div $floor 4) -}}
+{{- if ge $floor 4 -}}25%{{- else -}}1{{- end -}}
 {{- end -}}

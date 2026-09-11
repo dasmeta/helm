@@ -1,0 +1,6 @@
+#@ desc: floor 4 is the first at which a percentage cannot round down to zero
+#@ assert: .spec.maxUnavailable == "25%"
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 40
