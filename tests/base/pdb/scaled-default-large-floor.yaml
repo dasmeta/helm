@@ -1,0 +1,6 @@
+#@ desc: the default budget scales with the replica floor -- 20 replicas permit 5
+#@ assert: .spec.maxUnavailable == 5
+autoscaling:
+  enabled: true
+  minReplicas: 20
+  maxReplicas: 40

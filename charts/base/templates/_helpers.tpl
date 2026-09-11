@@ -521,3 +521,24 @@ true
   {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+The default maxUnavailable, scaled to the effective replica floor: max(1, floor / 4).
+
+A flat 1 is safe at every size but needlessly conservative above a handful of replicas -- a 20-replica
+service could lose 5 during a drain without noticing, and pacing it at one pod at a time makes a cluster
+upgrade crawl. A quarter is not an arbitrary fraction: it is exactly what a Deployment rollout already does
+by default (maxUnavailable 25%), so draining paces at a rate the service demonstrably tolerates every time
+it is deployed.
+
+Computed as an ABSOLUTE number rather than emitted as the string "25%", which matters: kubernetes rounds
+maxUnavailable percentages DOWN, so "25%" resolves to 0 permitted evictions at any floor below 4 -- the
+exact zero-eviction budget this chart refuses. Taking max(1, ...) here makes that unrepresentable.
+
+  floor  2-7  -> 1        floor 8-11 -> 2        floor 12-15 -> 3
+  floor 20    -> 5        floor 40   -> 10
+*/}}
+{{- define "base.pdb.defaultMaxUnavailable" -}}
+{{- $floor := int (include "base.pdb.floor" .) -}}
+{{- max 1 (div $floor 4) -}}
+{{- end -}}

@@ -23,7 +23,7 @@ spec:
   {{- else if $hasMax }}
   maxUnavailable: {{ $pdb.maxUnavailable }}
   {{- else }}
-  maxUnavailable: 1
+  maxUnavailable: {{ include "base.pdb.defaultMaxUnavailable" . }}
   {{- end }}
   selector:
     matchLabels:

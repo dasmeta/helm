@@ -513,23 +513,28 @@ pdb:
   # maxUnavailable percentages DOWN, so "25%" at a replica floor of 2 resolves to
   # 0 and is refused.
   #
-  # NOTE ON LARGE DEPLOYMENTS. The default of 1 does not scale with replica count:
-  # a 20-replica service still permits one eviction at a time. That does NOT slow
-  # down a rollout -- a Deployment rollout deletes pods directly and never goes
-  # through the Eviction API, so it is governed by `strategy.rollingUpdate`, not by
-  # this. What it does slow down is DRAINING: a cluster upgrade moving node after
-  # node can only take one pod of this service at a time, cluster-wide.
+  # The default SCALES with the effective replica floor: max(1, floor / 4).
   #
-  # For a large service that can genuinely lose several replicas at once, set a
-  # percentage here -- "10%" or "25%" -- and drains proceed in proportion. The
-  # default stays absolute because a percentage can round DOWN to zero at a small
-  # replica floor ("25%" of 2 is 0), which is the failure this guard exists to
-  # prevent; 1 is safe at every size, which is why it is the default rather than
-  # the best choice for every service.
+  #   floor 2-7 -> 1     floor 8-11 -> 2     floor 12-15 -> 3     floor 20 -> 5
   #
-  # Left unset here on purpose: the default is applied by the template, not by
-  # this file. A literal value here would survive values merging and collide with
-  # minAvailable whenever a service sets that instead.
+  # A quarter is not arbitrary: it is what a Deployment rollout already does by
+  # default (maxUnavailable 25%), so draining paces at a rate the service
+  # demonstrably tolerates every time it is deployed.
+  #
+  # It is computed as an absolute number rather than emitted as "25%" because
+  # kubernetes rounds maxUnavailable percentages DOWN, so a literal "25%" resolves
+  # to 0 permitted evictions at any floor below 4 -- the exact zero-eviction budget
+  # this chart refuses. max(1, ...) makes that unrepresentable.
+  #
+  # Note this paces DRAINING, not rollouts. A Deployment rollout deletes pods
+  # directly and never goes through the Eviction API, so it is governed by
+  # `strategy.rollingUpdate` and a budget has no say in it. What this paces is a
+  # node drain: consolidation, reclaimed-capacity replacement, cluster upgrades.
+  #
+  # Set a value here to override the scaling, in either direction: 1 to drain
+  # strictly one at a time, or a percentage string if you prefer kubernetes to do
+  # the arithmetic (mind the rounding above at small floors).
+  #
   # maxUnavailable: 1
 
   # Floor on available replicas. Mutually exclusive with maxUnavailable.

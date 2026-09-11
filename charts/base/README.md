@@ -40,7 +40,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
 | `pdb.enabled` | Create a PodDisruptionBudget. Leave unset for the safe default: created automatically when the effective replica floor is 2 or more, omitted below that. `true` at a floor below 2 is refused | unset (derived) |
-| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `1` (applied by the template) |
+| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `max(1, floor / 4)` (applied by the template) |
 | `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
 | `pdb.allowZeroEvictions` | Allow a budget that permits zero voluntary evictions, for a workload rolled by hand that automation must never evict. Renders with a warning and an annotation rather than being refused | `false` |
 | `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
@@ -111,26 +111,34 @@ eviction, and the node stops receiving AMI patches until someone moves the workl
 those consequences are intended, and the annotation is what tells whoever finds the stuck drain months later
 that it was a decision.
 
-### Large deployments should raise `maxUnavailable`
+### The default budget scales with the replica floor
 
-The default of `1` does not scale with replica count. A 20-replica service still permits one eviction at a
-time, which is conservative for something that can comfortably lose several.
+`maxUnavailable` defaults to `max(1, floor / 4)`, not to a flat `1`:
 
-This does **not** slow rollouts. A Deployment rollout deletes pods directly and never uses the Eviction API,
-so its speed comes from `strategy.rollingUpdate` (Kubernetes defaults to 25% unavailable / 25% surge), not
-from the budget. What the budget paces is **draining** -- a cluster upgrade moving node after node can take
-only one pod of that service at a time.
+| effective replica floor | permitted evictions |
+| --- | --- |
+| 2–7 | 1 |
+| 8–11 | 2 |
+| 12–15 | 3 |
+| 20 | 5 |
+| 40 | 10 |
 
-For a large service, set a percentage:
+A quarter is not an arbitrary fraction: it is exactly what a Deployment rollout already does by default
+(`maxUnavailable: 25%`), so draining paces at a rate the service demonstrably tolerates every time it is
+deployed.
 
-```yaml
-pdb:
-  maxUnavailable: "25%"   # 5 of 20, drains proceed in proportion
-```
+It is computed as an **absolute number** rather than emitted as the string `"25%"`, and that matters:
+Kubernetes rounds `maxUnavailable` percentages **down**, so a literal `"25%"` resolves to 0 permitted
+evictions at any floor below 4 — the exact zero-eviction budget this chart refuses. `max(1, ...)` makes that
+unrepresentable.
 
-The default stays absolute because a percentage can round **down** to zero at a small replica floor (`25%`
-of 2 is 0), which is the failure the guard exists to prevent. `1` is safe at every size, which makes it the
-right default and not the right answer for every service.
+**This paces draining, not rollouts.** A Deployment rollout deletes pods directly and never uses the
+Eviction API, so its speed comes from `strategy.rollingUpdate` (Kubernetes defaults to 25% unavailable /
+25% surge) and a PodDisruptionBudget has no say in it. What the budget paces is node drains: consolidation,
+reclaimed-capacity replacement, and cluster upgrades.
+
+Override in either direction — `maxUnavailable: 1` to drain strictly one at a time, or a percentage string
+if you would rather Kubernetes did the arithmetic.
 
 ### The most common breakage
 
