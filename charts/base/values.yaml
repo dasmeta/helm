@@ -566,6 +566,17 @@ pdb:
   # so the choice stays visible to whoever finds the stuck drain later.
   # allowZeroEvictions: false
 
+  # Override the labels the budget selects on.
+  #
+  # Needed only where the chart cannot derive them. The one known case is flagger
+  # running with a non-default `-selector-labels` flag: the chart assumes the
+  # default (`app,name,app.kubernetes.io/name`), under which the generated primary
+  # carries `app.kubernetes.io/name: <fullname>-primary`. If your flagger is
+  # configured otherwise, put here what
+  #   kubectl get deploy <name>-primary -o jsonpath='{.spec.selector.matchLabels}'
+  # actually reports.
+  # selectorOverride: {}
+
   pdbName:
 
 # Maximum time Kubernetes waits for this pod to shut down before killing it.

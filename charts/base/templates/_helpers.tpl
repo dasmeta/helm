@@ -405,11 +405,20 @@ caused it. These helpers make that configuration unrepresentable.
 */}}
 
 {{/* Which value the effective replica floor was taken from, for error messages. */}}
+{{- define "base.pdb.flagger" -}}
+{{- $rs := .Values.rolloutStrategy | default dict -}}
+{{- if and $rs.enabled (eq ($rs.operator | default "") "flagger") -}}true{{- end -}}
+{{- end -}}
+
 {{- define "base.pdb.floorSource" -}}
+{{- if include "base.pdb.flagger" . -}}
+rolloutStrategy.configs.primaryScalerMinReplicas
+{{- else -}}
 {{- if (.Values.autoscaling | default dict).enabled -}}
 autoscaling.minReplicas
 {{- else -}}
 replicaCount
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -422,7 +431,14 @@ comparison would rank "10" below "2".
 */}}
 {{- define "base.pdb.floor" -}}
 {{- $as := .Values.autoscaling | default dict -}}
-{{- if $as.enabled -}}
+{{- if include "base.pdb.flagger" . -}}
+{{- /* Under flagger the canary deployment is scaled to zero between rollouts and the generated `-primary`
+       is what serves traffic, so the primary's autoscaler minimum is the floor that matters. Flagger
+       defaults it to autoscaling.minReplicas when primaryScalerMinReplicas is unset, and so does this. */ -}}
+{{- $cfg := (.Values.rolloutStrategy.configs | default dict) -}}
+{{- if hasKey $cfg "primaryScalerMinReplicas" }}{{ $cfg.primaryScalerMinReplicas | int64 }}
+{{- else if hasKey $as "minReplicas" }}{{ $as.minReplicas | int64 }}{{ else }}1{{ end -}}
+{{- else if $as.enabled -}}
 {{- if hasKey $as "minReplicas" }}{{ $as.minReplicas | int64 }}{{ else }}1{{ end -}}
 {{- else -}}
 {{- if hasKey .Values "replicaCount" }}{{ .Values.replicaCount | int64 }}{{ else }}1{{ end -}}
@@ -574,18 +590,45 @@ it does not, and an unrequested budget is wrong rather than merely useless:
                                  budgets over the same pods, and the eviction API refuses to evict a pod
                                  covered by more than one PDB -- turning a feature meant to protect drains
                                  into one that blocks them outright.
-  flagger rolloutStrategy     -- the serving workload is the flagger-generated `-primary`, whose replica
-                                 count comes from rolloutStrategy.configs.primaryScalerMinReplicas and
-                                 whose selector carries a -primary suffix. This chart's floor and selector
-                                 both describe the canary, so a budget here would protect the wrong pods.
 
-An explicit `pdb.enabled: true` still wins in all three: the author has taken ownership, and a budget they
-asked for is their decision to make. Returns "true" or "".
+Flagger IS handled rather than skipped: base.pdb.floor takes the primary's scaler minimum and
+base.pdb.selectorLabels selects the generated `-primary`, so the budget lands on the workload that actually
+serves traffic.
+
+An explicit `pdb.enabled: true` still wins in both cases above: the author has taken ownership, and a budget
+they asked for is their decision to make. Returns "true" or "".
 */}}
 {{- define "base.pdb.mayAutoCreate" -}}
-{{- $flagger := and .Values.rolloutStrategy.enabled (eq (.Values.rolloutStrategy.operator | default "") "flagger") -}}
-{{- if and (eq (.Values.workloadType | default "Deployment") "Deployment") (not .Values.selectorLabelsOverride) (not $flagger) -}}
+{{- if and (eq (.Values.workloadType | default "Deployment") "Deployment") (not .Values.selectorLabelsOverride) -}}
 true
+{{- end -}}
+{{- end -}}
+
+{{/*
+The selector the budget must carry.
+
+Normally the chart's own selector labels. Under flagger it has to be the GENERATED primary's instead: the
+canary deployment is scaled to zero between rollouts, so a budget over the canary selector protects nothing
+while looking like protection.
+
+Flagger builds the primary's labels by taking the target deployment's selector and replacing the value of
+each label it is configured to treat as the name -- its `-selector-labels` flag, which defaults to
+`app,name,app.kubernetes.io/name`. This chart selects on `app.kubernetes.io/name`, which is in that default
+set, so the primary carries `<fullname>-primary` there and keeps `app.kubernetes.io/instance` unchanged.
+
+If a cluster runs flagger with a non-default `-selector-labels` that omits `app.kubernetes.io/name`, this
+selector is wrong; set pdb.selectorOverride to whatever `kubectl get deploy <name>-primary -o jsonpath=
+'{.spec.selector.matchLabels}'` actually reports there.
+*/}}
+{{- define "base.pdb.selectorLabels" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- if $pdb.selectorOverride -}}
+{{ $pdb.selectorOverride | toYaml }}
+{{- else if include "base.pdb.flagger" . -}}
+app.kubernetes.io/name: {{ include "base.fullname" . }}-primary
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- else -}}
+{{- include "base.selectorLabels" . }}
 {{- end -}}
 {{- end -}}
 

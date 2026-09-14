@@ -36,5 +36,5 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "base.selectorLabels" . | nindent 6 }}
+      {{- include "base.pdb.selectorLabels" . | nindent 6 }}
 {{- end }}

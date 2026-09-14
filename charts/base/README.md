@@ -43,6 +43,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `"25%"` (applied by the template) |
 | `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
 | `pdb.allowZeroEvictions` | Allow a budget that permits zero voluntary evictions, for a workload rolled by hand that automation must never evict. Renders with a warning and an annotation rather than being refused | `false` |
+| `pdb.selectorOverride` | Labels the budget selects on. Only needed where the chart cannot derive them — see Flagger below | unset (derived) |
 | `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
 | `terminationGracePeriodSeconds` | Time Kubernetes waits for the pod to shut down before killing it. Must exceed the `defaultLifecycle.preStop` sleep | unset (Kubernetes default `30`) |
 
@@ -150,10 +151,31 @@ not, because an unrequested budget there is wrong rather than merely useless:
 | --- | --- |
 | `workloadType` is not `Deployment` | the workload template does not render, so the budget would select nothing |
 | `selectorLabelsOverride` is set | the release points at *another* release's pods. Two budgets over one pod makes it un-evictable, because the eviction API refuses a pod covered by more than one |
-| `rolloutStrategy` uses Flagger | the serving workload is the generated `-primary`, whose floor comes from `rolloutStrategy.configs.primaryScalerMinReplicas` and whose selector carries a `-primary` suffix. This chart's floor and selector both describe the canary |
 
 Setting `pdb.enabled: true` still creates one in all three — the author has taken ownership, and the guards
 above only govern what happens *unasked*.
+
+### Flagger
+
+Under a Flagger `rolloutStrategy` the budget follows the **generated primary**, not the canary:
+
+- the floor comes from `rolloutStrategy.configs.primaryScalerMinReplicas` (falling back to
+  `autoscaling.minReplicas`, which is what Flagger itself does)
+- the selector is `app.kubernetes.io/name: <fullname>-primary`
+
+Both matter. Flagger scales the canary Deployment to zero between rollouts, so a budget derived from the
+canary would take its floor from a workload that is not serving and select pods that do not exist —
+protection that looks present and is not. The bundled canary example has a canary floor of `1` and a primary
+floor of `5`, so reading the canary would have rendered no budget at all.
+
+The selector assumes Flagger's default `-selector-labels` (`app,name,app.kubernetes.io/name`). If your
+Flagger runs with a different set, confirm with:
+
+```bash
+kubectl get deploy <name>-primary -o jsonpath='{.spec.selector.matchLabels}'
+```
+
+and set `pdb.selectorOverride` to whatever it reports.
 
 ### Kubernetes version
 

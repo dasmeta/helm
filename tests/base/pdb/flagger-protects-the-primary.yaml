@@ -1,0 +1,16 @@
+#@ desc: under flagger the budget takes the primary's scaler floor and selects the generated -primary pods
+#@ assert: .spec.selector.matchLabels["app.kubernetes.io/name"] == "testrelease-primary"
+#@ assert: .spec.maxUnavailable == "25%"
+#
+# The canary floor here is 1 and the primary floor is 5. Reading the canary would render no budget at all,
+# and selecting the canary would protect pods that flagger scales to zero between rollouts -- protection
+# that looks present and is not.
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 5
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
