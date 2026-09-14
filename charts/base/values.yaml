@@ -507,11 +507,9 @@ pdb:
   # enabled:
 
   # Ceiling on simultaneously-unavailable replicas. This is the chart default and
-  # the recommended form: it always permits exactly one eviction regardless of
-  # replica count, so it can never become a zero-eviction budget.
-  # Accepts an absolute number or a percentage string. Kubernetes rounds
-  # maxUnavailable percentages DOWN, so "25%" at a replica floor of 2 resolves to
-  # 0 and is refused.
+  # the recommended form: it cannot become a zero-eviction budget at any replica
+  # count, which minAvailable can.
+  # Accepts an absolute number or a percentage string.
   #
   # The default is "25%", at every replica floor.
   #

@@ -31,8 +31,10 @@
 #   ./tests/run.sh base pdb               one ability
 #   ./tests/run.sh --baseline main        render from an unmodified ref
 #
-# Baseline mode exists to satisfy SC-006: every assertion must be shown to fail
-# against the chart as it exists today, otherwise it is asserting nothing.
+# Baseline mode exists so that every assertion is shown to fail against the chart
+# as it exists today, otherwise it is asserting nothing. It ENFORCES that: a
+# negative case that already passes at baseline was already being refused before
+# the change, proves nothing about it, and makes the run exit non-zero.
 
 set -uo pipefail
 
@@ -96,9 +98,19 @@ is_empty()      { [ -z "$(printf '%s' "$1" | tr -d '[:space:]-')" ]; }
 pass=0
 fail=0
 declare -a failures=()
+# Negative cases that passed at BASELINE. Each one was already refused by the unmodified chart, so it
+# demonstrates nothing about the change and the suite must say so rather than counting it as a pass.
+declare -a vacuous=()
 
 # find rather than a glob: the wildcards have to survive being optional, and a quoted glob stays literal.
-mapfile -t CASE_FILES < <(
+#
+# Read with a while loop rather than mapfile, which is bash 4+. macOS ships bash 3.2 at /bin/bash, so the
+# documented `./tests/run.sh` failed there with `mapfile: command not found` and an unbound array -- on the
+# machines this is developed on, while passing CI on ubuntu's bash 5.
+CASE_FILES=()
+while IFS= read -r _f; do
+  [ -n "${_f}" ] && CASE_FILES+=("${_f}")
+done < <(
   find "${SCRIPT_DIR}" -mindepth 3 -maxdepth 3 -name '*.yaml' \
     -path "${SCRIPT_DIR}/${FILTER_CHART:-*}/${FILTER_ABILITY:-*}/*" | sort
 )
@@ -129,7 +141,9 @@ for case_file in "${CASE_FILES[@]}"; do
   ok=1
   reason=""
 
-  if [[ "$(basename "${case_file}")" == invalid-* ]]; then
+  is_negative=0
+  [[ "$(basename "${case_file}")" == invalid-* ]] && is_negative=1
+  if [ "${is_negative}" = 1 ]; then
     expect="$(directive expect-fail "${case_file}")"
     if [ -z "${expect}" ]; then
       ok=0; reason="negative case has no '#@ expect-fail:' directive"
@@ -164,7 +178,13 @@ for case_file in "${CASE_FILES[@]}"; do
 
   if [ ${ok} -eq 1 ]; then
     pass=$((pass + 1))
-    printf 'PASS  %-52s %s\n' "${name}" "${desc}"
+    if [ -n "${BASELINE_REF}" ] && [ "${is_negative}" = 1 ]; then
+      # Refused by the UNMODIFIED chart, so this case cannot be evidence for the change.
+      vacuous+=("${name}")
+      printf 'VACUOUS  %-49s %s\n' "${name}" "${desc}"
+    else
+      printf 'PASS  %-52s %s\n' "${name}" "${desc}"
+    fi
   else
     fail=$((fail + 1))
     failures+=("${name}: ${reason}")
@@ -188,6 +208,14 @@ if [ -n "${BASELINE_REF}" ]; then
   echo
   echo "NOTE: in baseline mode failures are EXPECTED. Every negative case must fail"
   echo "here; a negative case that passes against an unmodified chart asserts nothing."
+  if [ ${#vacuous[@]} -gt 0 ]; then
+    echo
+    echo "VACUOUS negative cases -- already refused by the unmodified chart, so they"
+    echo "demonstrate nothing about this change. Correct them before relying on them:"
+    for v in "${vacuous[@]}"; do echo "  - ${v}"; done
+    exit 1
+  fi
+  echo "No vacuous negative cases: every one of them fails at baseline, as required."
   exit 0
 fi
 

@@ -6,10 +6,7 @@
 {{- $hasMin := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) -}}
 {{- $hasMax := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
 {{- /* Explicit enablement wins over every automatic-creation guard: the author has taken ownership. */ -}}
-{{- $explicit := and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "true") -}}
-{{- $auto := and (not (hasKey $pdb "enabled")) (include "base.pdb.mayAutoCreate" .) -}}
-{{- $enabled := or $explicit $auto -}}
-{{- if and $enabled (ge $floorVal 2) -}}
+{{- if include "base.pdb.renders" . -}}
 {{- /* policy/v1 is served from 1.21. The chart supports 1.18+, and this is the first template to create a
        PDB without being asked, so pre-1.21 consumers would newly fail on apply. Same gate as ingress.yaml. */ -}}
 {{- if semverCompare ">=1.21-0" (include "base.capabilities.kubeVersion" .) -}}

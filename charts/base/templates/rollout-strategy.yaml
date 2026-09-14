@@ -24,7 +24,7 @@ spec:
     name: {{ include "base.fullname" . }}
     primaryScalerReplicas:
       # min and max replicas count for primary hpa, default to main app hpa, the main app hpa values also being used for canary deploy hpa so we use this options to have custom values for primary hpa
-      minReplicas: {{ .Values.rolloutStrategy.configs.primaryScalerMinReplicas | default .Values.autoscaling.minReplicas }}
+      minReplicas: {{ include "base.primaryFloor" . }}
       maxReplicas: {{ .Values.rolloutStrategy.configs.primaryScalerMaxReplicas | default .Values.autoscaling.maxReplicas }}
   {{- end }}
   {{- with .Values.rolloutStrategy.configs.progressDeadlineSeconds }}

@@ -1,5 +1,16 @@
 # Base Chart PodDisruptionBudget Safety Design
 
+> **Amendment, 2026-09-14.** Two decisions below were superseded during review and are left in place as the
+> record of what was originally decided. The chart is the authority; `charts/base/README.md` describes the
+> shipped behaviour.
+>
+> 1. **Rounding.** This document states that Kubernetes rounds `maxUnavailable` percentages *down*. That is
+>    true of a Deployment rolling update and false of a PodDisruptionBudget: the disruption controller
+>    resolves both fields with `roundUp=true`. The guard built on the wrong rule rejected safe
+>    configurations.
+> 2. **The default.** `maxUnavailable: 1` became `"25%"`, which Kubernetes resolves against the *current*
+>    replica count rather than the floor fixed at template time.
+
 **Ticket:** DMVP-10430 (case group B)
 
 ## Context
