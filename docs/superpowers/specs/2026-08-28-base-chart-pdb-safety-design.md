@@ -28,8 +28,8 @@ same time, the pattern demonstrated in this repository's own examples paired
 nothing. Both failure directions were live simultaneously: services with no
 protection, and services whose protection blocked the cluster.
 
-A fleet review tied roughly 35 incidents to a small set of causes, of which this
-was one. Anyone copying `examples/base/basic.yaml` inherited the antipattern.
+A review tied a series of incidents to a small set of causes, of which this was
+one. Anyone copying `examples/base/basic.yaml` inherited the antipattern.
 
 ## Goal
 
