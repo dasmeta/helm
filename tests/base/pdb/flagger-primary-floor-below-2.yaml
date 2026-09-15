@@ -1,0 +1,11 @@
+#@ desc: a primary floor below 2 renders no budget, the same rule as any other workload
+#@ assert-no-pdb
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 1
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 8

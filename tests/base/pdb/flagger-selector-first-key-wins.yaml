@@ -1,0 +1,21 @@
+#@ desc: flagger suffixes the FIRST of its selector-labels present, so `app` wins over app.kubernetes.io/name
+#@ assert: .spec.selector.matchLabels["app"] == "checkout-primary"
+#@ assert: .spec.selector.matchLabels["app.kubernetes.io/name"] == "verify"
+#
+# Flagger walks app,name,app.kubernetes.io/name in order and suffixes the first key it finds, leaving the
+# others alone. Assuming the last key is suffixed renders a selector matching zero pods: a budget that
+# exists, reports no expected pods, and protects nothing.
+selectorLabelsOverride:
+  app: checkout
+  app.kubernetes.io/name: verify
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 3
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+pdb:
+  enabled: true

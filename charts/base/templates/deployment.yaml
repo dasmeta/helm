@@ -58,7 +58,7 @@ spec:
         {{- end }}
     spec:
       {{- if .Values.terminationGracePeriodSeconds }}
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 30 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

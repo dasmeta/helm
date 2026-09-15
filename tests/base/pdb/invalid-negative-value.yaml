@@ -1,0 +1,9 @@
+#@ desc: a negative value is refused by name, not with a misleading zero-evictions message
+#@ expect-fail: neither a non-negative whole number nor a percentage
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: -1

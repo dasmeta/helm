@@ -1,0 +1,5 @@
+#@ desc: percentage minAvailable, rounds up to 2 of 4, permits 2 evictions
+#@ assert: .spec.minAvailable == "50%"
+replicaCount: 4
+pdb:
+  minAvailable: "50%"

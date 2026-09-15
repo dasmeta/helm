@@ -1,0 +1,11 @@
+#@ desc: the opt-in covers maxUnavailable=0 too, not just minAvailable at the floor
+#@ assert: .spec.maxUnavailable == 0
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 8
+
+pdb:
+  enabled: true
+  maxUnavailable: 0
+  allowZeroEvictions: true

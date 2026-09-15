@@ -1,0 +1,12 @@
+#@ desc: "0%" is the only percentage that can still resolve to zero permitted evictions
+#@ expect-fail: Budget percentages round UP
+#
+# Pinned on the CORRECTED wording on purpose. "resolves to 0 permitted evictions" also appeared in the old
+# message that said percentages round down, so asserting on it would have passed against the bug.
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: "0%"

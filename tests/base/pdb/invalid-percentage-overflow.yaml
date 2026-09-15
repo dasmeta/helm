@@ -1,0 +1,12 @@
+#@ desc: an oversized percentage must be refused by pattern, not by a conversion that overflows to 0
+#@ expect-fail: is not a percentage between 0% and 100%
+#
+# `int` narrows, so this value overflowed to 0, passed a `> 100` comparison and rendered -- leaving
+# kubernetes a budget it cannot evaluate, from the guard whose whole job is preventing that.
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: "999999999999999999999999999%"

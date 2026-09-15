@@ -39,6 +39,181 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `config` | Env vars for main container (map) | example in values.yaml |
 | `externalSecretsApiVersion` | API version of the generated `ExternalSecret`. Set to `external-secrets.io/v1beta1` if the cluster's external secret operator does not serve `v1` | `external-secrets.io/v1` |
 | `gatewayApi.enabled` | Enable Gateway API (subchart) | `false` |
+| `pdb.enabled` | Create a PodDisruptionBudget. Leave unset for the safe default: created automatically when the effective replica floor is 2 or more, omitted below that. `true` at a floor below 2 is refused | unset (derived) |
+| `pdb.maxUnavailable` | Ceiling on simultaneously-unavailable replicas. Absolute number or percentage string. Recommended form; can never become a zero-eviction budget | `"25%"` (applied by the template) |
+| `pdb.minAvailable` | Floor on available replicas. Mutually exclusive with `maxUnavailable`. Must stay below the effective replica floor. Never set to `autoscaling.minReplicas` | unset |
+| `pdb.allowZeroEvictions` | Allow a budget that permits zero voluntary evictions, for a workload rolled by hand that automation must never evict. Renders with a warning and an annotation rather than being refused | `false` |
+| `pdb.selectorOverride` | Labels the budget selects on. Only needed where the chart cannot derive them — see Flagger below | unset (derived) |
+| `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
+| `terminationGracePeriodSeconds` | Time Kubernetes waits for the pod to shut down before killing it. Must exceed the `defaultLifecycle.preStop` sleep | unset (Kubernetes default `30`) |
+
+## Upgrading to 0.4.0
+
+This release changes rendered output. Read this before bumping.
+
+### PodDisruptionBudgets are now created by default
+
+A budget is created automatically when the **effective replica floor** is 2 or
+more, defaulting to `maxUnavailable: "25%"`. The effective replica floor is
+`autoscaling.minReplicas` when autoscaling is enabled, and `replicaCount`
+otherwise. Below a floor of 2 no budget is created, because a budget over a
+single replica either blocks every drain or protects nothing.
+
+Previously `pdb.enabled` defaulted to `false`, so most services had no budget at
+all and a node drain could evict every replica at once, emptying the service's
+endpoints for one to two minutes.
+
+### Budgets that permit zero evictions are now refused
+
+The chart now **fails to render** any budget that permits no voluntary eviction
+at the replica floor. This is deliberate and it is the more important half of the
+change.
+
+Such a budget blocks every drain-based operation: node consolidation stalls,
+reclaimed-capacity (spot) replacement stalls, and managed node group upgrades
+fail on pod eviction. The reported symptom is that node scaling or the cluster
+upgrade is stuck, which sends the investigation somewhere other than the service
+that caused it.
+
+Refused configurations:
+
+| Configuration | Why |
+| --- | --- |
+| `minAvailable` >= effective replica floor | permits nothing |
+| `maxUnavailable: 0` | permits nothing |
+| a percentage resolving to 0 permitted evictions | only `"0%"` can, since budget percentages round **up** |
+| a value outside the `IntOrString` domain | negative numbers, percentages above 100, and anything that is neither |
+| both `minAvailable` and `maxUnavailable` set | the Kubernetes API accepts only one |
+| `pdb.enabled: true` at a replica floor below 2 | no budget over a single replica is both safe and useful |
+
+Every message above names `pdb.allowZeroEvictions` as the way through, so the escape hatch is discoverable
+from the failure rather than from this document.
+
+### When a zero-eviction budget is correct
+
+Some workloads are rolled by hand, pod by pod, after cooling an internal process down first, and must never
+be evicted by automation. For those, a budget permitting nothing is the right answer rather than a mistake:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 3
+pdb:
+  enabled: true
+  minAvailable: 3            # equals the floor, permits nothing -- deliberately
+  allowZeroEvictions: true   # say so, and the chart renders it
+podAnnotations:
+  karpenter.sh/do-not-disrupt: "true"   # stop the autoscaler retrying a drain it cannot finish
+```
+
+The chart then renders the budget, annotates it `dasmeta.io/zero-evictions`, and prints a warning on every
+install and upgrade. Nothing is silenced: node drains still block, node group upgrades still fail on
+eviction, and the node stops receiving AMI patches until someone moves the workload. The flag records that
+those consequences are intended, and the annotation is what tells whoever finds the stuck drain months later
+that it was a decision.
+
+### The default budget tracks the current replica count
+
+`maxUnavailable` defaults to `"25%"` at every replica floor.
+
+A **percentage** rather than a number computed by the chart, because Kubernetes resolves a percentage at
+runtime against the *current* expected pod count, while a number is fixed at template time from the *floor*
+and never moves. For a service with `minReplicas: 10, maxReplicas: 100`:
+
+| running replicas | absolute `2` | `"25%"` |
+| --- | --- | --- |
+| 10 | 2 | 2 |
+| 20 | 2 | **5** |
+| 100 | 2 | **25** |
+
+25% is not arbitrary: it is what a Deployment rollout already does by default, so draining paces at a rate
+the service demonstrably tolerates every time it is deployed.
+
+**Rounding.** The disruption controller resolves *both* `minAvailable` and `maxUnavailable` percentages
+rounding **up**. That is not the same as a Deployment rolling update, where `maxUnavailable` rounds **down**
+— so `"25%"` is 1 permitted eviction at a floor of 2 under budget rules and 0 under rollout rules. Only
+`"0%"` can resolve to zero.
+
+**This paces draining, not rollouts.** A Deployment rollout deletes pods directly and never uses the
+Eviction API, so its speed comes from `strategy.rollingUpdate` (Kubernetes defaults to 25% unavailable /
+25% surge) and a PodDisruptionBudget has no say in it. What the budget paces is node drains: consolidation,
+reclaimed-capacity replacement, and cluster upgrades.
+
+Override in either direction — an absolute number to pin it regardless of scale, or a different percentage.
+
+### When the chart does NOT create a budget for you
+
+Automatic creation needs the chart to own both the workload and the selector. It stands down where it does
+not, because an unrequested budget there is wrong rather than merely useless:
+
+| situation | why |
+| --- | --- |
+| `workloadType` is not `Deployment` | the workload template does not render, so the budget would select nothing |
+| `selectorLabelsOverride` is set | the release points at *another* release's pods. Two budgets over one pod makes it un-evictable, because the eviction API refuses a pod covered by more than one |
+
+Setting `pdb.enabled: true` still creates one in both cases — the author has taken ownership, and the
+guards above only govern what happens *unasked*.
+
+### Flagger
+
+Under a Flagger `rolloutStrategy` the budget follows the **generated primary**, not the canary:
+
+- with autoscaling **enabled**, the floor is `rolloutStrategy.configs.primaryScalerMinReplicas`, falling
+  back to `autoscaling.minReplicas` exactly as Flagger does
+- with autoscaling **disabled**, Flagger emits no `autoscalerRef` at all and the primary mirrors the
+  Deployment, so the floor is `replicaCount`
+- the selector is the chart's own selector labels with **one key suffixed `-primary`** — the first of
+  `app`, `name`, `app.kubernetes.io/name` that is present, which is how Flagger chooses it
+
+Both matter. Flagger scales the canary Deployment to zero between rollouts, so a budget derived from the
+canary would take its floor from a workload that is not serving and select pods that do not exist —
+protection that looks present and is not. The bundled canary example has a canary floor of `1` and a primary
+floor of `5`, so reading the canary would have rendered no budget at all.
+
+Flagger walks its `-selector-labels` list **in order** and suffixes the first key it finds in the target's
+selector, leaving the rest untouched. A release whose selector carries `app` therefore gets
+`app=<value>-primary` while `app.kubernetes.io/name` is unchanged — assuming the last key is the suffixed
+one produces a selector matching zero pods. Where the selector contains none of those keys the chart
+refuses rather than guessing, because Flagger itself would refuse the canary.
+
+The order above is Flagger's default. If your
+Flagger runs with a different set, confirm with:
+
+```bash
+kubectl get deploy <name>-primary -o jsonpath='{.spec.selector.matchLabels}'
+```
+
+and set `pdb.selectorOverride` to whatever it reports.
+
+### Kubernetes version
+
+`policy/v1` is served from Kubernetes 1.21. Below that the budget renders `policy/v1beta1`, so the 1.18+
+support this chart documents still holds now that budgets are created without being asked for.
+
+### The most common breakage
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 1
+pdb:
+  enabled: true
+  minAvailable: 1     # equals the replica floor -> permits zero evictions
+```
+
+This renders a drain-blocking budget on 0.3.x and is refused on 0.4.0. It was the
+pattern in this repository's own examples, so it is widespread.
+
+**Fix**: delete the `pdb` block. The chart now does the right thing on its own —
+no budget at a floor of 1, and a safe one at 2 or more. If you genuinely need a
+budget, raise the replica floor to 2 or more first.
+
+To tune a budget deliberately, see `examples/base/with-pdb-tuned.yaml`.
+
+### Opting out
+
+`pdb.enabled: false` still disables the budget entirely and is never refused.
 
 ### Examples
 

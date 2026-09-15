@@ -489,10 +489,102 @@ volumes: []
 env: dev
 product: application
 
+# PodDisruptionBudget. Controls how much of this workload may be voluntarily
+# removed at once, which is what protects it during node drains: node
+# consolidation, reclaimed-capacity (spot) replacement, and cluster/node-group
+# upgrades all drain nodes and all honour this budget.
+#
+# A budget that permits ZERO evictions blocks all of the above indefinitely, and
+# the symptom looks like the node scaling or the cluster upgrade being stuck
+# rather than a problem with this service. The chart therefore refuses to render
+# such a budget, including when it is set explicitly.
 pdb:
-  enabled: false
-  minAvailable: 1
+  # Leave unset to get the safe default: a budget is created automatically when
+  # the effective replica floor is 2 or more, and omitted below that (a budget
+  # over a single replica either blocks every drain or protects nothing).
+  # Set to false to opt out entirely. Setting true when the replica floor is
+  # below 2 is refused.
+  # enabled:
+
+  # Ceiling on simultaneously-unavailable replicas. This is the chart default and
+  # the recommended form: it cannot become a zero-eviction budget at any replica
+  # count, which minAvailable can.
+  # Accepts an absolute number or a percentage string.
+  #
+  # The default is "25%", at every replica floor.
+  #
+  # A percentage rather than a number, because kubernetes resolves it at RUNTIME
+  # against the current expected pod count, while a number is fixed at template
+  # time from the FLOOR and never moves. For minReplicas 10 / maxReplicas 100 that
+  # is the whole difference: a number permits the same 2 evictions at 10 pods, at
+  # 20 and at 100, whereas "25%" gives 2, 5 and 25.
+  #
+  # 25% is what a Deployment rollout already does by default, so draining paces at
+  # a rate the service demonstrably tolerates every time it is deployed.
+  #
+  # ROUNDING. The disruption controller resolves BOTH minAvailable and
+  # maxUnavailable percentages rounding UP. This is not the same as a Deployment
+  # rolling update, where maxUnavailable rounds DOWN -- so "25%" is 1 permitted
+  # eviction at a floor of 2 under budget rules and 0 under rollout rules. Only
+  # "0%" can resolve to zero, which is why no lower boundary is needed here.
+  #
+  # Note this paces DRAINING, not rollouts. A Deployment rollout deletes pods
+  # directly and never goes through the Eviction API, so it is governed by
+  # `strategy.rollingUpdate` and a budget has no say in it. What this paces is a
+  # node drain: consolidation, reclaimed-capacity replacement, cluster upgrades.
+  #
+  # Override in either direction: an absolute number to pin it regardless of scale,
+  # or a different percentage.
+  #
+  # maxUnavailable: 1
+
+  # Floor on available replicas. Mutually exclusive with maxUnavailable.
+  # Must stay BELOW the effective replica floor, otherwise it permits nothing.
+  # Do NOT set this to autoscaling.minReplicas: at the floor that permits zero
+  # evictions and blocks every drain. Accepts an absolute number or a percentage
+  # string; percentages round UP, the same as maxUnavailable under budget rules.
+  # minAvailable:
+
+  # Escape hatch for workloads that are rolled BY HAND, pod by pod, and must never
+  # be evicted by automation -- typically after cooling an internal process down
+  # first. Setting this to true allows a budget that permits zero voluntary
+  # evictions, which the chart otherwise refuses.
+  #
+  # It is not a way to silence the error. Understand what you are taking on:
+  # node drains block on these pods, consolidation and reclaimed-capacity
+  # replacement stall, an EKS managed node group upgrade FAILS on pod eviction,
+  # and the node stops receiving AMI patches until someone moves the workload
+  # deliberately. The symptom appears as node scaling or the cluster upgrade
+  # being stuck, nowhere near this release.
+  #
+  # When you do set it, also set karpenter.sh/do-not-disrupt on the pods, so the
+  # autoscaler stops retrying a drain it can never complete.
+  #
+  # The budget is annotated and a warning is printed on every install and upgrade,
+  # so the choice stays visible to whoever finds the stuck drain later.
+  # allowZeroEvictions: false
+
+  # Override the labels the budget selects on.
+  #
+  # Needed only where the chart cannot derive them. The one known case is flagger
+  # running with a non-default `-selector-labels` flag: the chart assumes the
+  # default (`app,name,app.kubernetes.io/name`), under which the generated primary
+  # carries `app.kubernetes.io/name: <fullname>-primary`. If your flagger is
+  # configured otherwise, put here what
+  #   kubectl get deploy <name>-primary -o jsonpath='{.spec.selector.matchLabels}'
+  # actually reports.
+  # selectorOverride: {}
+
   pdbName:
+
+# Maximum time Kubernetes waits for this pod to shut down before killing it.
+# Unset means the Kubernetes default of 30 seconds applies.
+#
+# This budget covers the preStop hook below PLUS the application's own shutdown.
+# If preStop sleeps for N seconds, this must exceed N or the pod is killed mid-
+# shutdown and in-flight requests are cut off. Relevant during any node drain,
+# where the node is waiting on exactly this before it can go away.
+# terminationGracePeriodSeconds: 30
 
 # the default lifecycle rule to apply which allows to have some kind of graceful shutdown by waiting/sleep for 5 seconds, even if there is no sleep command in os this will not produce issues and container will get shuted down
 defaultLifecycle:
