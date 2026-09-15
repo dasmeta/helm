@@ -21,6 +21,11 @@
 #   #@ assert: <yq expression>       must evaluate to true against the rendered PDB
 #   #@ expect-fail: <substring>      render must fail and print this substring
 #   #@ kube-version: <semver>        render against this kubernetes version rather than helm's default
+#   #@ assert-notes: <substring>     install NOTES must contain this
+#   #@ assert-no-notes: <substring>  install NOTES must NOT contain this
+#
+# The notes directives render with `helm install --dry-run`, because `helm template` does not produce
+# NOTES.txt at all -- a fixture asserting on notes through the template path silently tests nothing.
 #
 # A case whose filename starts with `invalid-` is a negative case: the render is
 # required to fail. Every other case is positive and the render must succeed.
@@ -95,6 +100,13 @@ has_directive() { grep -qE "^#@ $1([[:space:]]|$)" "$2" 2>/dev/null; }
 # yq emits "---" or whitespace for an empty selection; treat that as absent.
 is_empty()      { [ -z "$(printf '%s' "$1" | tr -d '[:space:]-')" ]; }
 
+# A missing or broken yq turns every rendered budget into a false "none was rendered", and lets
+# assert-no-pdb cases pass without inspecting any YAML at all. The suite would report success while
+# asserting nothing, which is worse than failing.
+for dep in helm yq jq; do
+  command -v "${dep}" >/dev/null 2>&1 || { echo "error: ${dep} is required and not on PATH" >&2; exit 2; }
+done
+
 pass=0
 fail=0
 declare -a failures=()
@@ -156,7 +168,12 @@ for case_file in "${CASE_FILES[@]}"; do
     if [ ${rc} -ne 0 ]; then
       ok=0; reason="render failed: $(printf '%s' "${out}" | head -2 | tr '\n' ' ')"
     else
-      pdb="$(printf '%s' "${out}" | yq 'select(.kind == "PodDisruptionBudget")' 2>/dev/null)"
+      pdb="$(printf '%s' "${out}" | yq 'select(.kind == "PodDisruptionBudget")' 2>&1)"
+      yq_rc=$?
+      if [ ${yq_rc} -ne 0 ]; then
+        ok=0; reason="yq failed on the rendered output: $(printf '%s' "${pdb}" | head -1)"
+        pdb=""
+      fi
       if has_directive assert-no-pdb "${case_file}"; then
         if ! is_empty "${pdb}"; then ok=0; reason="expected NO PodDisruptionBudget, but one was rendered"; fi
       else
@@ -174,6 +191,21 @@ for case_file in "${CASE_FILES[@]}"; do
         fi
       fi
     fi
+  fi
+
+  # NOTES.txt is produced by `helm install`, not by `helm template`, so it needs its own render.
+  if [ ${ok} -eq 1 ] && { has_directive assert-notes "${case_file}" || has_directive assert-no-notes "${case_file}"; }; then
+    notes="$(helm install --dry-run testrelease "${CHART_DIR}" -f "${case_file}" ${kubever:+--kube-version "${kubever}"} 2>&1)"
+    while IFS= read -r want; do
+      [ -z "${want}" ] && continue
+      printf '%s' "${notes}" | grep -qF -- "${want}" || { ok=0; reason="install notes missing: ${want}"; }
+    done < <(directive assert-notes "${case_file}")
+    while IFS= read -r unwanted; do
+      [ -z "${unwanted}" ] && continue
+      if printf '%s' "${notes}" | grep -qF -- "${unwanted}"; then
+        ok=0; reason="install notes contained what must not be there: ${unwanted}"
+      fi
+    done < <(directive assert-no-notes "${case_file}")
   fi
 
   if [ ${ok} -eq 1 ]; then

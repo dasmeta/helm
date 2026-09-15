@@ -1,4 +1,4 @@
-#@ desc: floor 2, no config -> default budget of maxUnavailable 1
+#@ desc: floor 2, no config -> default budget of maxUnavailable "25%"
 #@ assert: .spec.maxUnavailable == "25%"
 #@ assert: has("spec") and (.spec | has("minAvailable") | not)
 replicaCount: 2

@@ -54,7 +54,7 @@ This release changes rendered output. Read this before bumping.
 ### PodDisruptionBudgets are now created by default
 
 A budget is created automatically when the **effective replica floor** is 2 or
-more, defaulting to `maxUnavailable: 1`. The effective replica floor is
+more, defaulting to `maxUnavailable: "25%"`. The effective replica floor is
 `autoscaling.minReplicas` when autoscaling is enabled, and `replicaCount`
 otherwise. Below a floor of 2 no budget is created, because a budget over a
 single replica either blocks every drain or protects nothing.
@@ -152,23 +152,32 @@ not, because an unrequested budget there is wrong rather than merely useless:
 | `workloadType` is not `Deployment` | the workload template does not render, so the budget would select nothing |
 | `selectorLabelsOverride` is set | the release points at *another* release's pods. Two budgets over one pod makes it un-evictable, because the eviction API refuses a pod covered by more than one |
 
-Setting `pdb.enabled: true` still creates one in all three — the author has taken ownership, and the guards
-above only govern what happens *unasked*.
+Setting `pdb.enabled: true` still creates one in both cases — the author has taken ownership, and the
+guards above only govern what happens *unasked*.
 
 ### Flagger
 
 Under a Flagger `rolloutStrategy` the budget follows the **generated primary**, not the canary:
 
-- the floor comes from `rolloutStrategy.configs.primaryScalerMinReplicas` (falling back to
-  `autoscaling.minReplicas`, which is what Flagger itself does)
-- the selector is `app.kubernetes.io/name: <fullname>-primary`
+- with autoscaling **enabled**, the floor is `rolloutStrategy.configs.primaryScalerMinReplicas`, falling
+  back to `autoscaling.minReplicas` exactly as Flagger does
+- with autoscaling **disabled**, Flagger emits no `autoscalerRef` at all and the primary mirrors the
+  Deployment, so the floor is `replicaCount`
+- the selector is the chart's own selector labels with **one key suffixed `-primary`** — the first of
+  `app`, `name`, `app.kubernetes.io/name` that is present, which is how Flagger chooses it
 
 Both matter. Flagger scales the canary Deployment to zero between rollouts, so a budget derived from the
 canary would take its floor from a workload that is not serving and select pods that do not exist —
 protection that looks present and is not. The bundled canary example has a canary floor of `1` and a primary
 floor of `5`, so reading the canary would have rendered no budget at all.
 
-The selector assumes Flagger's default `-selector-labels` (`app,name,app.kubernetes.io/name`). If your
+Flagger walks its `-selector-labels` list **in order** and suffixes the first key it finds in the target's
+selector, leaving the rest untouched. A release whose selector carries `app` therefore gets
+`app=<value>-primary` while `app.kubernetes.io/name` is unchanged — assuming the last key is the suffixed
+one produces a selector matching zero pods. Where the selector contains none of those keys the chart
+refuses rather than guessing, because Flagger itself would refuse the canary.
+
+The order above is Flagger's default. If your
 Flagger runs with a different set, confirm with:
 
 ```bash

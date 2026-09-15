@@ -1,5 +1,6 @@
 #@ desc: a disabled budget must not be described as a zero-eviction budget in the install notes
 #@ assert-no-pdb
+#@ assert-no-notes: ZERO voluntary evictions
 #
 # allowZeroEvictions with pdb.enabled=false previously told the reader their release had a zero-eviction
 # budget, when it had no budget at all. The warning now follows the render decision, not the values.

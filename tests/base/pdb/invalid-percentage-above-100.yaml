@@ -1,5 +1,5 @@
 #@ desc: a percentage above 100 is outside the IntOrString domain and must be named as such
-#@ expect-fail: exceeds 100%
+#@ expect-fail: is not a percentage between 0% and 100%
 autoscaling:
   enabled: true
   minReplicas: 4
