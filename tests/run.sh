@@ -27,6 +27,10 @@
 # The notes directives render with `helm install --dry-run`, because `helm template` does not produce
 # NOTES.txt at all -- a fixture asserting on notes through the template path silently tests nothing.
 #
+# THEY NEED A REACHABLE CLUSTER. helm 3.15 has no offline path for NOTES.txt: --dry-run=client still asks
+# the API server for its version, and --show-only does not cover it. Where no cluster is reachable these
+# specific assertions are reported as SKIPPED rather than passed, so CI stays honest about what it checked.
+#
 # A case whose filename starts with `invalid-` is a negative case: the render is
 # required to fail. Every other case is positive and the render must succeed.
 #
@@ -115,6 +119,8 @@ declare -a failures=()
 # Negative cases that passed at BASELINE. Each one was already refused by the unmodified chart, so it
 # demonstrates nothing about the change and the suite must say so rather than counting it as a pass.
 declare -a vacuous=()
+# Assertions that could not run in this environment. Reported, never counted as passes.
+declare -a skipped=()
 
 # find rather than a glob: the wildcards have to survive being optional, and a quoted glob stays literal.
 #
@@ -196,18 +202,29 @@ for case_file in "${CASE_FILES[@]}"; do
   fi
 
   # NOTES.txt is produced by `helm install`, not by `helm template`, so it needs its own render.
+  notes_skip=0
   if [ ${ok} -eq 1 ] && { has_directive assert-notes "${case_file}" || has_directive assert-no-notes "${case_file}"; }; then
     notes="$(helm install --dry-run testrelease "${CHART_DIR}" -f "${case_file}" ${kubever:+--kube-version "${kubever}"} 2>&1)"
-    if [ $? -ne 0 ]; then
-      # A failed dry-run produces no notes, so every assert-no-notes would pass for the wrong reason.
+    notes_rc=$?
+    if [ ${notes_rc} -ne 0 ] && printf '%s' "${notes}" | grep -q 'cluster unreachable'; then
+      # NOTES.txt is rendered by `helm install`, and helm 3.15 has no offline path for it: --dry-run=client
+      # still asks the API server for its version, and --show-only does not cover NOTES.txt. Where there is
+      # no cluster these assertions cannot run, so they are SKIPPED and said so -- not silently passed,
+      # which is the failure mode that put them here.
+      skipped+=("${name}: notes assertions need a reachable cluster")
+      notes_skip=1
+    elif [ ${notes_rc} -ne 0 ]; then
+      # Any other failure produces no notes, so every assert-no-notes would pass for the wrong reason.
       ok=0; reason="notes render failed: $(printf '%s' "${notes}" | head -1)"
     fi
     while IFS= read -r want; do
       [ -z "${want}" ] && continue
+      [ "${notes_skip}" = 1 ] && continue
       printf '%s' "${notes}" | grep -qF -- "${want}" || { ok=0; reason="install notes missing: ${want}"; }
     done < <(directive assert-notes "${case_file}")
     while IFS= read -r unwanted; do
       [ -z "${unwanted}" ] && continue
+      [ "${notes_skip}" = 1 ] && continue
       if printf '%s' "${notes}" | grep -qF -- "${unwanted}"; then
         ok=0; reason="install notes contained what must not be there: ${unwanted}"
       fi
@@ -235,6 +252,11 @@ shopt -u nullglob
 echo
 echo "-----------------------------------------------------------"
 printf 'passed: %d   failed: %d   total: %d\n' "${pass}" "${fail}" "$((pass + fail))"
+if [ ${#skipped[@]} -gt 0 ]; then
+  echo
+  echo "SKIPPED assertions (the case still ran; these specific checks could not):"
+  for sk in "${skipped[@]}"; do echo "  - ${sk}"; done
+fi
 
 if [ ${fail} -gt 0 ]; then
   echo
