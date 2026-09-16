@@ -1,0 +1,23 @@
+#@ desc: the selector flagger sees includes .Values.matchLabels, so a key added there is the one suffixed
+#@ assert: .spec.selector.matchLabels["app"] == "checkout-primary"
+#@ assert: .spec.selector.matchLabels["app.kubernetes.io/name"] == "testrelease"
+#
+# deployment.yaml puts base.selectorLabels AND .Values.matchLabels into spec.selector.matchLabels. Reading
+# only the first misses a key the deployment really carries: flagger suffixes the first key IT finds, so an
+# `app` added through matchLabels is suffixed by flagger while the chart suffixes something else and the
+# budget matches zero primary pods.
+matchLabels:
+  appkey:
+    name: app
+    value: checkout
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 3
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 6
+pdb:
+  enabled: true

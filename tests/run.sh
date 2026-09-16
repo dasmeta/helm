@@ -96,7 +96,9 @@ if [ -n "${BASELINE_REF}" ]; then
 fi
 
 directive()     { grep -E "^#@ $1:" "$2" 2>/dev/null | sed -E "s/^#@ $1:[[:space:]]*//"; }
-has_directive() { grep -qE "^#@ $1([[:space:]]|$)" "$2" 2>/dev/null; }
+# The colon is part of every directive that takes a value, so it has to be accepted here. Without it the
+# notes gates below silently returned false and their cases reported PASS while asserting nothing.
+has_directive() { grep -qE "^#@ $1([[:space:]:]|$)" "$2" 2>/dev/null; }
 # yq emits "---" or whitespace for an empty selection; treat that as absent.
 is_empty()      { [ -z "$(printf '%s' "$1" | tr -d '[:space:]-')" ]; }
 
@@ -196,6 +198,10 @@ for case_file in "${CASE_FILES[@]}"; do
   # NOTES.txt is produced by `helm install`, not by `helm template`, so it needs its own render.
   if [ ${ok} -eq 1 ] && { has_directive assert-notes "${case_file}" || has_directive assert-no-notes "${case_file}"; }; then
     notes="$(helm install --dry-run testrelease "${CHART_DIR}" -f "${case_file}" ${kubever:+--kube-version "${kubever}"} 2>&1)"
+    if [ $? -ne 0 ]; then
+      # A failed dry-run produces no notes, so every assert-no-notes would pass for the wrong reason.
+      ok=0; reason="notes render failed: $(printf '%s' "${notes}" | head -1)"
+    fi
     while IFS= read -r want; do
       [ -z "${want}" ] && continue
       printf '%s' "${notes}" | grep -qF -- "${want}" || { ok=0; reason="install notes missing: ${want}"; }

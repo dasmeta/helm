@@ -526,7 +526,10 @@ replica floor below 2.
          there, flagger itself refuses the canary and there is no correct selector to derive, so rendering
          one would produce a budget matching zero pods -- present, reporting no expected pods, protecting
          nothing. Refuse instead, and name the way out. */ -}}
-  {{- if and (include "base.pdb.flagger" .) (not $pdb.selectorOverride) (not (include "base.pdb.flaggerSelectorKey" .)) -}}
+  {{- /* Gated on whether a budget renders at all. Unconditional, this refused a working setup -- flagger
+         plus selectorLabelsOverride and no pdb.enabled -- where the chart stands down and creates nothing,
+         so there was no selector to get wrong and nothing to protect. */ -}}
+  {{- if and (include "base.pdb.renders" .) (include "base.pdb.flagger" .) (not $pdb.selectorOverride) (not (include "base.pdb.flaggerSelectorKey" .)) -}}
     {{- fail "base chart: this release uses a flagger rolloutStrategy, but its selector labels contain none of `app`, `name` or `app.kubernetes.io/name`, so the label flagger will suffix on the generated primary cannot be derived. Set pdb.selectorOverride to the primary's real selector -- `kubectl get deploy <name>-primary -o jsonpath='{.spec.selector.matchLabels}'` reports it -- or set pdb.enabled=false." -}}
   {{- end -}}
 
@@ -659,9 +662,26 @@ When the selector contains none of those keys, flagger itself refuses the canary
 answer to derive and the chart stands down rather than guessing. `pdb.selectorOverride` covers that and any
 cluster running flagger with a non-default `-selector-labels`.
 */}}
-{{- define "base.pdb.flaggerSelectorKey" -}}
+{{/*
+The selector flagger sees: exactly what deployment.yaml puts in spec.selector.matchLabels, which is
+base.selectorLabels PLUS .Values.matchLabels. Reading only the former misses a key the deployment really
+carries, and flagger suffixes the first key IT finds -- so an `app` added through matchLabels is suffixed
+by flagger while this chart suffixes something else, and the budget matches nothing.
+*/}}
+{{- define "base.pdb.targetSelector" -}}
 {{- $sel := fromYaml (include "base.selectorLabels" .) -}}
-{{- $order := (((.Values.rolloutStrategy | default dict).configs | default dict).selectorLabels) | default (list "app" "name" "app.kubernetes.io/name") -}}
+{{- range $k, $v := (.Values.matchLabels | default dict) -}}
+  {{- $_ := set $sel $v.name (toString $v.value) -}}
+{{- end -}}
+{{ toYaml $sel }}
+{{- end -}}
+
+{{- define "base.pdb.flaggerSelectorKey" -}}
+{{- $sel := fromYaml (include "base.pdb.targetSelector" .) -}}
+{{- /* Flagger's own default order. NOT configurable here: its -selector-labels is a controller-wide flag
+       this chart does not set, so a per-release override would change only the budget and reintroduce the
+       mismatch it is meant to prevent. Non-default controllers use pdb.selectorOverride. */ -}}
+{{- $order := list "app" "name" "app.kubernetes.io/name" -}}
 {{- range $k := $order -}}
 {{- if and (not $.found) (hasKey $sel $k) -}}{{ $k }}{{- break -}}{{- end -}}
 {{- end -}}
@@ -672,7 +692,7 @@ cluster running flagger with a non-default `-selector-labels`.
 {{- if $pdb.selectorOverride -}}
 {{ $pdb.selectorOverride | toYaml }}
 {{- else if include "base.pdb.flagger" . -}}
-{{- $sel := fromYaml (include "base.selectorLabels" .) -}}
+{{- $sel := fromYaml (include "base.pdb.targetSelector" .) -}}
 {{- $key := include "base.pdb.flaggerSelectorKey" . -}}
 {{- $out := dict -}}
 {{- range $k, $v := $sel -}}
@@ -700,6 +720,14 @@ Args: dict "field" <name> "value" <any>
        "9.9999999999e+10 is neither a non-negative whole number", which is true of the rendering and
        useless to the reader. Format numbers as integers first so both the check and the message describe
        what was actually written. */ -}}
+{{- if kindIs "float64" .value -}}
+  {{- /* pdb.yaml emits the value as written, so normalising 1.5 to 2 for the range check would validate a
+         number the chart never renders and hand kubernetes `maxUnavailable: 1.5`, which IntOrString cannot
+         hold and the API rejects at apply time. Prove it is whole before formatting it. */ -}}
+  {{- if ne (float64 .value) (floor (float64 .value)) -}}
+    {{- fail (printf "base chart: pdb.%s=%v is fractional. The Kubernetes IntOrString type holds a whole number or a percentage string, so this is rejected at apply time rather than here." .field .value) -}}
+  {{- end -}}
+{{- end -}}
 {{- $raw := ternary (printf "%.0f" (float64 .value)) (toString .value) (kindIs "float64" .value) -}}
 {{- /* The range is enforced by the PATTERN, not by converting and comparing. `int` narrows, so a value like
        999999999999999999999999999% overflows to 0, sails past a `> 100` check and renders -- leaving

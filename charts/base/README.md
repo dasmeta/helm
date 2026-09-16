@@ -163,8 +163,9 @@ Under a Flagger `rolloutStrategy` the budget follows the **generated primary**, 
   back to `autoscaling.minReplicas` exactly as Flagger does
 - with autoscaling **disabled**, Flagger emits no `autoscalerRef` at all and the primary mirrors the
   Deployment, so the floor is `replicaCount`
-- the selector is the chart's own selector labels with **one key suffixed `-primary`** — the first of
-  `app`, `name`, `app.kubernetes.io/name` that is present, which is how Flagger chooses it
+- the selector is the **Deployment's full selector** — `selectorLabels` plus anything added through
+  `matchLabels` — with **one key suffixed `-primary`**: the first of `app`, `name`,
+  `app.kubernetes.io/name` that is present, which is how Flagger chooses it
 
 Both matter. Flagger scales the canary Deployment to zero between rollouts, so a budget derived from the
 canary would take its floor from a workload that is not serving and select pods that do not exist —
@@ -177,7 +178,9 @@ selector, leaving the rest untouched. A release whose selector carries `app` the
 one produces a selector matching zero pods. Where the selector contains none of those keys the chart
 refuses rather than guessing, because Flagger itself would refuse the canary.
 
-The order above is Flagger's default. If your
+That order is Flagger's `-selector-labels` default, and it is a **controller-wide flag** this chart does not
+set — so there is deliberately no per-release option to change it here. One would alter only the budget
+while Flagger kept its own order, which is the mismatch this is meant to prevent. If your
 Flagger runs with a different set, confirm with:
 
 ```bash

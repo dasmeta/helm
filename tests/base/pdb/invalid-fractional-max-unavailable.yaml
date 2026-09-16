@@ -1,0 +1,9 @@
+#@ desc: a fractional value is outside IntOrString and pdb.yaml would emit it unchanged
+#@ expect-fail: is fractional
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: 1.5
