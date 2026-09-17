@@ -115,6 +115,9 @@ done
 
 pass=0
 fail=0
+# Cases that passed everything they could RUN, but where some assertion could not run at all.
+# Counted apart from `pass` so the summary line can never imply coverage that did not happen.
+partial=0
 declare -a failures=()
 # Negative cases that passed at BASELINE. Each one was already refused by the unmodified chart, so it
 # demonstrates nothing about the change and the suite must say so rather than counting it as a pass.
@@ -232,12 +235,19 @@ for case_file in "${CASE_FILES[@]}"; do
   fi
 
   if [ ${ok} -eq 1 ]; then
-    pass=$((pass + 1))
     if [ -n "${BASELINE_REF}" ] && [ "${is_negative}" = 1 ]; then
       # Refused by the UNMODIFIED chart, so this case cannot be evidence for the change.
+      pass=$((pass + 1))
       vacuous+=("${name}")
       printf 'VACUOUS  %-49s %s\n' "${name}" "${desc}"
+    elif [ "${notes_skip}" = 1 ]; then
+      # Some assertion in this case could not run. What DID run passed, and saying PASS here would put
+      # the unrun part behind a footnote while the headline claimed coverage -- which is the exact
+      # failure these cases were written to catch, reproduced in the runner reporting them.
+      partial=$((partial + 1))
+      printf 'PARTIAL  %-49s %s\n' "${name}" "${desc}"
     else
+      pass=$((pass + 1))
       printf 'PASS  %-52s %s\n' "${name}" "${desc}"
     fi
   else
@@ -251,7 +261,12 @@ shopt -u nullglob
 
 echo
 echo "-----------------------------------------------------------"
-printf 'passed: %d   failed: %d   total: %d\n' "${pass}" "${fail}" "$((pass + fail))"
+printf 'passed: %d   partial: %d   failed: %d   total: %d\n' \
+  "${pass}" "${partial}" "${fail}" "$((pass + partial + fail))"
+if [ ${partial} -gt 0 ]; then
+  echo "PARTIAL means the case ran and what ran passed, but at least one assertion could not run."
+  echo "Those cases are NOT counted as passed. See the SKIPPED list below for which checks were missed."
+fi
 if [ ${#skipped[@]} -gt 0 ]; then
   echo
   echo "SKIPPED assertions (the case still ran; these specific checks could not):"

@@ -6,7 +6,15 @@
 # only the first misses a key the deployment really carries: flagger suffixes the first key IT finds, so an
 # `app` added through matchLabels is suffixed by flagger while the chart suffixes something else and the
 # budget matches zero primary pods.
+# The chart feeds spec.selector.matchLabels from `matchLabels` and spec.template.metadata.labels from
+# `labels`, so a key added to only one of them renders a Deployment whose selector does not match its own
+# pod template -- which the API server refuses. Both are set here so this fixture describes a deployable
+# workload; a fixture that could never exist in a cluster proves nothing about one that does.
 matchLabels:
+  appkey:
+    name: app
+    value: checkout
+labels:
   appkey:
     name: app
     value: checkout

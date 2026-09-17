@@ -723,9 +723,9 @@ Args: dict "field" <name> "value" <any>
 {{- if kindIs "float64" .value -}}
   {{- /* pdb.yaml emits the value as written, so normalising 1.5 to 2 for the range check would validate a
          number the chart never renders and hand kubernetes `maxUnavailable: 1.5`, which IntOrString cannot
-         hold and the API rejects at apply time. Prove it is whole before formatting it. */ -}}
+         hold and the API would reject at apply time. Refuse it here instead. */ -}}
   {{- if ne (float64 .value) (floor (float64 .value)) -}}
-    {{- fail (printf "base chart: pdb.%s=%v is fractional. The Kubernetes IntOrString type holds a whole number or a percentage string, so this is rejected at apply time rather than here." .field .value) -}}
+    {{- fail (printf "base chart: pdb.%s=%v is fractional. The Kubernetes IntOrString type holds a whole number or a percentage string, so this is refused here at render time -- rendering it would only move the same failure to apply time, where it is harder to place." .field .value) -}}
   {{- end -}}
 {{- end -}}
 {{- $raw := ternary (printf "%.0f" (float64 .value)) (toString .value) (kindIs "float64" .value) -}}

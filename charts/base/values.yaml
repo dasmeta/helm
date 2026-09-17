@@ -567,10 +567,17 @@ pdb:
   # Override the labels the budget selects on.
   #
   # Needed only where the chart cannot derive them. The one known case is flagger
-  # running with a non-default `-selector-labels` flag: the chart assumes the
-  # default (`app,name,app.kubernetes.io/name`), under which the generated primary
-  # carries `app.kubernetes.io/name: <fullname>-primary`. If your flagger is
-  # configured otherwise, put here what
+  # running with a non-default `-selector-labels` flag.
+  #
+  # Flagger walks that flag's keys IN ORDER -- the default is
+  # `app,name,app.kubernetes.io/name` -- and suffixes the FIRST one present in the
+  # deployment's own selector. It does not always pick `app.kubernetes.io/name`:
+  # a release that puts `app` in its selector (via .Values.matchLabels) gets `app`
+  # suffixed instead, because `app` comes first in that list. The chart derives the
+  # same key the same way, so the two agree by construction.
+  #
+  # Where flagger runs with a different flag value that agreement breaks, and the
+  # budget would select labels no primary pod carries. Put here what
   #   kubectl get deploy <name>-primary -o jsonpath='{.spec.selector.matchLabels}'
   # actually reports.
   # selectorOverride: {}
