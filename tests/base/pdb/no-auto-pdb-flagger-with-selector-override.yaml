@@ -1,0 +1,16 @@
+#@ desc: flagger plus selectorLabelsOverride and no pdb.enabled renders nothing, and must not fail either
+#@ assert-no-pdb
+#
+# The chart stands down here because the selector belongs to another release, so there is no budget to get
+# wrong. Validating the flagger selector unconditionally refused this working setup outright.
+selectorLabelsOverride:
+  tier: web
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 3
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 6

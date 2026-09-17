@@ -1,0 +1,18 @@
+#@ desc: with autoscaling off, flagger mirrors replicaCount -- a budget above it must be refused
+#@ expect-fail: replica floor 3
+#
+# rollout-strategy.yaml emits primaryScalerReplicas only when autoscaling is enabled, so with it disabled
+# flagger scales the primary to the deployment's static count. Reading primaryScalerMinReplicas here let a
+# budget requiring 4 available pods render against a 3-replica deployment: more pods than exist, so no
+# eviction is ever permitted and every drain blocks.
+replicaCount: 3
+autoscaling:
+  enabled: false
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 5
+pdb:
+  enabled: true
+  minAvailable: 4

@@ -1,0 +1,5 @@
+#@ desc: string-typed replica floor must compare numerically, not lexically
+#@ assert: .spec.minAvailable == 2
+replicaCount: "10"
+pdb:
+  minAvailable: 2

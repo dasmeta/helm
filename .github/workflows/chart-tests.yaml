@@ -1,0 +1,62 @@
+name: Chart Tests
+
+# Gating checks for chart behaviour. Unlike pre-commit.yaml this workflow does NOT
+# set continue-on-error: the PodDisruptionBudget guard exists to stop a
+# drain-blocking configuration reaching a cluster, and a guard that only reports
+# is not a guard.
+#
+# The suite lives at tests/, laid out as tests/<chart>/<ability>/<case>.yaml the
+# way examples/ is laid out per chart. ./tests/run.sh with no arguments runs every
+# case for every chart, so adding a chart or an ability needs no change here.
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  charts:
+    name: chart validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.2
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+
+      - name: Helm lint
+        run: helm lint charts/base
+
+      - name: Render with default values
+        run: helm template ci ./charts/base > /dev/null
+
+      - name: Chart validation suite
+        run: ./tests/run.sh
+
+      - name: Example regression
+        run: |
+          failed=0
+          for f in $(find examples/base -name '*.yaml' | sort); do
+            if ! helm template ci ./charts/base -f "$f" > /dev/null 2>&1; then
+              echo "FAILED: $f"
+              helm template ci ./charts/base -f "$f" 2>&1 | head -3
+              failed=$((failed + 1))
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "$failed example(s) failed to render"
+            exit 1
+          fi
+          echo "all examples rendered"

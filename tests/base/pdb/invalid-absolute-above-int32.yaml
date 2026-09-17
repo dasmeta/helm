@@ -1,0 +1,9 @@
+#@ desc: an absolute value above the int32 maximum is not representable in IntOrString
+#@ expect-fail: exceeds the int32 maximum
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: 99999999999

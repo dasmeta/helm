@@ -1,0 +1,3 @@
+#@ desc: single replica -> no budget (a budget over 1 replica blocks or protects nothing)
+#@ assert-no-pdb
+replicaCount: 1

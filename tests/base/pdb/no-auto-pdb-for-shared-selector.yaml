@@ -1,0 +1,13 @@
+#@ desc: a release borrowing another release's selector must not auto-create a second budget over its pods
+#@ assert-no-pdb
+#
+# The eviction API refuses to evict a pod covered by more than one PodDisruptionBudget, so two releases
+# both auto-creating over the same selector would block drains outright -- the failure this chart exists
+# to prevent. An explicit pdb.enabled still wins; ownership just has to be stated.
+selectorLabelsOverride:
+  app.kubernetes.io/name: some-other-release
+  app.kubernetes.io/instance: some-other-release
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10

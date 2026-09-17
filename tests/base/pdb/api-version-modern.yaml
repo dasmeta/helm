@@ -1,0 +1,7 @@
+#@ desc: from 1.21 onward the budget renders policy/v1
+#@ kube-version: 1.31.0
+#@ assert: .apiVersion == "policy/v1"
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10

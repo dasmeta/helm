@@ -1,0 +1,14 @@
+#@ desc: a cluster whose flagger uses non-default selector-labels can state the real selector
+#@ assert: .spec.selector.matchLabels["app"] == "checkout-primary"
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 3
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+pdb:
+  selectorOverride:
+    app: checkout-primary
