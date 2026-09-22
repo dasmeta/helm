@@ -1,0 +1,7 @@
+#@ desc: an unrecognised boolean string is refused, not read as false
+#@ expect-fail: expected a boolean
+#
+# Treating it as false would bypass pdb validation entirely and look like a deliberate opt-out.
+pdb:
+  enabled: "garbage"
+autoscaling: {enabled: true, minReplicas: 3, maxReplicas: 6}

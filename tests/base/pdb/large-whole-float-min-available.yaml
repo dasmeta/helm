@@ -1,0 +1,9 @@
+#@ desc: a large unquoted minAvailable arrives as float64 and must still be refused
+#@ expect-fail: permits no voluntary eviction
+#
+# 1000000.0 renders as 1e+06 through toString, which int64 coerces to 0 -- the guard would then compute a
+# budget permitting everything and emit one permitting nothing.
+pdb:
+  enabled: true
+  minAvailable: 1000000.0
+autoscaling: {enabled: true, minReplicas: 3, maxReplicas: 6}

@@ -36,6 +36,16 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
           yq --version
 
+      # NOTES.txt is produced by `helm install`, not `helm template`, and helm 3.15 has no offline path
+      # for it -- `--dry-run=client` still asks the API server for its version. Without a cluster the two
+      # notes assertions could not run, and the job stayed green while they were skipped. A disposable
+      # cluster makes them execute; run.sh now also exits non-zero if any assertion is skipped, so this
+      # cannot silently regress to the previous state.
+      - name: Create a disposable cluster for the NOTES assertions
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: chart-tests
+
       - name: Helm lint
         run: helm lint charts/base
 

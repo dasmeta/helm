@@ -1,0 +1,8 @@
+#@ desc: a quoted boolean alias enables the budget, as --set-string produces
+#@ assert: .spec.maxUnavailable == "25%"
+#
+# --set-string yields strings, so "yes"/"on"/"1" reach the chart as text. Decoding only "true" would
+# silently drop the budget the author asked for, with a green render and no message.
+pdb:
+  enabled: "yes"
+autoscaling: {enabled: true, minReplicas: 3, maxReplicas: 6}

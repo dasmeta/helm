@@ -164,8 +164,30 @@ for case_file in "${CASE_FILES[@]}"; do
   ok=1
   reason=""
 
+  # The DIRECTIVE declares intent; the filename is a convention. Keying only on the name meant a fixture
+  # carrying expect-fail but named otherwise was graded as a positive case -- so if the chart accepted the
+  # very thing it says must be refused, the case passed.
   is_negative=0
   [[ "$(basename "${case_file}")" == invalid-* ]] && is_negative=1
+  has_directive expect-fail "${case_file}" && is_negative=1
+
+  # BASELINE MODE grades negative cases on one question only: does the OLD chart accept this input?
+  # If it does, the new guard is what refuses it and the case is evidence. If the old chart refuses it
+  # too -- for ANY reason, including one unrelated to this change -- the case proves nothing. Matching on
+  # the expected substring was not enough: an old chart failing for a different reason produced an
+  # ordinary failure, which baseline mode ignored, and the gate reported no vacuous cases.
+  if [ -n "${BASELINE_REF}" ] && [ "${is_negative}" = 1 ]; then
+    if [ ${rc} -eq 0 ]; then
+      pass=$((pass + 1))
+      printf 'USABLE   %-49s %s\n' "${name}" "${desc}"
+    else
+      vacuous+=("${name}: old chart already refused it -- $(printf '%s' "${out}" | grep -o 'Error:.*' | head -1 | cut -c1-120)")
+      fail=$((fail + 1))
+      printf 'VACUOUS  %-49s %s\n' "${name}" "${desc}"
+      printf '        -> the unmodified chart refuses this too, so it is not evidence for the change\n'
+    fi
+    continue
+  fi
   if [ "${is_negative}" = 1 ]; then
     expect="$(directive expect-fail "${case_file}")"
     if [ -z "${expect}" ]; then
@@ -235,12 +257,7 @@ for case_file in "${CASE_FILES[@]}"; do
   fi
 
   if [ ${ok} -eq 1 ]; then
-    if [ -n "${BASELINE_REF}" ] && [ "${is_negative}" = 1 ]; then
-      # Refused by the UNMODIFIED chart, so this case cannot be evidence for the change.
-      pass=$((pass + 1))
-      vacuous+=("${name}")
-      printf 'VACUOUS  %-49s %s\n' "${name}" "${desc}"
-    elif [ "${notes_skip}" = 1 ]; then
+    if [ "${notes_skip}" = 1 ]; then
       # Some assertion in this case could not run. What DID run passed, and saying PASS here would put
       # the unrun part behind a footnote while the headline claimed coverage -- which is the exact
       # failure these cases were written to catch, reproduced in the runner reporting them.
@@ -273,6 +290,14 @@ if [ ${#skipped[@]} -gt 0 ]; then
   for sk in "${skipped[@]}"; do echo "  - ${sk}"; done
 fi
 
+# A skipped assertion is not a passed one. Exiting 0 here is what let a required CI job stay green while
+# neither NOTES assertion ran, so a regression in that path would have merged unnoticed.
+if [ ${partial} -gt 0 ]; then
+  echo
+  echo "FAILING: ${partial} case(s) could not run every assertion. Provide what they need -- the notes"
+  echo "assertions want a reachable cluster -- or remove them. A gate that skips is not a gate."
+fi
+
 if [ ${fail} -gt 0 ]; then
   echo
   echo "Failures:"
@@ -281,8 +306,9 @@ fi
 
 if [ -n "${BASELINE_REF}" ]; then
   echo
-  echo "NOTE: in baseline mode failures are EXPECTED. Every negative case must fail"
-  echo "here; a negative case that passes against an unmodified chart asserts nothing."
+  echo "NOTE: in baseline mode POSITIVE cases are expected to fail -- the feature does not exist"
+  echo "on this ref. Negative cases are graded the other way: the unmodified chart must ACCEPT"
+  echo "each one, because a case it already refuses is not evidence for this change."
   if [ ${#vacuous[@]} -gt 0 ]; then
     echo
     echo "VACUOUS negative cases -- already refused by the unmodified chart, so they"
@@ -290,8 +316,8 @@ if [ -n "${BASELINE_REF}" ]; then
     for v in "${vacuous[@]}"; do echo "  - ${v}"; done
     exit 1
   fi
-  echo "No vacuous negative cases: every one of them fails at baseline, as required."
+  echo "No vacuous negative cases: the unmodified chart ACCEPTS every one of them, so each is evidence."
   exit 0
 fi
 
-[ ${fail} -eq 0 ]
+[ ${fail} -eq 0 ] && [ ${partial} -eq 0 ]

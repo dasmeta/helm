@@ -462,7 +462,11 @@ caused it. These helpers make that configuration unrepresentable.
 {{- define "base.pdb.value" -}}
 {{- $pdb := .Values.pdb | default dict -}}
 {{- $f := include "base.pdb.field" . -}}
-{{- if and (hasKey $pdb $f) (not (kindIs "invalid" (get $pdb $f))) -}}{{ get $pdb $f }}{{- else -}}{{ include "base.pdb.defaultMaxUnavailable" . }}{{- end -}}
+{{- $v := ternary (get $pdb $f) (include "base.pdb.defaultMaxUnavailable" .) (and (hasKey $pdb $f) (not (kindIs "invalid" (get $pdb $f)))) -}}
+{{- /* %.0f, not toString: a large unquoted integer arrives as float64 and renders as 1e+06, which int64
+       then coerces to 0 -- the guard then sees a budget permitting everything and renders one permitting
+       nothing. Fractional floats never reach here; validate refuses them on the typed value first. */ -}}
+{{- ternary (printf "%.0f" (float64 $v)) (toString $v) (kindIs "float64" $v) -}}
 {{- end -}}
 
 {{/* What this release's budget would permit. The one answer used to reject, to annotate and to render --
@@ -486,7 +490,7 @@ caused it. These helpers make that configuration unrepresentable.
 {{- end -}}
 
 {{- if and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "true") (lt $floor 2) -}}
-{{- fail (printf "base chart: pdb.enabled=true but the replica floor is %d (from %s). A budget over a single replica blocks every drain or protects nothing." $floor $src) -}}
+{{- fail (printf "base chart: pdb.enabled=true but the replica floor is %d (from %s). A budget over a single replica either blocks every drain or protects nothing. Raise the replica floor to 2 or more, or remove pdb.enabled." $floor $src) -}}
 {{- end -}}
 
 {{- if ge $floor 2 -}}
@@ -497,9 +501,9 @@ caused it. These helpers make that configuration unrepresentable.
 {{- include "base.pdb.validateDomain" (dict "field" $field "value" $raw) -}}
 {{- if and (le (int (include "base.pdb.allowed" .)) 0) (ne (include "base.toBool" $pdb.allowZeroEvictions) "true") -}}
 {{- if hasSuffix "%" (toString $raw) -}}
-{{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). Budget percentages round UP, so only 0%% resolves to nothing -- use an absolute value or a higher percentage. Rolled by hand on purpose? set pdb.allowZeroEvictions=true." $field (toString $raw) $floor $src) -}}
+{{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). Budget percentages round UP, so only 0%% can resolve to nothing. Set an absolute value, or a percentage above 0%%. If this workload is rolled by hand on purpose and must never be evicted automatically, set pdb.allowZeroEvictions=true to say so." $field (toString $raw) $floor $src) -}}
 {{- else -}}
-{{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). That blocks drains, consolidation and cluster upgrades. Rolled by hand on purpose? set pdb.allowZeroEvictions=true." $field (toString $raw) $floor $src) -}}
+{{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). A budget that permits nothing blocks node drains, node consolidation and cluster upgrades. Set pdb.minAvailable below %d, or use pdb.maxUnavailable of 1 or more. If this workload is rolled by hand on purpose and must never be evicted automatically, set pdb.allowZeroEvictions=true to say so." $field (toString $raw) $floor $src $floor) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -512,12 +516,18 @@ caused it. These helpers make that configuration unrepresentable.
 {{- if and (include "base.pdb.renders" .) (eq (include "base.toBool" (.Values.pdb | default dict).allowZeroEvictions) "true") (le (int (include "base.pdb.allowed" .)) 0) -}}true{{- end -}}
 {{- end -}}
 
-{{/* Helm values carry booleans as bool or string, and "false" is truthy in a template. */}}
+{{/* Helm values carry booleans as bool or string, and "false" is truthy in a template. Aliases are
+     accepted because --set-string yields them; anything else FAILS rather than defaulting to false, which
+     would silently disable a budget the author asked for. */}}
 {{- define "base.toBool" -}}
 {{- if kindIs "invalid" . -}}false
 {{- else if kindIs "bool" . -}}{{ ternary "true" "false" . }}
-{{- else if kindIs "string" . -}}{{ ternary "true" "false" (eq (lower .) "true") }}
-{{- else -}}false
+{{- else if kindIs "string" . -}}
+  {{- if has (lower .) (list "true" "yes" "on" "1") -}}true
+  {{- else if has (lower .) (list "false" "no" "off" "0" "") -}}false
+  {{- else -}}{{- fail (printf "base chart: expected a boolean, got the string %q. Quote-free true/false, or drop --set-string for this key." .) -}}
+  {{- end -}}
+{{- else -}}{{- fail (printf "base chart: expected a boolean, got %s" (kindOf .)) -}}
 {{- end -}}
 {{- end -}}
 
