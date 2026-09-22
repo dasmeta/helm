@@ -1,0 +1,7 @@
+#@ desc: a workloadType other than Deployment renders no workload, so an auto budget would select nothing
+#@ assert-no-pdb
+workloadType: StatefulSet
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 10

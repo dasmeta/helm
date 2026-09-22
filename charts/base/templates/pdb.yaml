@@ -1,11 +1,26 @@
-{{- if .Values.pdb.enabled -}}
+{{- /* Validation runs first and unconditionally: an invalid budget must be refused even where none would
+       be rendered. */ -}}
+{{- include "base.pdb.validate" . -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- if include "base.pdb.renders" . -}}
+{{- /* policy/v1 is served from 1.21 and the chart supports 1.18+. Same gate as ingress.yaml. */ -}}
+{{- if semverCompare ">=1.21-0" (include "base.capabilities.kubeVersion" .) -}}
 apiVersion: policy/v1
+{{- else -}}
+apiVersion: policy/v1beta1
+{{- end }}
 kind: PodDisruptionBudget
 metadata:
-  name: {{ .Values.pdb.pdbName | default (include "base.fullname" .) }}
+  name: {{ $pdb.pdbName | default (include "base.fullname" .) }}
+  {{- if include "base.pdb.isDeliberatelyBlocking" . }}
+  annotations:
+    # So `kubectl describe pdb` explains a disruptionsAllowed of 0 instead of leaving whoever finds a
+    # stuck drain to guess whether it was deliberate.
+    dasmeta.io/zero-evictions: "deliberate, pdb.allowZeroEvictions=true; this workload is rolled by hand"
+  {{- end }}
 spec:
-  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{ include "base.pdb.field" . }}: {{ include "base.pdb.value" . }}
   selector:
     matchLabels:
-      {{- include "base.selectorLabels" . | nindent 6 }}
+      {{- include "base.pdb.selectorLabels" . | nindent 6 }}
 {{- end }}

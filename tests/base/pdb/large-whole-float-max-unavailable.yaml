@@ -1,0 +1,6 @@
+#@ desc: the same float path on maxUnavailable, where zero is the dangerous value
+#@ expect-fail: permits no voluntary eviction
+pdb:
+  enabled: true
+  maxUnavailable: 0.0
+autoscaling: {enabled: true, minReplicas: 3, maxReplicas: 6}

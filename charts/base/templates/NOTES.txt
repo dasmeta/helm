@@ -1,3 +1,21 @@
+{{- if include "base.pdb.isDeliberatelyBlocking" . }}
+WARNING: this release has a PodDisruptionBudget that permits ZERO voluntary evictions.
+
+  You asked for this with pdb.allowZeroEvictions=true, so it is being applied. What it means:
+
+    - node drains BLOCK on these pods, including drains started by node consolidation,
+      by spot capacity being reclaimed, and by cluster or node group upgrades;
+    - an EKS managed node group upgrade FAILS on pod eviction rather than waiting;
+    - the symptom shows up as node scaling or the upgrade being stuck, not as this release.
+
+  That is the correct configuration for a workload that is rolled by hand, pod by pod, after
+  cooling it down. It is the wrong configuration for anything else. Pair it with
+  karpenter.sh/do-not-disrupt on the pods so the autoscaler does not keep retrying a drain it can
+  never complete, and remember that this node will not receive AMI patches until you move it.
+
+  Remove pdb.allowZeroEvictions to have the chart refuse this again.
+
+{{ end -}}
 1. Get the application URL by running these commands:
 {{- if not (kindIs "slice" .Values.ingress) }}
 {{- if .Values.ingress.enabled }}

@@ -1,0 +1,15 @@
+#@ desc: when the selector has none of flagger's label keys there is no correct answer, so refuse
+#@ expect-fail: cannot be derived
+selectorLabelsOverride:
+  tier: web
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 3
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+pdb:
+  enabled: true

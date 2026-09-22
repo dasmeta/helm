@@ -1,0 +1,10 @@
+#@ desc: with a wide autoscaling range the default is a percentage, so it tracks the current replica count
+#@ assert: .spec.maxUnavailable == "25%"
+#
+# The case this exists for: minReplicas 10, maxReplicas 100. An absolute value computed at template time
+# from the floor would permit 2 evictions whether the service is running 10 pods or 100. A percentage is
+# resolved by kubernetes against the CURRENT expected count, so it is 2 at 10 and 25 at 100.
+autoscaling:
+  enabled: true
+  minReplicas: 10
+  maxReplicas: 100

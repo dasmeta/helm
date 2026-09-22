@@ -393,3 +393,218 @@ User-provided extraEnv can still override predefined items.
 {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+PodDisruptionBudget safety helpers.
+
+A PodDisruptionBudget that permits zero voluntary evictions blocks every
+drain-based operation: node consolidation, reclaimed-capacity replacement, and
+managed node group upgrades, which fail on pod eviction. The failure surfaces as
+the node scaling or the cluster upgrade being stuck, far from the workload that
+caused it. These helpers make that configuration unrepresentable.
+*/}}
+
+{{/* Primary's replica floor under flagger. rollout-strategy.yaml includes this same helper so the two
+     cannot drift; `default` (not hasKey) because that is what the Canary does, 0 included. */}}
+{{- define "base.primaryFloor" -}}
+{{- $as := .Values.autoscaling | default dict -}}
+{{- $cfg := (.Values.rolloutStrategy | default dict).configs | default dict -}}
+{{- if $as.enabled -}}
+{{- $cfg.primaryScalerMinReplicas | default $as.minReplicas | default 1 | int64 -}}
+{{- else -}}
+{{- if hasKey .Values "replicaCount" }}{{ .Values.replicaCount | int64 }}{{ else }}1{{ end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "base.pdb.flagger" -}}
+{{- $rs := .Values.rolloutStrategy | default dict -}}
+{{- if and $rs.enabled (eq ($rs.operator | default "") "flagger") -}}true{{- end -}}
+{{- end -}}
+
+{{/* Replicas the budget is measured against. */}}
+{{- define "base.pdb.floor" -}}
+{{- $as := .Values.autoscaling | default dict -}}
+{{- if include "base.pdb.flagger" . -}}
+{{- include "base.primaryFloor" . -}}
+{{- else if $as.enabled -}}
+{{- if hasKey $as "minReplicas" }}{{ $as.minReplicas | int64 }}{{ else }}1{{ end -}}
+{{- else -}}
+{{- if hasKey .Values "replicaCount" }}{{ .Values.replicaCount | int64 }}{{ else }}1{{ end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Which value supplied the floor -- named in errors because three can. */}}
+{{- define "base.pdb.floorSource" -}}
+{{- $as := .Values.autoscaling | default dict -}}
+{{- if not $as.enabled -}}replicaCount
+{{- else if and (include "base.pdb.flagger" .) (hasKey ((.Values.rolloutStrategy | default dict).configs | default dict) "primaryScalerMinReplicas") -}}rolloutStrategy.configs.primaryScalerMinReplicas
+{{- else -}}autoscaling.minReplicas
+{{- end -}}
+{{- end -}}
+
+{{- define "base.pdb.defaultMaxUnavailable" -}}25%{{- end -}}
+
+{{/* Which of the two mutually exclusive fields applies. */}}
+{{- define "base.pdb.field" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- ternary "minAvailable" "maxUnavailable" (and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable))) -}}
+{{- end -}}
+
+{{/* Evictions permitted. Budget percentages round UP on BOTH fields, so only 0% reaches zero. */}}
+{{- define "base.pdb.permitted" -}}
+{{- $v := toString .value -}}
+{{- $n := ternary (int (ceil (divf (mulf (float64 (trimSuffix "%" $v)) (float64 .floor)) 100.0))) (int64 $v) (hasSuffix "%" $v) -}}
+{{- ternary (sub .floor $n) $n (eq .field "minAvailable") -}}
+{{- end -}}
+
+{{/* The value that field carries, or the default. hasKey, not `default`: sprig's `get` returns "" for a
+     missing key, and an explicit 0 is falsy -- both would silently become the default. */}}
+{{- define "base.pdb.value" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- $f := include "base.pdb.field" . -}}
+{{- $v := ternary (get $pdb $f) (include "base.pdb.defaultMaxUnavailable" .) (and (hasKey $pdb $f) (not (kindIs "invalid" (get $pdb $f)))) -}}
+{{- /* %.0f, not toString: a large unquoted integer arrives as float64 and renders as 1e+06, which int64
+       then coerces to 0 -- the guard then sees a budget permitting everything and renders one permitting
+       nothing. Fractional floats never reach here; validate refuses them on the typed value first. */ -}}
+{{- ternary (printf "%.0f" (float64 $v)) (toString $v) (kindIs "float64" $v) -}}
+{{- end -}}
+
+{{/* What this release's budget would permit. The one answer used to reject, to annotate and to render --
+     three sites computed it separately before, and they had to agree. */}}
+{{- define "base.pdb.allowed" -}}
+{{- include "base.pdb.permitted" (dict "floor" (int (include "base.pdb.floor" .)) "field" (include "base.pdb.field" .) "value" (include "base.pdb.value" .)) -}}
+{{- end -}}
+
+{{- define "base.pdb.validate" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- $floor := int (include "base.pdb.floor" .) -}}
+{{- $src := include "base.pdb.floorSource" . -}}
+{{- if not (and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "false")) -}}
+
+{{- if and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) -}}
+{{- fail "base chart: pdb.minAvailable and pdb.maxUnavailable are mutually exclusive; set exactly one." -}}
+{{- end -}}
+
+{{- if and (include "base.pdb.renders" .) (include "base.pdb.flagger" .) (not $pdb.selectorOverride) (not (include "base.pdb.flaggerSelectorKey" .)) -}}
+{{- fail "base chart: flagger is enabled but the selector holds none of `app`, `name`, `app.kubernetes.io/name`, so the label flagger suffixes on the primary cannot be derived. Set pdb.selectorOverride to the primary's real selector, or pdb.enabled=false." -}}
+{{- end -}}
+
+{{- if and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "true") (lt $floor 2) -}}
+{{- fail (printf "base chart: pdb.enabled=true but the replica floor is %d (from %s). A budget over a single replica either blocks every drain or protects nothing. Raise the replica floor to 2 or more, or remove pdb.enabled." $floor $src) -}}
+{{- end -}}
+
+{{- if ge $floor 2 -}}
+{{- $field := include "base.pdb.field" . -}}
+{{- /* Typed, unlike base.pdb.value, because validateDomain must see a float64 as a float64. */ -}}
+{{- $raw := include "base.pdb.defaultMaxUnavailable" . -}}
+{{- if and (hasKey $pdb $field) (not (kindIs "invalid" (get $pdb $field))) -}}{{- $raw = get $pdb $field -}}{{- end -}}
+{{- include "base.pdb.validateDomain" (dict "field" $field "value" $raw) -}}
+{{- if and (le (int (include "base.pdb.allowed" .)) 0) (ne (include "base.toBool" $pdb.allowZeroEvictions) "true") -}}
+{{- if hasSuffix "%" (toString $raw) -}}
+{{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). Budget percentages round UP, so only 0%% can resolve to nothing. Set an absolute value, or a percentage above 0%%. If this workload is rolled by hand on purpose and must never be evicted automatically, set pdb.allowZeroEvictions=true to say so." $field (toString $raw) $floor $src) -}}
+{{- else -}}
+{{- fail (printf "base chart: pdb.%s=%s permits no voluntary eviction at replica floor %d (from %s). A budget that permits nothing blocks node drains, node consolidation and cluster upgrades. Set pdb.minAvailable below %d, or use pdb.maxUnavailable of 1 or more. If this workload is rolled by hand on purpose and must never be evicted automatically, set pdb.allowZeroEvictions=true to say so." $field (toString $raw) $floor $src $floor) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- end -}}
+{{- end -}}
+
+{{/* A zero-eviction budget the author asked for. base.pdb.renders already guarantees floor >= 2. */}}
+{{- define "base.pdb.isDeliberatelyBlocking" -}}
+{{- if and (include "base.pdb.renders" .) (eq (include "base.toBool" (.Values.pdb | default dict).allowZeroEvictions) "true") (le (int (include "base.pdb.allowed" .)) 0) -}}true{{- end -}}
+{{- end -}}
+
+{{/* Helm values carry booleans as bool or string, and "false" is truthy in a template. Aliases are
+     accepted because --set-string yields them; anything else FAILS rather than defaulting to false, which
+     would silently disable a budget the author asked for. */}}
+{{- define "base.toBool" -}}
+{{- if kindIs "invalid" . -}}false
+{{- else if kindIs "bool" . -}}{{ ternary "true" "false" . }}
+{{- else if kindIs "string" . -}}
+  {{- if has (lower .) (list "true" "yes" "on" "1") -}}true
+  {{- else if has (lower .) (list "false" "no" "off" "0" "") -}}false
+  {{- else -}}{{- fail (printf "base chart: expected a boolean, got the string %q. Quote-free true/false, or drop --set-string for this key." .) -}}
+  {{- end -}}
+{{- else -}}{{- fail (printf "base chart: expected a boolean, got %s" (kindOf .)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "base.pdb.mayAutoCreate" -}}
+{{- if and (eq (.Values.workloadType | default "Deployment") "Deployment") (not .Values.selectorLabelsOverride) -}}true{{- end -}}
+{{- end -}}
+
+{{/* Exactly what deployment.yaml puts in spec.selector.matchLabels: base.selectorLabels PLUS matchLabels. */}}
+{{- define "base.pdb.targetSelector" -}}
+{{- $sel := fromYaml (include "base.selectorLabels" .) -}}
+{{- range $k, $v := (.Values.matchLabels | default dict) -}}
+  {{- $_ := set $sel $v.name (toString $v.value) -}}
+{{- end -}}
+{{ toYaml $sel }}
+{{- end -}}
+
+{{/* Flagger suffixes the FIRST of its -selector-labels present in the selector, not a fixed key. Order is
+     flagger's controller-wide default; a non-default controller needs pdb.selectorOverride. */}}
+{{- define "base.pdb.flaggerSelectorKey" -}}
+{{- $sel := fromYaml (include "base.pdb.targetSelector" .) -}}
+{{- range $k := list "app" "name" "app.kubernetes.io/name" -}}
+{{- if hasKey $sel $k -}}{{ $k }}{{- break -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Under flagger the budget must select the generated primary: the canary is scaled to zero between
+     rollouts, so a budget on the canary selector protects nothing while looking like protection. */}}
+{{- define "base.pdb.selectorLabels" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- if $pdb.selectorOverride -}}
+{{ $pdb.selectorOverride | toYaml }}
+{{- else if include "base.pdb.flagger" . -}}
+{{- $sel := fromYaml (include "base.pdb.targetSelector" .) -}}
+{{- $key := include "base.pdb.flaggerSelectorKey" . -}}
+{{- $out := dict -}}
+{{- range $k, $v := $sel -}}
+  {{- $_ := set $out $k (ternary (printf "%s-primary" $v) $v (eq $k $key)) -}}
+{{- end -}}
+{{ toYaml $out }}
+{{- else -}}
+{{- include "base.selectorLabels" . }}
+{{- end -}}
+{{- end -}}
+
+{{/* Keep values inside the IntOrString domain. Arithmetic coercion otherwise accepts "150%", and "-1" or
+     "abc" become 0 and then fail blaming the replica count. Args: dict "field" <name> "value" <any>. */}}
+{{- define "base.pdb.validateDomain" -}}
+{{- $field := .field -}}
+{{- if kindIs "float64" .value -}}
+{{- if ne (float64 .value) (floor (float64 .value)) -}}
+{{- fail (printf "base chart: pdb.%s=%v is fractional. The Kubernetes IntOrString type holds a whole number or a percentage string, so this is refused here at render time -- rendering it would only move the same failure to apply time, where it is harder to place." $field .value) -}}
+{{- end -}}
+{{- end -}}
+{{- /* A large unquoted integer arrives as a float and toString renders it in scientific notation, so
+       format first -- the message must describe what was written. */ -}}
+{{- $raw := ternary (printf "%.0f" (float64 .value)) (toString .value) (kindIs "float64" .value) -}}
+{{- /* Checked by PATTERN, not by converting: `int` narrows, so a huge percentage overflows to 0 and would
+       sail past a `> 100` comparison. */ -}}
+{{- if hasSuffix "%" $raw -}}
+{{- if not (regexMatch "^(100|[0-9]{1,2})%$" $raw) -}}
+{{- fail (printf "base chart: pdb.%s=%s is not a percentage between 0%% and 100%%. A budget cannot describe more replicas than exist." $field $raw) -}}
+{{- end -}}
+{{- else -}}
+{{- if not (regexMatch "^[0-9]{1,18}$" $raw) -}}
+{{- fail (printf "base chart: pdb.%s=%s is neither a non-negative whole number nor a percentage. The Kubernetes API accepts only those two forms." $field $raw) -}}
+{{- end -}}
+{{- if gt (int64 $raw) 2147483647 -}}
+{{- fail (printf "base chart: pdb.%s=%s exceeds the int32 maximum the Kubernetes IntOrString type can hold." $field $raw) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Whether a budget is rendered at all. Used by pdb.yaml and by NOTES.txt, so a warning without a budget
+     is inexpressible. */}}
+{{- define "base.pdb.renders" -}}
+{{- $pdb := .Values.pdb | default dict -}}
+{{- $explicit := and (hasKey $pdb "enabled") (eq (include "base.toBool" $pdb.enabled) "true") -}}
+{{- $auto := and (not (hasKey $pdb "enabled")) (include "base.pdb.mayAutoCreate" .) -}}
+{{- if and (or $explicit $auto) (ge (int (include "base.pdb.floor" .)) 2) -}}true{{- end -}}
+{{- end -}}

@@ -1,0 +1,13 @@
+#@ desc: "25%" at floor 2 is VALID -- the disruption controller rounds maxUnavailable percentages UP, to 1
+#@ assert: .spec.maxUnavailable == "25%"
+#
+# This case previously asserted the opposite, on the mistaken belief that PDB maxUnavailable percentages
+# round down the way a Deployment rolling update's do. They do not: the disruption controller resolves both
+# minAvailable and maxUnavailable with roundUp=true, so 25% of 2 is 1 permitted eviction, not 0.
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+pdb:
+  enabled: true
+  maxUnavailable: "25%"

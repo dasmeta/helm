@@ -1,0 +1,6 @@
+#@ desc: maxUnavailable of zero permits nothing
+#@ expect-fail: permits no voluntary eviction
+replicaCount: 3
+pdb:
+  enabled: true
+  maxUnavailable: 0

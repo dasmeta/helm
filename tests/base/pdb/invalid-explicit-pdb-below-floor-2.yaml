@@ -1,0 +1,10 @@
+#@ desc: budget explicitly enabled at floor 1 - the configuration 15 repo examples carry today
+#@ expect-fail: replica floor is 1
+replicaCount: 1
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+pdb:
+  enabled: true
+  minAvailable: 1

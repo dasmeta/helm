@@ -1,0 +1,10 @@
+#@ desc: the same budget without the opt-in is still refused, and the message names the opt-in
+#@ expect-fail: pdb.allowZeroEvictions=true
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 3
+
+pdb:
+  enabled: true
+  minAvailable: 3

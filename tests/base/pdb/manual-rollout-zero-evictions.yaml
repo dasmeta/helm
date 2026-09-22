@@ -1,0 +1,19 @@
+#@ desc: a workload rolled by hand opts into a zero-eviction budget and renders
+#@ assert: .spec.minAvailable == 3
+#@ assert: .metadata.annotations["dasmeta.io/zero-evictions"] != null
+#
+# The real shape this exists for: a service rolled pod by pod after cooling each one down, where no
+# automation may ever evict a pod. minAvailable equal to the replica floor permits nothing, which is the
+# point, and the do-not-disrupt annotation stops karpenter retrying a drain it can never finish.
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 3
+
+pdb:
+  enabled: true
+  minAvailable: 3
+  allowZeroEvictions: true
+
+podAnnotations:
+  karpenter.sh/do-not-disrupt: "true"

@@ -1,0 +1,13 @@
+#@ desc: the flagger floor with autoscaling off comes from replicaCount, so a valid budget still renders
+#@ assert: .spec.minAvailable == 2
+replicaCount: 4
+autoscaling:
+  enabled: false
+rolloutStrategy:
+  enabled: true
+  operator: flagger
+  configs:
+    primaryScalerMinReplicas: 9
+pdb:
+  enabled: true
+  minAvailable: 2
