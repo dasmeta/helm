@@ -1,0 +1,6 @@
+# helm diff upgrade --install -n default with-image-digest ./charts/base/ -f ./examples/base/with-image-digest.yaml
+
+image:
+  repository: my-registry/my-app
+  tag: "1.2.3"
+  digest: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"

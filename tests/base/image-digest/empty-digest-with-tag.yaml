@@ -1,0 +1,7 @@
+#@ desc: empty digest keeps the image tag
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "my-registry/my-app:2.0.0"
+image:
+  repository: my-registry/my-app
+  tag: "2.0.0"
+  digest: ""

@@ -1,0 +1,6 @@
+#@ desc: tag only renders repository:tag
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "my-registry/my-app:1.2.3"
+image:
+  repository: my-registry/my-app
+  tag: "1.2.3"

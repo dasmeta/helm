@@ -17,8 +17,9 @@
 # Case files carry their assertions as `#@` directives:
 #
 #   #@ desc: human readable description
+#   #@ kind: <Kind>                  run #@ assert against this object (default: PodDisruptionBudget)
 #   #@ assert-no-pdb                 no PodDisruptionBudget may be rendered
-#   #@ assert: <yq expression>       must evaluate to true against the rendered PDB
+#   #@ assert: <yq expression>       must evaluate to true against the selected object
 #   #@ expect-fail: <substring>      render must fail and print this substring
 #   #@ kube-version: <semver>        render against this kubernetes version rather than helm's default
 #   #@ assert-notes: <substring>     install NOTES must contain this
@@ -207,15 +208,29 @@ for case_file in "${CASE_FILES[@]}"; do
         ok=0; reason="yq failed on the rendered output: $(printf '%s' "${pdb}" | head -1)"
         pdb=""
       fi
+      doc_kind="$(directive kind "${case_file}")"
+      if [ -z "${doc_kind}" ]; then
+        doc_kind="PodDisruptionBudget"
+        doc="${pdb}"
+      elif [ ${ok} -eq 1 ]; then
+        doc="$(printf '%s' "${out}" | yq "select(.kind == \"${doc_kind}\")" 2>&1)"
+        doc_rc=$?
+        if [ ${doc_rc} -ne 0 ]; then
+          ok=0; reason="yq failed selecting kind ${doc_kind}: $(printf '%s' "${doc}" | head -1)"
+          doc=""
+        fi
+      else
+        doc=""
+      fi
       if has_directive assert-no-pdb "${case_file}"; then
         if ! is_empty "${pdb}"; then ok=0; reason="expected NO PodDisruptionBudget, but one was rendered"; fi
-      else
-        if is_empty "${pdb}"; then
-          ok=0; reason="expected a PodDisruptionBudget, none was rendered"
+      elif [ ${ok} -eq 1 ]; then
+        if is_empty "${doc}"; then
+          ok=0; reason="expected a ${doc_kind}, none was rendered"
         else
           while IFS= read -r expr; do
             [ -z "${expr}" ] && continue
-            res="$(printf '%s' "${pdb}" | yq "${expr}" 2>&1)"
+            res="$(printf '%s' "${doc}" | yq "${expr}" 2>&1)"
             if [ "${res}" != "true" ]; then
               ok=0; reason="assertion failed: ${expr} (evaluated to: ${res})"
               break

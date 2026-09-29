@@ -29,7 +29,8 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | Key | Description | Default / Example |
 | --- | ----------- | ----------------- |
 | `image.repository` | Main container image repository | set per app |
-| `image.tag` | Image tag | set per app |
+| `image.tag` | Image tag. Ignored when `image.digest` is set. Falls back to `Chart.appVersion` when empty | set per app |
+| `image.digest` | Optional image digest. When non-empty, the main container is `repository@digest` and this takes precedence over `image.tag` | `""` |
 | `containerPort` | Main container port | set per app |
 | `service.enabled` | Create Service | `true` |
 | `service.type` | Service type | `ClusterIP` |
@@ -46,6 +47,18 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `pdb.selectorOverride` | Labels the budget selects on. Only needed where the chart cannot derive them — see Flagger below | unset (derived) |
 | `pdb.pdbName` | Override the generated PodDisruptionBudget name | chart fullname |
 | `terminationGracePeriodSeconds` | Time Kubernetes waits for the pod to shut down before killing it. Must exceed the `defaultLifecycle.preStop` sleep | unset (Kubernetes default `30`) |
+
+## 0.5.0
+
+The main container can be pinned by digest. Set `image.digest` to a full digest such as `sha256:<64 hex chars>`. The rendered image is `<repository>@<digest>`. When `image.digest` is empty, rendering is unchanged: `image.tag` is used, and an empty tag still falls back to `Chart.appVersion`. If both `image.digest` and `image.tag` are set, the digest wins.
+
+```yaml
+image:
+  repository: my-registry/my-app
+  digest: "sha256:<full-image-digest>"
+```
+
+See [examples/base/with-image-digest.yaml](../../examples/base/with-image-digest.yaml). This applies to the main application container. Init containers and extra containers still use their own image tag.
 
 ## Upgrading to 0.4.0
 
