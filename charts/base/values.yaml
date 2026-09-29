@@ -7,7 +7,11 @@ replicaCount: 1
 image:
   repository: nginx
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is  the chart appVersion.
+  # Overrides the image tag whose default is the chart appVersion.
+  # Optional image digest (for example sha256:<64 hex chars>). When non-empty, the main
+  # container is pinned as repository@digest and image.tag is ignored. Leave empty to keep
+  # the tag, or Chart.appVersion when tag is also empty.
+  digest: ""
 
 # Init containers
 # initContainers:

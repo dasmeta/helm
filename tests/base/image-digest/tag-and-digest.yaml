@@ -1,0 +1,7 @@
+#@ desc: digest takes precedence when tag is also set
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "my-registry/my-app@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+image:
+  repository: my-registry/my-app
+  tag: "9.9.9"
+  digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"

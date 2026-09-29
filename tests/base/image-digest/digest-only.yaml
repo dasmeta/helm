@@ -1,0 +1,6 @@
+#@ desc: digest only renders repository@digest
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "my-registry/my-app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+image:
+  repository: my-registry/my-app
+  digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

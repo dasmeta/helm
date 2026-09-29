@@ -1,0 +1,3 @@
+#@ desc: neither tag nor digest falls back to Chart.appVersion
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "nginx:0.4.0"
