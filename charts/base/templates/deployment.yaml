@@ -69,7 +69,11 @@ spec:
       initContainers:
        {{- range $initContainer := (ternary .Values.initContainers (list .Values.initContainers) (kindIs "slice" .Values.initContainers)) }}
         - name: {{ $initContainer.name }}
+          {{- if $initContainer.image.digest }}
+          image: "{{ $initContainer.image.repository }}@{{ $initContainer.image.digest }}"
+          {{- else }}
           image: "{{ $initContainer.image.repository }}:{{ $initContainer.image.tag }}"
+          {{- end }}
           imagePullPolicy: {{ $initContainer.image.pullPolicy }}
           {{- with $initContainer.workingDir }}
           workingDir: {{ . | quote }}

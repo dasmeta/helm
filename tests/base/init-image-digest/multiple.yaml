@@ -1,0 +1,49 @@
+#@ desc: each init container picks its own image, and other init settings stay in place
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].image == "my-registry/init-tag:1.0.0"
+#@ assert: .spec.template.spec.initContainers[1].image == "my-registry/init-digest@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+#@ assert: .spec.template.spec.initContainers[2].image == "my-registry/init-both@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+#@ assert: .spec.template.spec.initContainers[3].image == "my-registry/init-empty:3.0.0"
+#@ assert: .spec.template.spec.initContainers[0].command[0] == "/bin/sh"
+#@ assert: .spec.template.spec.initContainers[0].command[1] == "-c"
+#@ assert: .spec.template.spec.initContainers[0].args[0] == "sleep 5 && echo initialized"
+#@ assert: (.spec.template.spec.initContainers[0].env[] | select(.name == "INIT_TOKEN") | .value) == "abc"
+#@ assert: .spec.template.spec.initContainers[0].volumeMounts[0].name == "config-json"
+#@ assert: .spec.template.spec.initContainers[0].volumeMounts[0].mountPath == "/data"
+#@ assert: .spec.template.spec.initContainers[0].volumeMounts[0].subPath == "config.json"
+#@ assert: .spec.template.spec.containers[0].image == "my-registry/my-app@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+image:
+  repository: my-registry/my-app
+  tag: "9.9.9"
+  digest: "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+initContainers:
+  - name: tag-only
+    image:
+      repository: my-registry/init-tag
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c"]
+    args: ["sleep 5 && echo initialized"]
+    extraEnv:
+      INIT_TOKEN: abc
+    volumes:
+      - mountPath: /data
+        name: config-json
+        subPath: config.json
+  - name: digest-only
+    image:
+      repository: my-registry/init-digest
+      pullPolicy: IfNotPresent
+      digest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  - name: tag-and-digest
+    image:
+      repository: my-registry/init-both
+      tag: "should-not-render"
+      pullPolicy: IfNotPresent
+      digest: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  - name: empty-digest
+    image:
+      repository: my-registry/init-empty
+      tag: "3.0.0"
+      pullPolicy: IfNotPresent
+      digest: ""

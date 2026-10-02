@@ -1,0 +1,10 @@
+#@ desc: init container digest takes precedence over tag
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].image == "my-registry/init@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+initContainers:
+  - name: init-both
+    image:
+      repository: my-registry/init
+      tag: "9.9.9"
+      pullPolicy: IfNotPresent
+      digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"

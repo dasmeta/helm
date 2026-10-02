@@ -1,0 +1,15 @@
+#@ desc: a single initContainers map still accepts an image digest
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].image == "nginx@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+#@ assert: .spec.template.spec.initContainers[0].args[0] == "/config.json"
+#@ assert: .spec.template.spec.initContainers[0].args[1] == "/test/config.json"
+initContainers:
+  name: config
+  args:
+    - /config.json
+    - /test/config.json
+  image:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    tag: latest
+    digest: "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
