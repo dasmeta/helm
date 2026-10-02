@@ -3,6 +3,28 @@ entries:
   base:
   - apiVersion: v2
     appVersion: 0.4.0
+    created: "2026-10-02T07:53:03.100391638Z"
+    dependencies:
+    - alias: gatewayApi
+      condition: gatewayApi.enabled
+      name: gateway-api
+      repository: https://dasmeta.github.io/helm
+      version: 0.1.3
+    - alias: zeroTrustMesh
+      condition: zeroTrustMesh.enabled
+      name: zero-trust-mesh
+      repository: https://dasmeta.github.io/helm
+      version: 0.1.4
+    description: A Base Helm chart for Kubernetes
+    digest: 2103234068f5767fe3fd72069fc4d97050b2e608ea31860edf4e792e1fc1f3c4
+    icon: https://media.licdn.com/dms/image/C4E0BAQEdK6tkXfbtXQ/company-logo_200_200/0/1674118[…]47483647&v=beta&t=66-Xh3XKEy8l4jC5BCzb-73JqBDxRZPWACNt9KRiL4M
+    name: base
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/base-0.6.0/base-0.6.0.tgz
+    version: 0.6.0
+  - apiVersion: v2
+    appVersion: 0.4.0
     created: "2026-09-29T13:16:54.230541231Z"
     dependencies:
     - alias: gatewayApi
