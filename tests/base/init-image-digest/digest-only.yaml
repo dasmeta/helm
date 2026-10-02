@@ -1,0 +1,9 @@
+#@ desc: init container digest without a tag renders repository@digest
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].image == "my-registry/init@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+initContainers:
+  - name: init-digest
+    image:
+      repository: my-registry/init
+      pullPolicy: IfNotPresent
+      digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

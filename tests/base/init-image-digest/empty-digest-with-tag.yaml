@@ -1,0 +1,10 @@
+#@ desc: empty init container digest keeps the image tag
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].image == "my-registry/init:2.0.0"
+initContainers:
+  - name: init-empty-digest
+    image:
+      repository: my-registry/init
+      tag: "2.0.0"
+      pullPolicy: IfNotPresent
+      digest: ""

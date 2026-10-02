@@ -30,6 +30,8 @@ image:
 #       repository: nginx
 #       pullPolicy: IfNotPresent
 #       tag: latest
+#       # Optional. When non-empty, this init container is repository@digest and tag is ignored.
+#       digest: ""
 #     volumes:
 #       - mountPath: /config.json
 #         name: config-json

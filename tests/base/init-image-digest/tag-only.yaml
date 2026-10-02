@@ -1,0 +1,9 @@
+#@ desc: init container tag only renders repository:tag
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].image == "my-registry/init:1.2.3"
+initContainers:
+  - name: init-tag
+    image:
+      repository: my-registry/init
+      tag: "1.2.3"
+      pullPolicy: IfNotPresent

@@ -1,0 +1,26 @@
+# helm diff upgrade --install -n default with-init-container-digest ./charts/base/ -f ./examples/base/with-init-container-digest.yaml
+
+image:
+  repository: my-registry/my-app
+  tag: "1.2.3"
+
+initContainers:
+  - name: migrate
+    image:
+      repository: my-registry/migrate
+      tag: "9.9.9"
+      pullPolicy: IfNotPresent
+      digest: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    command: ["/bin/sh", "-c"]
+    args: ["echo migrated"]
+    extraEnv:
+      MIGRATE_ENV: production
+    volumes:
+      - mountPath: /data
+        name: config-json
+        subPath: config.json
+  - name: wait-for-config
+    image:
+      repository: my-registry/wait
+      tag: "2.0.0"
+      pullPolicy: IfNotPresent

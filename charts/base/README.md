@@ -31,6 +31,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `image.repository` | Main container image repository | set per app |
 | `image.tag` | Image tag. Ignored when `image.digest` is set. Falls back to `Chart.appVersion` when empty | set per app |
 | `image.digest` | Optional image digest. When non-empty, the main container is `repository@digest` and this takes precedence over `image.tag` | `""` |
+| `initContainers[].image.digest` | Optional digest for one init container. When non-empty, that init container is `repository@digest` and this takes precedence over its `image.tag`. An empty or omitted digest keeps `repository:tag` | unset |
 | `containerPort` | Main container port | set per app |
 | `service.enabled` | Create Service | `true` |
 | `service.type` | Service type | `ClusterIP` |
@@ -58,7 +59,23 @@ image:
   digest: "sha256:<full-image-digest>"
 ```
 
-See [examples/base/with-image-digest.yaml](../../examples/base/with-image-digest.yaml). This applies to the main application container. Init containers and extra containers still use their own image tag.
+See [examples/base/with-image-digest.yaml](../../examples/base/with-image-digest.yaml). This applies to the main application container. Extra containers still use their own image tag.
+
+## 0.6.0
+
+Each init container can be pinned by digest the same way. Set `initContainers[].image.digest`. That init container renders as `<repository>@<digest>`. When the digest is missing or empty, the init container still renders `repository:tag`. If both `image.digest` and `image.tag` are set on an init container, the digest wins. Other init container fields are unchanged.
+
+```yaml
+initContainers:
+  - name: migrate
+    image:
+      repository: my-registry/migrate
+      digest: "sha256:<full-image-digest>"
+    command: ["/bin/sh", "-c"]
+    args: ["echo migrated"]
+```
+
+See [examples/base/with-init-container-digest.yaml](../../examples/base/with-init-container-digest.yaml).
 
 ## Upgrading to 0.4.0
 
