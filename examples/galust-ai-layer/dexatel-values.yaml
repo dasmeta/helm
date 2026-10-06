@@ -1,0 +1,163 @@
+# Dexatel stage overlay for dasmeta/galust-ai-layer.
+# Chart YAML anchors are resolved before extra values files merge, so this
+# file restates hosts, TLS, public URLs, and OAuth/Redis config.
+# Keep secrets in Kubernetes, not here.
+#
+#   ./tools/helm3/helm3 upgrade --install ai-layer dasmeta/galust-ai-layer \
+#     --version 0.2.6 \
+#     -n das-meta \
+#     -f examples/galust-ai-layer/dexatel-values.yaml
+#
+# Secrets still required in namespace das-meta (keys only):
+#   ecr-secret
+#   ai-layer-mcp
+#   ai-layer-strapi            (+ ENCRYPTION_KEY, INTEGRATION_CREDENTIALS_ENCRYPTION_KEY, SENTRY_DSN)
+#   ai-layer-mcp-products      (+ MCP_OAUTH_JWT_PRIVATE_KEY, SENTRY_DSN)
+#   ai-layer-orchestrator      (+ OPENAI_API_KEY, CLOUDBROWSER_API_TOKEN, SENTRY_DSN)
+#
+# REDIS_URL comes from ConfigMap galust-incluster-urls (chart Redis unless redis.enabled=false).
+
+global:
+  API_URL: https://api-ai.stage.dexatel.com
+  API_HOST: api-ai.stage.dexatel.com
+  APP_URL: https://ai.stage.dexatel.com
+  APP_HOST: ai.stage.dexatel.com
+  MCP_URL: https://mcp-ai-layer.stage.dexatel.com
+  MCP_HOST: mcp-ai-layer.stage.dexatel.com
+  MCP_PRODUCTS_URL: https://mcp.stage.dexatel.com
+  MCP_PRODUCTS_HOST: mcp.stage.dexatel.com
+  ADMIN_URL: https://api-ai.stage.dexatel.com/admin
+  OPENAPI_BASE_URL: https://api-ai.stage.dexatel.com/api
+  OPENAPI_SPEC_URL: https://api-ai.stage.dexatel.com/documentation/openapi.json
+  ORCHESTRATOR_ENDPOINT: https://api-ai.stage.dexatel.com/orchestrator/api/galust/ask
+  ORCHESTRATOR_SSE_URL: https://api-ai.stage.dexatel.com/orchestrator/galust/ask/sse
+  ORCHESTRATOR_SUPPORT_SSE_URL: https://api-ai.stage.dexatel.com/orchestrator/galust/support/sse
+
+backend:
+  workload:
+    main:
+      podSpec:
+        containers:
+          main:
+            env:
+              ADMIN_URL: https://api-ai.stage.dexatel.com/admin
+              APP_URL: https://api-ai.stage.dexatel.com/admin
+              BACKEND_URL: https://api-ai.stage.dexatel.com
+              PUBLIC_URL: https://api-ai.stage.dexatel.com
+              STRAPI_ADMIN_BACKEND_URL: https://api-ai.stage.dexatel.com
+  ingress:
+    main:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        kubernetes.io/tls-acme: "true"
+        cert-manager.io/cluster-issuer: ""
+      hosts:
+        - host: api-ai.stage.dexatel.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - api-ai.stage.dexatel.com
+          secretName: wild-full-dexatel.com-tls
+
+mcp:
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: ""
+    hosts:
+      - host: mcp-ai-layer.stage.dexatel.com
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 80
+    tls:
+      - hosts:
+          - mcp-ai-layer.stage.dexatel.com
+        secretName: wild-full-dexatel.com-tls
+
+mcpProducts:
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: ""
+    hosts:
+      - host: mcp.stage.dexatel.com
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 80
+    tls:
+      - hosts:
+          - mcp.stage.dexatel.com
+        secretName: wild-full-dexatel.com-tls
+  config:
+    DEBUG_MCP_PRODUCTS_API: "true"
+    MCP_PRODUCTS_SHARED_HOST: mcp.stage.dexatel.com
+    MCP_OAUTH_INGRESS_HOSTS: mcp.stage.dexatel.com
+    MCP_OAUTH_CLIENTS: ""
+    MCP_OAUTH_TRUSTED_PROXIES: ""
+
+orchestrator:
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: ""
+      nginx.ingress.kubernetes.io/cors-allow-origin: https://ai.stage.dexatel.com
+    hosts:
+      - host: api-ai.stage.dexatel.com
+        paths:
+          - path: /orchestrator
+            pathType: Prefix
+            backend:
+              servicePort: 3000
+    tls:
+      - hosts:
+          - api-ai.stage.dexatel.com
+        secretName: wild-full-dexatel.com-tls
+  config:
+    PORTKEY_PROVIDER: dexatel-openai
+    QDRANT_URL: ""
+    LANGFUSE_BASE_URL: https://cloud.langfuse.com
+    EVALUATION_JUDGE_USE_CASE_ID: ""
+
+orchestratorScheduler:
+  config:
+    PORTKEY_PROVIDER: dexatel-openai
+    QDRANT_URL: ""
+    LANGFUSE_BASE_URL: https://cloud.langfuse.com
+
+frontend:
+  ingress:
+    enabled: true
+    class: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: ""
+    hosts:
+      - host: ai.stage.dexatel.com
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 80
+    tls:
+      - hosts:
+          - ai.stage.dexatel.com
+        secretName: wild-full-dexatel.com-tls
+  config:
+    API_BASE: https://api-ai.stage.dexatel.com
+    API_URL: https://api-ai.stage.dexatel.com/api
+    ASK_SSE_URL: https://api-ai.stage.dexatel.com/orchestrator/galust/ask/sse
+    SUPPORT_SSE_URL: https://api-ai.stage.dexatel.com/orchestrator/galust/support/sse
+    USE_CASE_RUN_URL_TEMPLATE: https://api-ai.stage.dexatel.com/use-cases/{name}/run
