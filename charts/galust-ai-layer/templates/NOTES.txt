@@ -22,6 +22,9 @@ Enabled components (Service names are {release}-{component} in {{ .Release.Names
 {{- if .Values.frontend.enabled }}
 - frontend: {{ printf "%s-frontend" .Release.Name }}
 {{- end }}
+{{- if .Values.redis.enabled }}
+- redis: {{ printf "%s-redis" .Release.Name }}
+{{- end }}
 
 In-cluster OpenAPI / MCP / backend URLs are in ConfigMap {{ include "galust-ai-layer.inclusterUrlsConfigMapName" . }}.
 

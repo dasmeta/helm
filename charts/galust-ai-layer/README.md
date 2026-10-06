@@ -12,10 +12,11 @@ This chart is an umbrella chart for the Galust AI layer services. It wraps the p
 - Orchestrator
 - Orchestrator scheduler
 - Frontend
+- Redis (OAuth store)
 
 The chart manages Kubernetes workload configuration for these services. It does not provision cloud infrastructure, databases, DNS records, TLS issuers, IAM roles, ECR policies, or external secrets.
 
-In-cluster Service names are `{release}-{component}` (for example `ai-layer-backend` when the Helm release is `ai-layer`). MCP, MCP products, orchestrator, and scheduler load OpenAPI and sibling URLs from ConfigMap `galust-incluster-urls` using those short names (same-namespace DNS). Kubernetes Secret names such as `ai-layer-strapi` stay as configured.
+In-cluster Service names are `{release}-{component}` (for example `ai-layer-backend` when the Helm release is `ai-layer`). MCP, MCP products, orchestrator, and scheduler load OpenAPI, Redis, and sibling URLs from ConfigMap `galust-incluster-urls` using those short names (same-namespace DNS). Kubernetes Secret names such as `ai-layer-strapi` stay as configured.
 
 ## Components
 
@@ -29,6 +30,7 @@ The chart wraps the published `dasmeta/base` chart with one alias per deployable
 | Orchestrator | `orchestrator.enabled` | `true` |
 | Orchestrator scheduler | `orchestratorScheduler.enabled` | `true` |
 | Frontend | `frontend.enabled` | `true` |
+| Redis | `redis.enabled` | `true` |
 
 Each component can be disabled independently:
 
@@ -78,7 +80,13 @@ Required default Kubernetes objects:
 | MCP products secret | `ai-layer-mcp-products` | MCP products |
 | Orchestrator secret | `ai-layer-orchestrator` | orchestrator and orchestrator scheduler |
 
-External dependencies such as Redis, Qdrant, Langfuse, OpenAI credentials, database provisioning, External Secrets, IAM trust, and DNS are handled outside this chart.
+External dependencies such as Qdrant, Langfuse, OpenAI credentials, database provisioning, External Secrets, IAM trust, and DNS are handled outside this chart. Redis is included (`redis.enabled=true`). To use an existing Redis instead:
+
+```yaml
+redis:
+  enabled: false
+  externalUrl: redis://redis:6379/0
+```
 
 ## Orchestrator Secret
 
@@ -293,7 +301,7 @@ Product OAuth (DEV-2084) runs on `mcp-products`. The shared host `mcp-products.g
 
 The chart also renders Ingress `{release}-mcp-products-callback` with exact `/oauth/product-token/callback` paths and access logs off. It reuses the same TLS secrets as the main MCP products ingress.
 
-Put `MCP_OAUTH_JWT_PRIVATE_KEY` on secret `ai-layer-mcp-products`. `REDIS_URL` is the OAuth store. Catalog lookup without the JWT key fails closed.
+Put `MCP_OAUTH_JWT_PRIVATE_KEY` on secret `ai-layer-mcp-products`. `REDIS_URL` is injected from ConfigMap `galust-incluster-urls` (`redis://{release}-redis:6379/0` when `redis.enabled=true`). Catalog lookup without the JWT key fails closed.
 
 `MCP_OAUTH_CLIENTS` defaults to empty. Those entries are vendor-fixed callback URLs. Public clients register at `POST /oauth/register` and are stored through the Strapi API.
 
@@ -429,6 +437,7 @@ Expected default service names:
 - `ai-layer-orchestrator`
 - `ai-layer-orchestrator-scheduler`
 - `ai-layer-frontend`
+- `ai-layer-redis`
 
 Expected public hosts when ingress is enabled:
 
