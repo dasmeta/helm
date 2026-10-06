@@ -404,7 +404,7 @@ Dexatel stage (`das-meta`, Helm 3 at `./tools/helm3/helm3` on the bastion):
 
 ```bash
 ./tools/helm3/helm3 upgrade --install ai-layer dasmeta/galust-ai-layer \
-  --version 0.2.6 \
+  --version 0.2.7 \
   -n das-meta \
   -f examples/galust-ai-layer/dexatel-values.yaml
 ```
