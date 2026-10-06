@@ -303,6 +303,13 @@ mcpProducts:
     DEBUG_MCP_PRODUCTS_API: "false"
     MCP_PRODUCTS_MAX_SPEC_BYTES: "20971520"
     MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
+    # MCP_OAUTH_JWT_PRIVATE_KEY stays on secret ai-layer-mcp-products.
+    # REDIS_URL is the OAuth store. Catalog lookup without the JWT key fails closed.
+    MCP_OAUTH_INGRESS_HOSTS: mcp.tutor-platform.com,mcp.cloudbrowser.dev
+    MCP_OAUTH_CLIENTS: "cursor|http://localhost:8787/callback;cursor|https://www.cursor.com/agents/mcp/oauth/callback;claude|http://localhost:8090/callback;postman|https://oauth.pstmn.io/v1/callback;postman|https://oauth.pstmn.io/v1/browser-callback;codex|http://127.0.0.1:8091/callback/zEfA300ZkXJ_;codex|http://127.0.0.1:8091/callback/DBCOEiWjqAOd"
+    MCP_OAUTH_TRUSTED_PROXIES: ""
+    REDIS_URL: redis://redis:6379/0
+    MCP_PRODUCTS_SHARED_HOST: *mcpProductsHost
   ingress:
     enabled: true
     class: nginx
@@ -320,11 +327,31 @@ mcpProducts:
             pathType: Prefix
             backend:
               servicePort: 80
+      - host: mcp.tutor-platform.com
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 80
+      - host: mcp.cloudbrowser.dev
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              servicePort: 80
     tls:
       - clusterIssuer: letsencrypt-prod
         secretName: com-galust-mcp-products-tls2
         hosts:
           - *mcpProductsHost
+      - clusterIssuer: letsencrypt-prod
+        secretName: mcp-oauth-mcp-tutor-platform-com
+        hosts:
+          - mcp.tutor-platform.com
+      - clusterIssuer: letsencrypt-prod
+        secretName: mcp-oauth-mcp-cloudbrowser-dev
+        hosts:
+          - mcp.cloudbrowser.dev
 
 orchestrator:
   enabled: true
@@ -376,6 +403,7 @@ orchestrator:
     QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
     REDIS_URL: redis://redis:6379/0
     LANGFUSE_HOST: https://cloud.langfuse.com
+    LANGFUSE_BASE_URL: https://cloud.langfuse.com
     PROMPT_SOURCE: backend
     CLOUDBROWSER_URL: https://app.dasmeta.com
     GLOBAL_PREFIX: orchestrator
@@ -385,7 +413,7 @@ orchestrator:
     PERSIST_CONVERSATION_TOOL_CALLS: "true"
     SCHEDULED_TRIGGERS_ENABLED: "false"
     EVALUATION_EXECUTION_ENABLED: "true"
-    EVALUATION_JUDGE_MODEL: gpt-4o-mini
+    EVALUATION_JUDGE_USE_CASE_ID: t216kbgfarcbcz8wmjyl3hlq
     EVALUATION_JUDGE_TIMEOUT_MS: "60000"
     EVALUATION_TARGET_TIMEOUT_MS: "300000"
     EVALUATION_STALE_RUN_TIMEOUT_MS: "900000"
@@ -458,6 +486,7 @@ orchestratorScheduler:
     QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
     REDIS_URL: redis://redis:6379/0
     LANGFUSE_HOST: https://cloud.langfuse.com
+    LANGFUSE_BASE_URL: https://cloud.langfuse.com
     PROMPT_SOURCE: backend
     CLOUDBROWSER_URL: https://app.dasmeta.com
     GLOBAL_PREFIX: orchestrator
