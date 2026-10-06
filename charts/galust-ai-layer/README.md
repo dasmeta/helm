@@ -400,17 +400,6 @@ helm upgrade --install galust-ai-layer charts/galust-ai-layer \
   -f examples/galust-ai-layer/values.test.yaml
 ```
 
-Dexatel stage (`das-meta`, Helm 3 at `./tools/helm3/helm3` on the bastion):
-
-```bash
-./tools/helm3/helm3 upgrade --install ai-layer dasmeta/galust-ai-layer \
-  --version 0.2.7 \
-  -n das-meta \
-  -f examples/galust-ai-layer/dexatel-values.yaml
-```
-
-Create missing secret keys before that upgrade. The overlay documents the host/OAuth/Redis overrides; it does not contain credentials.
-
 Disable a component:
 
 ```bash
@@ -467,7 +456,6 @@ helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set frontend.
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set orchestratorScheduler.enabled=false
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer --set backend.enabled=false
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml
-helm template ai-layer charts/galust-ai-layer -n das-meta -f examples/galust-ai-layer/dexatel-values.yaml
 ```
 
 ## Troubleshooting
@@ -484,5 +472,4 @@ If URL overrides do not appear in rendered manifests, remember that YAML anchors
 
 ```bash
 helm template galust-ai-layer charts/galust-ai-layer -n ai-layer -f examples/galust-ai-layer/values.test.yaml
-helm template ai-layer charts/galust-ai-layer -n das-meta -f examples/galust-ai-layer/dexatel-values.yaml
 ```
