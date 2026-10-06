@@ -108,6 +108,8 @@ This means every key in the `ai-layer-orchestrator` Secret is exposed to the orc
 
 The same secret is mounted by `orchestratorScheduler` via `envFrom.secret`.
 
+Evaluation execution uses `EVALUATION_JUDGE_USE_CASE_ID` (the Strapi document id of the Core `evaluation-result-judge` use case), not a model name. Chart defaults leave it empty; set it per environment. Langfuse v5 also needs `LANGFUSE_BASE_URL` on both orchestrator workloads; it defaults next to `LANGFUSE_HOST`.
+
 Create or update the secret before deploying:
 
 ```bash
@@ -284,6 +286,37 @@ Do not re-enable ClientIP affinity or ingress `upstream-hash-by: $remote_addr` u
 Core MCP (`mcp`) remains stateful and still pins external traffic with ingress `upstream-hash-by: $http_mcp_session_id`.
 
 Orchestrator → MCP traffic should keep using in-cluster URLs from ConfigMap `galust-incluster-urls` (`MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL`).
+
+## MCP products OAuth
+
+Product OAuth (DEV-2084) runs on `mcp-products`. The shared host `mcp-products.galust.ai` stays integrator-only. Chart defaults leave `MCP_OAUTH_INGRESS_HOSTS` empty. Add Product hostnames in an overlay values file, and list the same hosts on `mcpProducts.ingress.hosts` and `tls`, or OAuth clients cannot reach the adapter.
+
+The chart also renders Ingress `{release}-mcp-products-callback` with exact `/oauth/product-token/callback` paths and access logs off. It reuses the same TLS secrets as the main MCP products ingress.
+
+Put `MCP_OAUTH_JWT_PRIVATE_KEY` on secret `ai-layer-mcp-products`. `REDIS_URL` is the OAuth store. Catalog lookup without the JWT key fails closed.
+
+`MCP_OAUTH_CLIENTS` defaults to empty. Those entries are vendor-fixed callback URLs. Public clients register at `POST /oauth/register` and are stored through the Strapi API.
+
+## MCP products secret
+
+The default `ai-layer-mcp-products` secret should contain:
+
+| Secret key | Purpose |
+| --- | --- |
+| `AI_LAYER_BACKEND_API_TOKEN` | Strapi catalog Bearer token |
+| `MCP_DEVELOPMENT_CREDENTIAL_ENCRYPTION_KEY` | Development credential wrapping (even when disabled) |
+| `SENTRY_DSN` | Sentry project DSN |
+| `MCP_OAUTH_JWT_PRIVATE_KEY` | Product OAuth JWT signing key |
+
+```bash
+kubectl create secret generic ai-layer-mcp-products \
+  -n ai-layer \
+  --from-literal=AI_LAYER_BACKEND_API_TOKEN='<backend-api-token>' \
+  --from-literal=MCP_DEVELOPMENT_CREDENTIAL_ENCRYPTION_KEY='<encryption-key>' \
+  --from-literal=SENTRY_DSN='<sentry-dsn>' \
+  --from-literal=MCP_OAUTH_JWT_PRIVATE_KEY='<oauth-jwt-private-key>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
 
 ## MCP development credentials
 

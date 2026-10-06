@@ -9,6 +9,9 @@ Enabled components (Service names are {release}-{component} in {{ .Release.Names
 {{- end }}
 {{- if .Values.mcpProducts.enabled }}
 - mcp-products: {{ printf "%s-mcp-products" .Release.Name }}
+{{- if ((.Values.mcpProducts.ingress).enabled) }}
+- mcp-products OAuth callback ingress: {{ printf "%s-mcp-products-callback" .Release.Name }}
+{{- end }}
 {{- end }}
 {{- if .Values.orchestrator.enabled }}
 - orchestrator: {{ printf "%s-orchestrator" .Release.Name }}

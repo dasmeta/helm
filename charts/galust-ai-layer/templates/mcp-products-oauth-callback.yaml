@@ -1,0 +1,45 @@
+{{- if and .Values.mcpProducts.enabled ((.Values.mcpProducts.ingress).enabled) }}
+{{- $svc := include "galust-ai-layer.inclusterHost" (dict "root" . "component" "mcp-products") }}
+{{- $ingress := .Values.mcpProducts.ingress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-mcp-products-callback" .Release.Name }}
+  labels:
+    {{- include "galust-ai-layer.labels" . | nindent 4 }}
+    app: mcp-products
+  annotations:
+    kubernetes.io/ingress.ingressClassName: {{ default "nginx" $ingress.class | quote }}
+    nginx.ingress.kubernetes.io/enable-access-log: "false"
+spec:
+  {{- with $ingress.tls }}
+  tls:
+    {{- range . }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName | quote }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range $ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: /oauth/product-token/callback
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $svc }}
+                port:
+                  number: {{ default 80 $.Values.mcpProducts.service.port }}
+          - path: /oauth/product-token/callback/
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $svc }}
+                port:
+                  number: {{ default 80 $.Values.mcpProducts.service.port }}
+    {{- end }}
+{{- end }}
