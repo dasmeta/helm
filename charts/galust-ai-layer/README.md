@@ -289,15 +289,13 @@ Orchestrator → MCP traffic should keep using in-cluster URLs from ConfigMap `g
 
 ## MCP products OAuth
 
-Product OAuth (DEV-2084) runs on `mcp-products`. The shared host `mcp-products.galust.ai` stays integrator-only. Extra Product hostnames in `mcpProducts.config.MCP_OAUTH_INGRESS_HOSTS` must also be listed on `mcpProducts.ingress.hosts` and `tls`, or clients cannot reach the adapter.
+Product OAuth (DEV-2084) runs on `mcp-products`. The shared host `mcp-products.galust.ai` stays integrator-only. Chart defaults leave `MCP_OAUTH_INGRESS_HOSTS` empty. Add Product hostnames in an overlay values file, and list the same hosts on `mcpProducts.ingress.hosts` and `tls`, or OAuth clients cannot reach the adapter.
 
 The chart also renders Ingress `{release}-mcp-products-callback` with exact `/oauth/product-token/callback` paths and access logs off. It reuses the same TLS secrets as the main MCP products ingress.
 
 Put `MCP_OAUTH_JWT_PRIVATE_KEY` on secret `ai-layer-mcp-products`. `REDIS_URL` is the OAuth store. Catalog lookup without the JWT key fails closed.
 
-Default extra hosts match ai-layer `mcp-products/helm/values.yaml`: `mcp.tutor-platform.com` and `mcp.cloudbrowser.dev`. DNS records and cert-manager issuance for `mcp-oauth-*` TLS secrets are outside this chart.
-
-Hand-registered public clients are `mcpProducts.config.MCP_OAUTH_CLIENTS`. Other clients register at `POST /oauth/register` and are stored through the Strapi API.
+`MCP_OAUTH_CLIENTS` defaults to empty. Those entries are vendor-fixed callback URLs. Public clients register at `POST /oauth/register` and are stored through the Strapi API.
 
 ## MCP products secret
 
@@ -438,8 +436,6 @@ Expected public hosts when ingress is enabled:
 - `app.galust.ai`
 - `mcp.galust.ai`
 - `mcp-products.galust.ai`
-- `mcp.tutor-platform.com` (Product OAuth)
-- `mcp.cloudbrowser.dev` (Product OAuth)
 
 ## Local Validation
 
