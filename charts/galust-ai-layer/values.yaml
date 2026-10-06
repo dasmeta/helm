@@ -304,14 +304,14 @@ mcpProducts:
     MCP_PRODUCTS_MAX_SPEC_BYTES: "20971520"
     MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
     # MCP_OAUTH_JWT_PRIVATE_KEY stays on secret ai-layer-mcp-products.
-    # REDIS_URL is the OAuth store. Catalog lookup without the JWT key fails closed.
+    # Redis URL comes from ConfigMap galust-incluster-urls (chart Redis or redis.externalUrl).
+    # Catalog lookup without the JWT key fails closed.
     # Extra Product hostnames belong in an overlay values file, not chart defaults.
     MCP_OAUTH_INGRESS_HOSTS: ""
     # Hand-registered clientId|redirectUri entries. Leave empty: public clients
     # register at POST /oauth/register and persist through Strapi.
     MCP_OAUTH_CLIENTS: ""
     MCP_OAUTH_TRUSTED_PROXIES: ""
-    REDIS_URL: redis://redis:6379/0
     MCP_PRODUCTS_SHARED_HOST: *mcpProductsHost
   ingress:
     enabled: true
@@ -384,7 +384,6 @@ orchestrator:
     NODE_ENV: production
     OPENAI_MODEL: gpt-4o-mini
     QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
-    REDIS_URL: redis://redis:6379/0
     LANGFUSE_HOST: https://cloud.langfuse.com
     LANGFUSE_BASE_URL: https://cloud.langfuse.com
     PROMPT_SOURCE: backend
@@ -467,7 +466,6 @@ orchestratorScheduler:
     NODE_ENV: production
     OPENAI_MODEL: gpt-4o-mini
     QDRANT_URL: http://qdrant.dasmeta-customer-portal.svc.cluster.local:6333
-    REDIS_URL: redis://redis:6379/0
     LANGFUSE_HOST: https://cloud.langfuse.com
     LANGFUSE_BASE_URL: https://cloud.langfuse.com
     PROMPT_SOURCE: backend
@@ -536,3 +534,52 @@ frontend:
     ASK_SSE_URL: *orchestratorSseUrl
     SUPPORT_SSE_URL: *orchestratorSupportSseUrl
     USE_CASE_RUN_URL_TEMPLATE: https://api.galust.ai/use-cases/{name}/run
+
+# In-cluster Redis for mcp-products OAuth (and REDIS_URL on orchestrator).
+# Disable and set redis.externalUrl to keep using a cluster Redis named "redis".
+redis:
+  enabled: true
+  gatewayApi:
+    enabled: false
+  zeroTrustMesh:
+    enabled: false
+    allowTo: []
+  nameOverride: redis
+  version: 0.0.1
+  appVersion: "7"
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  labels:
+    version:
+      name: app-version
+      value: v7
+    app:
+      name: app
+      value: ai-layer-redis
+  service:
+    type: ClusterIP
+    port: 6379
+    name: redis
+  containerPort: 6379
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+  livenessProbe:
+    tcpSocket:
+      port: 6379
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 6379
+    periodSeconds: 5
+  ingress:
+    enabled: false
+  # Used only when redis.enabled=false.
+  externalUrl: redis://redis:6379/0

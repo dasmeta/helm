@@ -36,3 +36,8 @@ dependencies:
     version: 0.3.33
     repository: https://dasmeta.github.io/helm
     condition: frontend.enabled
+  - name: base
+    alias: redis
+    version: 0.3.33
+    repository: https://dasmeta.github.io/helm
+    condition: redis.enabled

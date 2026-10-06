@@ -63,3 +63,14 @@ In-cluster Service hostname: {release}-{component} (same-namespace kube-dns).
 {{- define "galust-ai-layer.inclusterUrlsConfigMapName" -}}
 galust-incluster-urls
 {{- end }}
+
+{{/*
+Redis URL for mcp-products OAuth and orchestrator. Chart Redis is {release}-redis.
+*/}}
+{{- define "galust-ai-layer.redisUrl" -}}
+{{- if .Values.redis.enabled -}}
+{{- printf "redis://%s:%v/0" (include "galust-ai-layer.inclusterHost" (dict "root" . "component" "redis")) (.Values.redis.service.port | default 6379) -}}
+{{- else -}}
+{{- default "redis://redis:6379/0" .Values.redis.externalUrl -}}
+{{- end -}}
+{{- end }}
