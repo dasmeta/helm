@@ -1678,6 +1678,52 @@ entries:
     version: 0.1.0
   galust-ai-layer:
   - apiVersion: v2
+    appVersion: 0.2.7
+    created: "2026-10-06T08:30:06.864854784Z"
+    dependencies:
+    - alias: backend
+      condition: backend.enabled
+      name: strapi
+      repository: oci://oci.trueforge.org/truecharts
+      version: 18.9.0
+    - alias: mcp
+      condition: mcp.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.33
+    - alias: mcpProducts
+      condition: mcpProducts.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.33
+    - alias: orchestrator
+      condition: orchestrator.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.33
+    - alias: orchestratorScheduler
+      condition: orchestratorScheduler.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.33
+    - alias: frontend
+      condition: frontend.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.33
+    - alias: redis
+      condition: redis.enabled
+      name: base
+      repository: https://dasmeta.github.io/helm
+      version: 0.3.33
+    description: Galust AI layer umbrella chart for Kubernetes clusters
+    digest: a2f1c06b27b1e02fcd9bee30f4f9ab9d939fad442c74aa19494b5a65ae88b78f
+    name: galust-ai-layer
+    type: application
+    urls:
+    - https://github.com/dasmeta/helm/releases/download/galust-ai-layer-0.2.7/galust-ai-layer-0.2.7.tgz
+    version: 0.2.7
+  - apiVersion: v2
     appVersion: 0.2.6
     created: "2026-10-06T08:06:35.093409343Z"
     dependencies:
