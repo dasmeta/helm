@@ -108,7 +108,7 @@ This means every key in the `ai-layer-orchestrator` Secret is exposed to the orc
 
 The same secret is mounted by `orchestratorScheduler` via `envFrom.secret`.
 
-Evaluation execution uses `EVALUATION_JUDGE_USE_CASE_ID` (a Strapi use-case document id), not a model name. Langfuse v5 also needs `LANGFUSE_BASE_URL` on both orchestrator workloads; it defaults next to `LANGFUSE_HOST`.
+Evaluation execution uses `EVALUATION_JUDGE_USE_CASE_ID` (the Strapi document id of the Core `evaluation-result-judge` use case), not a model name. Chart defaults leave it empty; set it per environment. Langfuse v5 also needs `LANGFUSE_BASE_URL` on both orchestrator workloads; it defaults next to `LANGFUSE_HOST`.
 
 Create or update the secret before deploying:
 
