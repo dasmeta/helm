@@ -1,0 +1,27 @@
+{{- /* ReferenceGrant: allows routes/gateways in other namespaces (spec.from) to reference objects of this
+       namespace (spec.to), e.g. cross-namespace backendRefs or certificateRefs. Spec fields are passed as-is. */ -}}
+{{- $outer := . -}}
+{{- $items := .Values.referenceGrants | default (list) -}}
+{{- range $idx, $item := (ternary $items (list $items) (kindIs "slice" $items)) }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: {{ default (printf "%s-referencegrant-%d" (include "gateway-api.fullname" $outer) $idx) $item.name | quote }}
+  namespace: {{ default $outer.Release.Namespace $item.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $item.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $item.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- /* spec: the item's `spec`, or its fields other than name/namespace/labels/annotations, passed as-is */ -}}
+{{- $spec := ternary $item.spec (omit $item "name" "namespace" "labels" "annotations") (hasKey $item "spec") }}
+{{- with $spec }}
+spec:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

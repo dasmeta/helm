@@ -94,6 +94,10 @@ spec:
   {{- end }}
   {{- with $gateway.infrastructure }}
   infrastructure:
+    {{- with .labels }}
+    labels:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
     {{- with .annotations }}
     annotations:
       {{- toYaml . | nindent 6 }}
@@ -118,6 +122,17 @@ spec:
     {{- end }}
   {{- end }}
 {{- end }}
+  {{- /* Gateway API v1.6: allow ListenerSets to attach (allowedListeners.namespaces.from: Same|All|Selector|None) */ -}}
+  {{- with $gateway.allowedListeners }}
+  allowedListeners:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- /* Gateway API v1.6: Gateway level TLS settings, spec.tls.frontend (client certificate validation) and
+         spec.tls.backend (client certificate the Gateway presents to backends) */ -}}
+  {{- with $gateway.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

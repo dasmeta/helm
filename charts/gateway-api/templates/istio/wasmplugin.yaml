@@ -1,0 +1,27 @@
+{{- /* Istio WasmPlugin (extensions.istio.io/v1alpha1). Defaults to the istio-system namespace, as targetRefs to a
+       Gateway must be in the Gateway's namespace. Spec fields are passed as-is. */ -}}
+{{- $outer := . -}}
+{{- $items := .Values.istio.wasmPlugins | default (list) -}}
+{{- range $idx, $item := (ternary $items (list $items) (kindIs "slice" $items)) }}
+---
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: {{ default (printf "%s-wasmplugin-%d" (include "gateway-api.fullname" $outer) $idx) $item.name | quote }}
+  namespace: {{ default "istio-system" $item.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $item.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $item.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- /* spec: the item's `spec`, or its fields other than name/namespace/labels/annotations, passed as-is */ -}}
+{{- $spec := ternary $item.spec (omit $item "name" "namespace" "labels" "annotations") (hasKey $item "spec") }}
+{{- with $spec }}
+spec:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,107 @@
+# helm template gateway-api-v1-6 ./charts/gateway-api -f ./examples/gateway-api/gateway-api-v1.6-and-istio-extensions.yaml
+# Gateway API v1.6 standard channel objects and Istio extension resources passed from outside.
+gateways:
+  - name: main
+    listeners:
+      - port: 80
+        protocol: HTTP
+    allowedListeners:
+      namespaces:
+        from: Same
+listenerSets:
+  - name: team-a
+    parentRef:
+      name: main
+      namespace: istio-system
+    listeners:
+      - name: https-team-a
+        hostname: team-a.example.com
+        port: 443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: team-a-tls
+httpRoutes:
+  - name: api
+    parentRefs:
+      - name: main
+    hostnames:
+      - api.example.com
+    rules:
+      - name: v2-preview
+        matches:
+          - path:
+              type: PathPrefix
+              value: /api
+            method: GET
+            queryParams:
+              - type: Exact
+                name: preview
+                value: "true"
+        timeouts:
+          request: 10s
+        backendRefs: { name: api-v2, port: 8080 }
+      - backendRefs: { name: api, port: 8080 }
+tcpRoutes:
+  - name: db
+    parentRefs:
+      - name: main
+        sectionName: tcp-5432
+    rules:
+      - name: postgres
+        backendRefs:
+          - name: postgres
+            port: 5432
+backendTLSPolicies:
+  - name: api-tls
+    targetRefs:
+      - group: ""
+        kind: Service
+        name: api
+    validation:
+      hostname: api.example.com
+      wellKnownCACertificates: System
+referenceGrants:
+  - name: allow-gateway-namespace-routes
+    from:
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        namespace: istio-system
+    to:
+      - group: ""
+        kind: Service
+istio:
+  envoyFilters:
+    - name: main-response-header
+      targetRefs:
+        - kind: Gateway
+          group: gateway.networking.k8s.io
+          name: main
+      configPatches:
+        - applyTo: HTTP_ROUTE
+          match:
+            context: GATEWAY
+          patch:
+            operation: MERGE
+            value:
+              response_headers_to_add:
+                - header: { key: x-served-by, value: gateway }
+  trafficExtensions:
+    - name: request-id-echo
+      targetRefs:
+        - kind: Gateway
+          group: gateway.networking.k8s.io
+          name: main
+      lua:
+        inlineCode: |
+          function envoy_on_response(handle)
+            handle:headers():add("x-gateway", "main")
+          end
+  proxyConfigs:
+    - name: main-concurrency
+      namespace: istio-system
+      selector:
+        matchLabels:
+          gateway.networking.k8s.io/gateway-name: main
+      concurrency: 2

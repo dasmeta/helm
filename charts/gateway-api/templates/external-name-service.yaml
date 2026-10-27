@@ -1,0 +1,19 @@
+{{- /* ExternalName Services for httpRoutes rules[].backendRefs[].external with create: true. No ports: Istio treats the
+       Service as an alias of its externalName, whose ServiceEntry/DestinationRule carry port and TLS settings.
+       Leave create off for a Service that already exists, the release would take it over. */ -}}
+{{- $outer := . -}}
+{{- range (include "gateway-api.externalBackends" . | fromJsonArray) }}
+{{- if .create }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name | quote }}
+  namespace: {{ $outer.Release.Namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ .host | quote }}
+{{- end }}
+{{- end }}

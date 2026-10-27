@@ -1,8 +1,22 @@
-{{- if .Values.istio.serviceEntries }}
 {{- $outer := . -}}
-{{- $entries := .Values.istio.serviceEntries -}}
+{{- $entries := .Values.istio.serviceEntries | default (list) -}}
+{{- $entries = ternary $entries (list $entries) (kindIs "slice" $entries) -}}
+{{- /* Registrations for httpRoutes rules[].backendRefs[].external, appended after the manual entries so unnamed
+       manual entries keep their index based default names. The port is declared HTTP also for HTTPS backends:
+       the generated DestinationRule originates TLS on it. exportTo "*" lets the Gateway namespace see it. */ -}}
+{{- range (include "gateway-api.externalBackends" . | fromJsonArray) }}
+  {{- $entries = append $entries (dict
+    "name" .resourceName
+    "hosts" (list .host)
+    "location" "MESH_EXTERNAL"
+    "resolution" "DNS"
+    "endpoints" (list (dict "address" .endpoint))
+    "ports" (list (dict "number" (int .port) "name" (printf "http-%d" (int .port)) "protocol" "HTTP"))
+    "exportTo" (list "*")
+  ) }}
+{{- end }}
 {{- if $entries }}
-{{- range $idx, $entry := (ternary $entries (list $entries) (kindIs "slice" $entries)) }}
+{{- range $idx, $entry := $entries }}
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -47,6 +61,5 @@ spec:
   workloadSelector:
     {{- toYaml $entry.workloadSelector | nindent 4 }}
   {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}

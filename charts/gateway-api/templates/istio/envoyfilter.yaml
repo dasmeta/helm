@@ -102,3 +102,78 @@ spec:
     {{- tpl (toYaml $filter.configPatches) $outer | nindent 4 }}
 {{- end }}
 {{- end }}
+{{- /* httpRoutes[].lua: Envoy Lua (envoy_on_request / envoy_on_response) for logic an HTTPRoute can't express, e.g.
+       building the upstream path from a query argument. One EnvoyFilter per route, inserted right before the
+       router of the route's parent Gateways. It runs for EVERY request on those Gateways, so the code must return
+       right away for hosts other than its own. The source is passed as-is (no tpl). */ -}}
+{{- if .Values.httpRoutes }}
+{{- $routes := .Values.httpRoutes -}}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) }}
+{{- with $route.lua }}
+{{- if not (kindIs "string" .) }}
+{{- fail (printf "httpRoutes[%d].lua must be a string of Lua source" $idx) }}
+{{- end }}
+{{- $nameBase := default (printf "%s-httproute-%d" (include "gateway-api.fullname" $outer) $idx) $route.name }}
+{{- $parentRefs := (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ printf "%s-lua" $nameBase | lower | trunc 63 | trimSuffix "-" | quote }}
+  namespace: {{ default "istio-system" (first (default (list (dict)) $parentRefs)).namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+spec:
+  targetRefs:
+    {{- range (default (list (dict "name" "main")) $parentRefs) }}
+    - group: {{ default "gateway.networking.k8s.io" .group | quote }}
+      kind: {{ default "Gateway" .kind | quote }}
+      name: {{ default "main" .name | quote }}
+    {{- end }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: {{ printf "%s.lua" $nameBase | quote }}
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            default_source_code:
+              {{- dict "inline_string" . | toYaml | nindent 14 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- /* istio.envoyFilters: full EnvoyFilter specs passed from outside (targetRefs / workloadSelector, configPatches,
+       priority). Defaults to the istio-system namespace, as targetRefs to a Gateway must be in its namespace. */ -}}
+{{- $customFilters := .Values.istio.envoyFilters | default (list) -}}
+{{- range $idx, $filter := (ternary $customFilters (list $customFilters) (kindIs "slice" $customFilters)) }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ default (printf "%s-envoyfilter-custom-%d" (include "gateway-api.fullname" $outer) $idx) $filter.name | quote }}
+  namespace: {{ default "istio-system" $filter.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $filter.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $filter.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- /* spec: the item's `spec`, or its fields other than name/namespace/labels/annotations, passed as-is */ -}}
+{{- $spec := ternary $filter.spec (omit $filter "name" "namespace" "labels" "annotations") (hasKey $filter "spec") }}
+{{- with $spec }}
+spec:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

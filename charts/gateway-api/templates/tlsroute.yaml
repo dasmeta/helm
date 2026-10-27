@@ -1,9 +1,4 @@
-{{- /*
-  TLSRoute is an EXPERIMENTAL Gateway API resource.
-  It is NOT included in the standard Gateway API CRD installation.
-  To use TLSRoute, you must install the experimental CRDs:
-  https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
-*/ -}}
+{{- /* TLSRoute gateway.networking.k8s.io/v1, part of the Gateway API v1.6 standard channel CRDs. */ -}}
 {{- if .Values.tlsRoutes }}
 {{- $outer := . -}}
 {{- $routes := .Values.tlsRoutes -}}
@@ -44,8 +39,9 @@ spec:
   rules:
     {{- range . }}
       {{- $rule := dict }}
-      {{- if .matches }}
-        {{- $_ := set $rule "matches" .matches }}
+      {{- /* the v1 rule has only name and backendRefs (no matches) */ -}}
+      {{- with .name }}
+        {{- $_ := set $rule "name" . }}
       {{- end }}
       {{- $backendRefs := .backendRefs | default (list (dict)) }}
       {{- if $backendRefs }}
@@ -58,11 +54,17 @@ spec:
           {{- if .weight }}
             {{- $_ := set $backendRef "weight" .weight }}
           {{- end }}
+          {{- with .group }}
+            {{- $_ := set $backendRef "group" . }}
+          {{- end }}
+          {{- with .kind }}
+            {{- $_ := set $backendRef "kind" . }}
+          {{- end }}
           {{- $processedBackendRefs = append $processedBackendRefs $backendRef }}
         {{- end }}
         {{- $_ := set $rule "backendRefs" $processedBackendRefs }}
       {{- end }}
-      {{- if or $rule.matches $rule.backendRefs }}
+      {{- if $rule.backendRefs }}
         {{- toYaml (list $rule) | nindent 4 | trimPrefix "- " }}
       {{- end }}
     {{- end }}

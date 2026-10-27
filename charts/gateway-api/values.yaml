@@ -114,6 +114,22 @@ enabled: false # makes no affect if chart used directly, this option can be used
 #         # serviceAccount, podDisruptionBudget: same pattern (object or string) using full YAML fragments
 #       # When parameters is set and non-empty, it overrides any manual parametersRef above.
 #       # Each value can be object (serialized to YAML) or string (used as-is); empty string omits the key.
+#     # infrastructure.labels: labels for the generated Gateway infrastructure (Deployment/Service)
+#     # Gateway API v1.6: let ListenerSets attach (from: Same | All | Selector | None)
+#     allowedListeners:
+#       namespaces:
+#         from: Same
+#     # Gateway API v1.6: Gateway level TLS. frontend validates client certificates (default or perPort),
+#     # backend.clientCertificateRef is the certificate the Gateway presents to backends
+#     tls:
+#       frontend:
+#         default:
+#           validation:
+#             mode: AllowValidOnly
+#             caCertificateRefs:
+#               - name: client-ca
+#                 kind: ConfigMap
+#                 group: ""
 gateways: []
 
 # Default parentRefs for HTTPRoute/GRPCRoute/TCPRoute/TLSRoute/UDPRoute objects.
@@ -228,6 +244,41 @@ defaultParentRefs: []
 #         directResponse:
 #           status: 200
 #           body: "ok"
+#
+# Example with an external backend and a Lua filter:
+# - backendRefs may be one object or a list
+# - backendRefs[].external renders a ServiceEntry `ext-<route>` (`ext-<route>-<backend>` when a route has several)
+#   for an ExternalName Service named like the backendRef, plus a TLS origination DestinationRule when protocol is
+#   HTTPS. It must be the only backendRef of its rule. host defaults to the first route hostname and must equal the
+#   Service externalName; endpoint (DNS target of the ServiceEntry) defaults to host. rewriteHost sends host as the
+#   upstream Host header; create also creates the ExternalName Service (keep it off for an existing Service).
+# - lua renders the EnvoyFilter `<route>-lua` with the Lua filter right before the router of the route's parent
+#   Gateways. It runs for every request on them, so it must return right away for other hosts.
+# httpRoutes:
+#   - name: lookup
+#     parentRefs:
+#       - name: main
+#         sectionName: https
+#     hostnames:
+#       - lookup.example.com
+#     rules:
+#       - matches:
+#           - path:
+#               type: PathPrefix
+#               value: /lookup
+#         backendRefs:
+#           name: lookup-cdn
+#           port: 443
+#           external:
+#             host: cdn.example.net
+#             protocol: HTTPS
+#             rewriteHost: true
+#             create: true
+#     lua: |
+#       function envoy_on_request(handle)
+#         if handle:headers():get(":authority") ~= "lookup.example.com" then return end
+#         -- custom request handling
+#       end
 httpRoutes: []
 
 # List (or single object) of GRPCRoute resources to create.
@@ -253,9 +304,8 @@ httpRoutes: []
 grpcRoutes: []
 
 # List (or single object) of TCPRoute resources to create.
-# NOTE: TCPRoute is an EXPERIMENTAL Gateway API resource and is NOT included in
-# the standard Gateway API CRD installation. To use TCPRoute, you must install
-# the experimental CRDs: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+# TCPRoute is gateway.networking.k8s.io/v1 in the Gateway API v1.6 standard channel. Rules have only
+# `name` and `backendRefs` (no matches).
 #
 # Example:
 # tcpRoutes:
@@ -265,17 +315,15 @@ grpcRoutes: []
 #     annotations: {}
 #     parentRefs: [] # optional, otherwise set explicit parentRefs
 #     rules:
-#       - matches:
-#           - port: 5432
+#       - name: postgres
 #         backendRefs:
 #           - name: postgres
 #             port: 5432
 tcpRoutes: []
 
 # List (or single object) of TLSRoute resources to create.
-# NOTE: TLSRoute is an EXPERIMENTAL Gateway API resource and is NOT included in
-# the standard Gateway API CRD installation. To use TLSRoute, you must install
-# the experimental CRDs: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+# TLSRoute is gateway.networking.k8s.io/v1 in the Gateway API v1.6 standard channel. Rules have only
+# `name` and `backendRefs` (no matches).
 #
 # Example:
 # tlsRoutes:
@@ -287,18 +335,14 @@ tcpRoutes: []
 #     hostnames:
 #       - tls.example.com
 #     rules:
-#       - matches:
-#           - sniHosts:
-#               - tls.example.com
-#         backendRefs:
+#       - backendRefs:
 #           - name: base
 #             port: 443
 tlsRoutes: []
 
 # List (or single object) of UDPRoute resources to create.
-# NOTE: UDPRoute is an EXPERIMENTAL Gateway API resource and is NOT included in
-# the standard Gateway API CRD installation. To use UDPRoute, you must install
-# the experimental CRDs: https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+# UDPRoute is gateway.networking.k8s.io/v1 in the Gateway API v1.6 standard channel. Rules have only
+# `name` and `backendRefs` (no matches).
 #
 # Example:
 # udpRoutes:
@@ -308,12 +352,61 @@ tlsRoutes: []
 #     annotations: {}
 #     parentRefs: []
 #     rules:
-#       - matches:
-#           - port: 8125
-#         backendRefs:
+#       - backendRefs:
 #           - name: statsd
 #             port: 8125
 udpRoutes: []
+
+# List (or single object) of ListenerSet resources (gateway.networking.k8s.io/v1): extra listeners attached to
+# a Gateway through spec.parentRef. The parent Gateway must allow them with `gateways[].allowedListeners`.
+# Items set name/namespace/labels/annotations plus the spec fields (or a `spec` key); spec is passed as-is.
+#
+# Example:
+# listenerSets:
+#   - name: team-a
+#     parentRef:
+#       name: main
+#       namespace: istio-system
+#     listeners:
+#       - name: https-team-a
+#         hostname: team-a.example.com
+#         port: 443
+#         protocol: HTTPS
+#         tls:
+#           mode: Terminate
+#           certificateRefs:
+#             - name: team-a-tls
+listenerSets: []
+
+# List (or single object) of BackendTLSPolicy resources (gateway.networking.k8s.io/v1): TLS from the Gateway to
+# backend Services. Spec passed as-is.
+#
+# Example:
+# backendTLSPolicies:
+#   - name: api-tls
+#     targetRefs:
+#       - group: ""
+#         kind: Service
+#         name: api
+#     validation:
+#       hostname: api.example.com
+#       wellKnownCACertificates: System
+backendTLSPolicies: []
+
+# List (or single object) of ReferenceGrant resources (gateway.networking.k8s.io/v1): let objects in other
+# namespaces reference objects of this namespace (cross-namespace backendRefs, certificateRefs). Spec passed as-is.
+#
+# Example:
+# referenceGrants:
+#   - name: allow-gateway-routes
+#     from:
+#       - group: gateway.networking.k8s.io
+#         kind: HTTPRoute
+#         namespace: istio-system
+#     to:
+#       - group: ""
+#         kind: Service
+referenceGrants: []
 
 # ==============================================================================
 # ISTIO-SPECIFIC RESOURCES (Not part of standard Gateway API)
@@ -699,3 +792,69 @@ istio:
   #               port:
   #                 number: 80
   virtualServices: []
+
+  # List (or single object) of Istio EnvoyFilter resources (networking.istio.io/v1alpha3) passed in full:
+  # targetRefs or workloadSelector, configPatches, priority. Defaults to the istio-system namespace (targetRefs to a
+  # Gateway must be in the Gateway's namespace). EnvoyFilter patches Envoy internals and can break across Istio
+  # upgrades; prefer httpRoutes rules, httpRoutes[].lua or trafficExtensions where they fit.
+  #
+  # Example: add a response header on every request of the `main` Gateway
+  # envoyFilters:
+  #   - name: main-response-header
+  #     targetRefs:
+  #       - kind: Gateway
+  #         group: gateway.networking.k8s.io
+  #         name: main
+  #     configPatches:
+  #       - applyTo: HTTP_ROUTE
+  #         match:
+  #           context: GATEWAY
+  #         patch:
+  #           operation: MERGE
+  #           value:
+  #             response_headers_to_add:
+  #               - header: { key: x-served-by, value: gateway }
+  envoyFilters: []
+
+  # List (or single object) of Istio TrafficExtension resources (extensions.istio.io/v1alpha1, Istio 1.30+): Lua
+  # (lua.inlineCode) or Wasm (wasm.*) proxy extensions through a supported API. Defaults to istio-system.
+  #
+  # Example:
+  # trafficExtensions:
+  #   - name: add-header
+  #     targetRefs:
+  #       - kind: Gateway
+  #         group: gateway.networking.k8s.io
+  #         name: main
+  #     lua:
+  #       inlineCode: |
+  #         function envoy_on_response(handle)
+  #           handle:headers():add("x-served-by", "gateway")
+  #         end
+  trafficExtensions: []
+
+  # List (or single object) of Istio WasmPlugin resources (extensions.istio.io/v1alpha1). Defaults to istio-system.
+  #
+  # Example:
+  # wasmPlugins:
+  #   - name: basic-auth
+  #     targetRefs:
+  #       - kind: Gateway
+  #         group: gateway.networking.k8s.io
+  #         name: main
+  #     url: oci://registry.example.com/wasm/basic-auth:1.0.0
+  #     phase: AUTHN
+  wasmPlugins: []
+
+  # List (or single object) of Istio ProxyConfig resources (networking.istio.io/v1beta1): per workload proxy settings
+  # (concurrency, environmentVariables, image, selector). Defaults to the release namespace.
+  #
+  # Example:
+  # proxyConfigs:
+  #   - name: gateway-concurrency
+  #     namespace: istio-system
+  #     selector:
+  #       matchLabels:
+  #         gateway.networking.k8s.io/gateway-name: main
+  #     concurrency: 2
+  proxyConfigs: []

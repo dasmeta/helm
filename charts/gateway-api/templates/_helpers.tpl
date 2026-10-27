@@ -65,3 +65,69 @@ Used when infrastructure.parameters is set and non-empty.
 {{- $gateway := index . 1 -}}
 {{- include "gateway-api.fullname" $outer }}-infra-{{ $gateway.name }}
 {{- end }}
+
+{{/*
+External backends of httpRoutes: every rules[].backendRefs[] item that sets `external`, as a JSON list.
+Used by the HTTPRoute (Host rewrite), ServiceEntry, DestinationRule and ExternalName Service templates, so all
+of them derive the same objects. Each item:
+  route, name, port, host, endpoint, protocol (HTTP|HTTPS), rewriteHost, create,
+  resourceName: "ext-<route>", or "ext-<route>-<backend>" when one route has several external backends.
+host defaults to the route's first hostname; endpoint defaults to host. Usage:
+  {{- $externalBackends := include "gateway-api.externalBackends" . | fromJsonArray -}}
+*/}}
+{{- define "gateway-api.externalBackends" -}}
+{{- $outer := . -}}
+{{- $result := list -}}
+{{- $routes := .Values.httpRoutes | default (list) -}}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) -}}
+  {{- $routeName := default (printf "%s-httproute-%d" (include "gateway-api.fullname" $outer) $idx) $route.name -}}
+  {{- $firstHost := "" -}}
+  {{- with $route.hostnames -}}
+    {{- $firstHost = tpl (toString (first .)) $outer -}}
+  {{- end -}}
+  {{- $found := list -}}
+  {{- range $ruleIdx, $rule := (default (list) $route.rules) -}}
+    {{- $refs := default (list) (ternary (list $rule.backendRefs) $rule.backendRefs (kindIs "map" $rule.backendRefs)) -}}
+    {{- range $ref := $refs -}}
+      {{- if and (kindIs "map" $ref) (hasKey $ref "external") -}}
+        {{- $ext := default (dict) $ref.external -}}
+        {{- if gt (len $refs) 1 -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d]: a backendRef with external must be the only backendRef of its rule" $idx $ruleIdx) -}}
+        {{- end -}}
+        {{- $host := tpl (toString (default $firstHost $ext.host)) $outer -}}
+        {{- if not $host -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d].backendRefs external.host is required when the route has no hostnames" $idx $ruleIdx) -}}
+        {{- end -}}
+        {{- $protocol := upper (default "HTTP" $ext.protocol) -}}
+        {{- if not (has $protocol (list "HTTP" "HTTPS")) -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d].backendRefs external.protocol must be HTTP or HTTPS" $idx $ruleIdx) -}}
+        {{- end -}}
+        {{- $name := toString (default $outer.Release.Name $ref.name) -}}
+        {{- $duplicate := false -}}
+        {{- range $found -}}
+          {{- if eq .name $name -}}
+            {{- $duplicate = true -}}
+          {{- end -}}
+        {{- end -}}
+        {{- if not $duplicate -}}
+          {{- $found = append $found (dict
+            "route" $routeName
+            "name" $name
+            "port" (int (default 80 $ref.port))
+            "host" $host
+            "endpoint" (tpl (toString (default $host $ext.endpoint)) $outer)
+            "protocol" $protocol
+            "rewriteHost" (eq (toString (default false $ext.rewriteHost)) "true")
+            "create" (eq (toString (default false $ext.create)) "true")
+          ) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range $found -}}
+    {{- $_ := set . "resourceName" (ternary (printf "ext-%s-%s" .route .name) (printf "ext-%s" .route) (gt (len $found) 1) | lower | trunc 63 | trimSuffix "-") -}}
+    {{- $result = append $result . -}}
+  {{- end -}}
+{{- end -}}
+{{- toJson $result -}}
+{{- end }}
