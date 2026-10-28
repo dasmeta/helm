@@ -247,6 +247,8 @@ For AWS Aurora clusters:
 
 ```yaml
 proxysql:
+  image:
+    tag: "3.0.11"
   app:
     awsAurora:
       enabled: true
@@ -255,7 +257,7 @@ proxysql:
       aurora_port: 3306
       max_lag_ms: 600000
       # Optional. Check count, not seconds. 0 disables autopurge.
-      # Only set this on a ProxySQL version that supports the field.
+      # Requires ProxySQL 3.0.9 or later; this example uses 3.0.11.
       autopurge_missing_checks: 100
 ```
 

@@ -19,6 +19,7 @@
 #   #@ desc: human readable description
 #   #@ kind: <Kind>                  run #@ assert against this object (default: PodDisruptionBudget)
 #   #@ name: <metadata.name>        keep only the object with this name
+#   #@ values-file: <repo path>     load shared values before this case's overrides
 #   #@ assert-no-pdb                 no PodDisruptionBudget may be rendered
 #   #@ assert: <yq expression>       must evaluate to true against the selected object
 #   #@ expect-fail: <substring>      render must fail and print this substring
@@ -157,10 +158,16 @@ for case_file in "${CASE_FILES[@]}"; do
   name="${chart}/${ability}/$(basename "${case_file}" .yaml)"
   desc="$(directive desc "${case_file}")"
   kubever="$(directive kube-version "${case_file}")"
+  values_file="$(directive values-file "${case_file}")"
+  values_args=()
+  if [ -n "${values_file}" ]; then
+    values_args+=(-f "${CHARTS_ROOT}/../${values_file}")
+  fi
+  values_args+=(-f "${case_file}")
   if [ -n "${kubever}" ]; then
-    out="$(helm template testrelease "${CHART_DIR}" -f "${case_file}" --kube-version "${kubever}" 2>&1)"
+    out="$(helm template testrelease "${CHART_DIR}" "${values_args[@]}" --kube-version "${kubever}" 2>&1)"
   else
-    out="$(helm template testrelease "${CHART_DIR}" -f "${case_file}" 2>&1)"
+    out="$(helm template testrelease "${CHART_DIR}" "${values_args[@]}" 2>&1)"
   fi
   rc=$?
   ok=1
@@ -254,7 +261,7 @@ for case_file in "${CASE_FILES[@]}"; do
   # NOTES.txt is produced by `helm install`, not by `helm template`, so it needs its own render.
   notes_skip=0
   if [ ${ok} -eq 1 ] && { has_directive assert-notes "${case_file}" || has_directive assert-no-notes "${case_file}"; }; then
-    notes="$(helm install --dry-run testrelease "${CHART_DIR}" -f "${case_file}" ${kubever:+--kube-version "${kubever}"} 2>&1)"
+    notes="$(helm install --dry-run testrelease "${CHART_DIR}" "${values_args[@]}" ${kubever:+--kube-version "${kubever}"} 2>&1)"
     notes_rc=$?
     if [ ${notes_rc} -ne 0 ] && printf '%s' "${notes}" | grep -q 'cluster unreachable'; then
       # NOTES.txt is rendered by `helm install`, and helm 3.15 has no offline path for it: --dry-run=client
