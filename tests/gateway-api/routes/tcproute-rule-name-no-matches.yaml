@@ -1,0 +1,11 @@
+#@ desc: v1 TCPRoute rules carry name and backendRefs only
+#@ kind: TCPRoute
+#@ assert: .apiVersion == "gateway.networking.k8s.io/v1"
+#@ assert: .spec.rules[0].name == "postgres" and (.spec.rules[0] | has("matches") | not)
+tcpRoutes:
+  - name: db
+    parentRefs: [{ name: main, sectionName: tcp-5432 }]
+    rules:
+      - name: postgres
+        matches: [{ port: 5432 }]
+        backendRefs: [{ name: postgres, port: 5432 }]

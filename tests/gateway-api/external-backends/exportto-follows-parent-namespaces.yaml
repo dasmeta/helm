@@ -1,0 +1,12 @@
+#@ desc: exportTo defaults to every parent Gateway namespace, external.exportTo overrides it
+#@ kind: ServiceEntry
+#@ assert-all: [.] | map(select(.metadata.name == "ext-a")) | .[0].spec.exportTo | (length == 2 and .[0] == "istio-system" and .[1] == "gateways")
+#@ assert-all: [.] | map(select(.metadata.name == "ext-b")) | .[0].spec.exportTo | (length == 1 and .[0] == "*")
+httpRoutes:
+  - name: a
+    parentRefs: [{ name: main }, { name: edge, namespace: gateways }]
+    hostnames: [a.example.com]
+    rules: [{ backendRefs: { name: one, port: 80, external: { host: one.example.net } } }]
+  - name: b
+    hostnames: [b.example.com]
+    rules: [{ backendRefs: { name: two, port: 80, external: { host: two.example.net, exportTo: ["*"] } } }]

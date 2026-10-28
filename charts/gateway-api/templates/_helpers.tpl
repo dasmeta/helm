@@ -137,9 +137,23 @@ use; later uses must not change its registration settings. Usage:
     {{- end -}}
   {{- end -}}
   {{- range $found -}}
-    {{- $_ := set . "resourceName" (ternary (printf "ext-%s-%s" .route .name) (printf "ext-%s" .route) (gt (len $found) 1) | lower | trunc 63 | trimSuffix "-") -}}
+    {{- $_ := set . "resourceName" (include "gateway-api.generatedName" (ternary (printf "ext-%s-%s" .route .name) (printf "ext-%s" .route) (gt (len $found) 1))) -}}
     {{- $result = append $result . -}}
   {{- end -}}
 {{- end -}}
 {{- toJson $result -}}
+{{- end }}
+
+{{/*
+Name of a generated object (Kubernetes name, max 63 characters). Names that fit are kept as they are; longer ones
+become their first 54 characters plus "-" and 8 characters of the full name's sha256, so two long names sharing a
+prefix can not collide. Usage: {{ include "gateway-api.generatedName" (printf "ext-%s" $routeName) }}
+*/}}
+{{- define "gateway-api.generatedName" -}}
+{{- $name := lower . -}}
+{{- if le (len $name) 63 -}}
+{{- $name -}}
+{{- else -}}
+{{- printf "%s-%s" ($name | trunc 54 | trimSuffix "-") (sha256sum $name | trunc 8) -}}
+{{- end -}}
 {{- end }}

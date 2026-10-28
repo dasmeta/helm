@@ -1,0 +1,13 @@
+#@ desc: HTTPS external backend registers its host, declared HTTP for TLS origination, exported to the Gateway namespace only
+#@ kind: ServiceEntry
+#@ assert: .metadata.name == "ext-lookup"
+#@ assert: (.spec.hosts | length) == 1 and .spec.hosts[0] == "cdn.example.net"
+#@ assert: .spec.ports[0].number == 443 and .spec.ports[0].protocol == "HTTP"
+#@ assert: (.spec.exportTo | length) == 1 and .spec.exportTo[0] == "istio-system"
+httpRoutes:
+  - name: lookup
+    parentRefs: [{ name: main }]
+    hostnames: [lookup.example.com]
+    rules:
+      - matches: [{ path: { type: PathPrefix, value: /lookup } }]
+        backendRefs: { name: lookup-cdn, port: 443, external: { host: cdn.example.net, protocol: HTTPS, rewriteHost: true, create: true } }

@@ -20,6 +20,8 @@
 #   #@ kind: <Kind>                  run #@ assert against this object (default: PodDisruptionBudget)
 #   #@ assert-no-pdb                 no PodDisruptionBudget may be rendered
 #   #@ assert: <yq expression>       must evaluate to true against the selected object
+#   #@ assert-all: <yq expression>   must evaluate to true against ALL selected objects at once (yq ea, e.g.
+#                                    [.] | map(.metadata.name) | unique | length == 2)
 #   #@ expect-fail: <substring>      render must fail and print this substring
 #   #@ kube-version: <semver>        render against this kubernetes version rather than helm's default
 #   #@ assert-notes: <substring>     install NOTES must contain this
@@ -58,7 +60,7 @@ WORKTREE=""
 TMPPARENT=""
 
 usage() {
-  sed -n '2,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 while [ $# -gt 0 ]; do
@@ -236,6 +238,14 @@ for case_file in "${CASE_FILES[@]}"; do
               break
             fi
           done < <(directive assert "${case_file}")
+          while [ ${ok} -eq 1 ] && IFS= read -r expr; do
+            [ -z "${expr}" ] && continue
+            res="$(printf '%s' "${doc}" | yq ea "${expr}" 2>&1)"
+            if [ "${res}" != "true" ]; then
+              ok=0; reason="assertion failed: ${expr} (evaluated to: ${res})"
+              break
+            fi
+          done < <(directive assert-all "${case_file}")
         fi
       fi
     fi

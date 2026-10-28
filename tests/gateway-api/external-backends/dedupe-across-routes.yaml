@@ -1,0 +1,10 @@
+#@ desc: the same external backend used by two routes is registered once
+#@ kind: Service
+#@ assert-all: [.] | length == 1
+httpRoutes:
+  - name: a
+    hostnames: [a.example.com]
+    rules: [{ backendRefs: { name: cdn, port: 443, external: { host: cdn.example.net, protocol: HTTPS, create: true } } }]
+  - name: b
+    hostnames: [b.example.com]
+    rules: [{ backendRefs: { name: cdn, port: 443, external: { host: cdn.example.net, protocol: HTTPS, create: true, rewriteHost: true } } }]

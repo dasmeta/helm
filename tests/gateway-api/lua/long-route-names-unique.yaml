@@ -1,0 +1,13 @@
+#@ desc: Lua EnvoyFilters of long route names sharing a prefix stay distinct within 63 characters
+#@ kind: EnvoyFilter
+#@ assert-all: [.] | map(.metadata.name) | unique | length == 2
+#@ assert-all: [.] | map(.metadata.name | length <= 63) | all
+httpRoutes:
+  - name: very-long-route-name-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-one
+    hostnames: [one.example.com]
+    rules: [{ backendRefs: { name: api, port: 8080 } }]
+    lua: "function envoy_on_request(handle) end"
+  - name: very-long-route-name-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-two
+    hostnames: [two.example.com]
+    rules: [{ backendRefs: { name: api, port: 8080 } }]
+    lua: "function envoy_on_request(handle) end"

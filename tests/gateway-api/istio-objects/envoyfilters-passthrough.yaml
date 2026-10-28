@@ -1,0 +1,12 @@
+#@ desc: istio.envoyFilters are passed in full, default namespace istio-system
+#@ kind: EnvoyFilter
+#@ assert: .metadata.name == "custom" and .metadata.namespace == "istio-system"
+#@ assert: .spec.configPatches[0].applyTo == "HTTP_ROUTE" and .spec.targetRefs[0].name == "main"
+istio:
+  envoyFilters:
+    - name: custom
+      targetRefs: [{ kind: Gateway, group: gateway.networking.k8s.io, name: main }]
+      configPatches:
+        - applyTo: HTTP_ROUTE
+          match: { context: GATEWAY }
+          patch: { operation: MERGE, value: { response_headers_to_add: [{ header: { key: x-served-by, value: gateway } }] } }

@@ -1,0 +1,15 @@
+#@ desc: lua renders an EnvoyFilter inserting the Lua filter before the router of the parent Gateway
+#@ kind: EnvoyFilter
+#@ assert: .metadata.name == "lookup-lua" and .metadata.namespace == "istio-system"
+#@ assert: (.spec.targetRefs | length) == 1 and .spec.targetRefs[0].kind == "Gateway" and .spec.targetRefs[0].name == "main"
+#@ assert: .spec.configPatches[0].patch.operation == "INSERT_BEFORE"
+#@ assert: .spec.configPatches[0].patch.value.typed_config.default_source_code.inline_string | test("envoy_on_request")
+httpRoutes:
+  - name: lookup
+    parentRefs: [{ name: main }]
+    hostnames: [lookup.example.com]
+    rules: [{ backendRefs: { name: api, port: 8080 } }]
+    lua: |
+      function envoy_on_request(handle)
+        if handle:headers():get(":authority") ~= "lookup.example.com" then return end
+      end

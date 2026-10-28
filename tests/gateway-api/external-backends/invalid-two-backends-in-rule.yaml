@@ -1,0 +1,6 @@
+#@ desc: a backendRef with external must be the only backendRef of its rule
+#@ expect-fail: must be the only backendRef of its rule
+httpRoutes:
+  - name: a
+    hostnames: [a.example.com]
+    rules: [{ backendRefs: [{ name: one, port: 80, external: {} }, { name: two, port: 80 }] }]

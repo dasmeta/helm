@@ -1,0 +1,9 @@
+#@ desc: reusing an external backend with other registration settings fails
+#@ expect-fail: is already registered with other settings
+httpRoutes:
+  - name: a
+    hostnames: [a.example.com]
+    rules: [{ backendRefs: [{ name: cdn, port: 443, external: { host: cdn.example.net, protocol: HTTPS } }] }]
+  - name: b
+    hostnames: [b.example.com]
+    rules: [{ backendRefs: [{ name: cdn, port: 443, external: { host: other.example.net, protocol: HTTPS } }] }]
