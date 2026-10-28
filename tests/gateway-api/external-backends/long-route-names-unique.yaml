@@ -1,0 +1,11 @@
+#@ desc: long route names sharing a prefix get distinct registration names within 63 characters
+#@ kind: ServiceEntry
+#@ assert-all: [.] | map(.metadata.name) | unique | length == 2
+#@ assert-all: [.] | map(.metadata.name | length <= 63) | all
+httpRoutes:
+  - name: very-long-route-name-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-one
+    hostnames: [one.example.com]
+    rules: [{ backendRefs: { name: one, port: 80, external: { host: one.example.net } } }]
+  - name: very-long-route-name-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-two
+    hostnames: [two.example.com]
+    rules: [{ backendRefs: { name: two, port: 80, external: { host: two.example.net } } }]

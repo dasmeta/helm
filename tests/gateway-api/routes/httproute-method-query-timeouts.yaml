@@ -1,0 +1,12 @@
+#@ desc: HTTPRoute rules keep name, timeouts, method and queryParams matches
+#@ kind: HTTPRoute
+#@ assert: .spec.rules[0].name == "preview" and .spec.rules[0].timeouts.request == "10s"
+#@ assert: .spec.rules[0].matches[0].method == "GET" and .spec.rules[0].matches[0].queryParams[0].name == "preview"
+httpRoutes:
+  - name: api
+    hostnames: [api.example.com]
+    rules:
+      - name: preview
+        matches: [{ path: { type: PathPrefix, value: /api }, method: GET, queryParams: [{ type: Exact, name: preview, value: "true" }] }]
+        timeouts: { request: 10s }
+        backendRefs: { name: api, port: 8080 }

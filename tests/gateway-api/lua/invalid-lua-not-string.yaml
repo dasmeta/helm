@@ -1,0 +1,7 @@
+#@ desc: lua must be a string of Lua source
+#@ expect-fail: lua must be a string of Lua source
+httpRoutes:
+  - name: a
+    hostnames: [a.example.com]
+    rules: []
+    lua: { code: 1 }

@@ -1,0 +1,11 @@
+#@ desc: rewriteHost adds the Host header filter to the rule and keeps external out of the HTTPRoute
+#@ kind: HTTPRoute
+#@ assert: .spec.rules[0].filters[0].requestHeaderModifier.set[0].name == "Host" and .spec.rules[0].filters[0].requestHeaderModifier.set[0].value == "cdn.example.net"
+#@ assert: .spec.rules[0].backendRefs[0] | has("external") | not
+httpRoutes:
+  - name: lookup
+    parentRefs: [{ name: main }]
+    hostnames: [lookup.example.com]
+    rules:
+      - matches: [{ path: { type: PathPrefix, value: /lookup } }]
+        backendRefs: { name: lookup-cdn, port: 443, external: { host: cdn.example.net, protocol: HTTPS, rewriteHost: true, create: true } }

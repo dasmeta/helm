@@ -13,6 +13,13 @@
     {{- $shouldFilter := false -}}
     {{- if .directResponse -}}
       {{- $shouldFilter = true -}}
+      {{- /* directResponse rules become AuthorizationPolicies/EnvoyFilters matched on path (and host) only, a method or
+             query condition would be ignored there and deny more than asked */ -}}
+      {{- range $matchIdx, $match := (default (list) .matches) -}}
+        {{- if or $match.method $match.queryParams -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d]: directResponse rules support path matches only, not method/queryParams" $idx $ruleIdx) -}}
+        {{- end -}}
+      {{- end -}}
     {{- end -}}
     {{- if not $shouldFilter -}}
       {{- $allRules = append $allRules $rule -}}
@@ -54,6 +61,12 @@ spec:
   rules:
     {{- range $allRules }}
       {{- $rule := dict }}
+      {{- with .name }}
+        {{- $_ := set $rule "name" . }}
+      {{- end }}
+      {{- with .timeouts }}
+        {{- $_ := set $rule "timeouts" . }}
+      {{- end }}
       {{- if .matches }}
         {{- $processedMatches := list }}
         {{- range .matches }}
@@ -65,6 +78,12 @@ spec:
           {{- end }}
           {{- if .headers }}
             {{- $_ := set $match "headers" .headers }}
+          {{- end }}
+          {{- if .queryParams }}
+            {{- $_ := set $match "queryParams" .queryParams }}
+          {{- end }}
+          {{- if .method }}
+            {{- $_ := set $match "method" .method }}
           {{- end }}
           {{- $processedMatches = append $processedMatches $match }}
         {{- end }}
@@ -98,7 +117,16 @@ spec:
       {{- else if .filters }}
         {{- $_ := set $rule "filters" .filters }}
       {{- end }}
-      {{- $backendRefs := .backendRefs }}
+      {{- /* backendRefs may be a single object or a list */ -}}
+      {{- $backendRefs := ternary (list .backendRefs) .backendRefs (kindIs "map" .backendRefs) }}
+      {{- /* external.rewriteHost: send the registered external host as the upstream Host header */ -}}
+      {{- range $backendRefs }}
+        {{- if and (kindIs "map" .) .external (eq (toString (default false .external.rewriteHost)) "true") }}
+          {{- $hostValue := tpl (toString (default (first (default (list "") $hostnames)) .external.host)) $outer }}
+          {{- $hostFilter := dict "type" "RequestHeaderModifier" "requestHeaderModifier" (dict "set" (list (dict "name" "Host" "value" $hostValue))) }}
+          {{- $_ := set $rule "filters" (append (default (list) $rule.filters) $hostFilter) }}
+        {{- end }}
+      {{- end }}
       {{- if not $backendRefs }}
         {{- /* Don't auto-create backendRefs if filters (including redirect) are present */ -}}
         {{- if not (or .filters .redirect $rule.filters) }}
@@ -114,6 +142,16 @@ spec:
           {{- end }}
           {{- if .weight }}
             {{- $_ := set $backendRef "weight" .weight }}
+          {{- end }}
+          {{- /* e.g. kind: Hostname, group: networking.istio.io for an Istio ServiceEntry host */ -}}
+          {{- with .group }}
+            {{- $_ := set $backendRef "group" . }}
+          {{- end }}
+          {{- with .kind }}
+            {{- $_ := set $backendRef "kind" . }}
+          {{- end }}
+          {{- with .filters }}
+            {{- $_ := set $backendRef "filters" . }}
           {{- end }}
           {{- $processedBackendRefs = append $processedBackendRefs $backendRef }}
         {{- end }}

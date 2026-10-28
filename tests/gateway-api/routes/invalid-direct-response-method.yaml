@@ -1,0 +1,6 @@
+#@ desc: directResponse rules accept path matches only
+#@ expect-fail: directResponse rules support path matches only
+httpRoutes:
+  - name: a
+    hostnames: [a.example.com]
+    rules: [{ matches: [{ path: { value: /x }, method: POST }], directResponse: { status: 403 } }]

@@ -1,0 +1,58 @@
+# helm diff upgrade --install -n default gateway-api-external ./charts/gateway-api -f ./examples/gateway-api/with-external-backend-and-lua.yaml
+# Routes to backends outside the cluster through backendRefs[].external, plus a Lua filter for logic an
+# HTTPRoute can't express (here: the upstream path is built from a query argument).
+httpRoutes:
+  - name: lookup
+    parentRefs:
+      - name: main
+        sectionName: https
+    hostnames:
+      - lookup.example.com
+    rules:
+      # in-cluster Service, a single backendRef can be given without a list
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /api
+        backendRefs: { name: api, port: 8080 }
+      # external HTTPS backend: ServiceEntry + TLS origination DestinationRule, Host rewritten to the external
+      # name, and the ExternalName Service `lookup-cdn` created by the chart (create: true)
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /lookup
+        backendRefs:
+          name: lookup-cdn
+          port: 443
+          external:
+            host: cdn.example.net
+            protocol: HTTPS
+            rewriteHost: true
+            create: true
+    # /lookup?key=<hex> -> /lookup/<hex> on the CDN, 400 JSON when the key is missing
+    lua: |
+      function envoy_on_request(handle)
+        local headers = handle:headers()
+        if headers:get(":authority") ~= "lookup.example.com" then return end
+        local path, query = string.match(headers:get(":path") or "", "^([^?]*)%??(.*)$")
+        if path ~= "/lookup" then return end
+        local key = string.match("&" .. query, "&key=([0-9a-f]+)")
+        if key == nil then
+          return handle:respond({ [":status"] = "400", ["content-type"] = "application/json" }, '{"error":"missing key"}')
+        end
+        headers:replace(":path", "/lookup/" .. key)
+      end
+  # external backend reusing an existing ExternalName Service (create defaults to false); host defaults to
+  # the first route hostname, endpoint pins the DNS target the ServiceEntry resolves
+  - name: broker-ui
+    parentRefs:
+      - name: main
+        sectionName: https
+    hostnames:
+      - broker.example.com
+    rules:
+      - backendRefs:
+          - name: broker
+            port: 15672
+            external:
+              endpoint: broker-node-1.internal.example.com

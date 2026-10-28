@@ -38,8 +38,14 @@ spec:
   rules:
     {{- range . }}
       {{- $rule := dict }}
+      {{- with .name }}
+        {{- $_ := set $rule "name" . }}
+      {{- end }}
       {{- if .matches }}
         {{- $_ := set $rule "matches" .matches }}
+      {{- end }}
+      {{- with .filters }}
+        {{- $_ := set $rule "filters" . }}
       {{- end }}
       {{- $backendRefs := .backendRefs | default (list (dict)) }}
       {{- if $backendRefs }}
@@ -52,11 +58,20 @@ spec:
           {{- if .weight }}
             {{- $_ := set $backendRef "weight" .weight }}
           {{- end }}
+          {{- with .group }}
+            {{- $_ := set $backendRef "group" . }}
+          {{- end }}
+          {{- with .kind }}
+            {{- $_ := set $backendRef "kind" . }}
+          {{- end }}
+          {{- with .filters }}
+            {{- $_ := set $backendRef "filters" . }}
+          {{- end }}
           {{- $processedBackendRefs = append $processedBackendRefs $backendRef }}
         {{- end }}
         {{- $_ := set $rule "backendRefs" $processedBackendRefs }}
       {{- end }}
-      {{- if or $rule.matches $rule.backendRefs }}
+      {{- if or $rule.matches $rule.filters $rule.backendRefs }}
         {{- toYaml (list $rule) | nindent 4 | trimPrefix "- " }}
       {{- end }}
     {{- end }}

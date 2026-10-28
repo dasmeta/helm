@@ -1,0 +1,28 @@
+{{- /* Istio TrafficExtension (extensions.istio.io/v1alpha1, Istio 1.30+): Lua (spec.lua.inlineCode) or Wasm
+       (spec.wasm) proxy extensions through a supported API instead of an EnvoyFilter patch. Defaults to the
+       istio-system namespace like the other Gateway-targeted policies. Spec fields are passed as-is. */ -}}
+{{- $outer := . -}}
+{{- $items := .Values.istio.trafficExtensions | default (list) -}}
+{{- range $idx, $item := (ternary $items (list $items) (kindIs "slice" $items)) }}
+---
+apiVersion: extensions.istio.io/v1alpha1
+kind: TrafficExtension
+metadata:
+  name: {{ default (printf "%s-trafficextension-%d" (include "gateway-api.fullname" $outer) $idx) $item.name | quote }}
+  namespace: {{ default "istio-system" $item.namespace | quote }}
+  labels:
+    {{- include "gateway-api.labels" $outer | nindent 4 }}
+    {{- with $item.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $item.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- /* spec: the item's `spec`, or its fields other than name/namespace/labels/annotations, passed as-is */ -}}
+{{- $spec := ternary $item.spec (omit $item "name" "namespace" "labels" "annotations") (hasKey $item "spec") }}
+{{- with $spec }}
+spec:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

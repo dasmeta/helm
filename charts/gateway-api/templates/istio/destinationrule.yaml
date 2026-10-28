@@ -1,8 +1,20 @@
-{{- if .Values.istio.destinationRules }}
 {{- $outer := . -}}
-{{- $rules := .Values.istio.destinationRules -}}
+{{- $rules := .Values.istio.destinationRules | default (list) -}}
+{{- $rules = ternary $rules (list $rules) (kindIs "slice" $rules) -}}
+{{- /* TLS origination for httpRoutes external backends with protocol HTTPS (SNI = host, the upstream certificate is
+       verified against the proxy's system CAs), appended after the manual rules to keep their default names */ -}}
+{{- range (include "gateway-api.externalBackends" . | fromJsonArray) }}
+  {{- if eq .protocol "HTTPS" }}
+    {{- $rules = append $rules (dict
+      "name" .resourceName
+      "host" .host
+      "trafficPolicy" (dict "portLevelSettings" (list (dict "port" (dict "number" (int .port)) "tls" (dict "mode" "SIMPLE" "sni" .host))))
+      "exportTo" .exportTo
+    ) }}
+  {{- end }}
+{{- end }}
 {{- if $rules }}
-{{- range $idx, $rule := (ternary $rules (list $rules) (kindIs "slice" $rules)) }}
+{{- range $idx, $rule := $rules }}
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -21,6 +33,9 @@ metadata:
 spec:
   {{- if $rule.host }}
   host: {{ $rule.host | quote }}
+  {{- end }}
+  {{- with $rule.exportTo }}
+  exportTo: {{- toYaml . | nindent 2 }}
   {{- end }}
   {{- with $rule.trafficPolicy }}
   trafficPolicy:
@@ -76,6 +91,5 @@ spec:
       {{- end }}
     {{- end }}
   {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}

@@ -65,3 +65,95 @@ Used when infrastructure.parameters is set and non-empty.
 {{- $gateway := index . 1 -}}
 {{- include "gateway-api.fullname" $outer }}-infra-{{ $gateway.name }}
 {{- end }}
+
+{{/*
+External backends of httpRoutes: every rules[].backendRefs[] item that sets `external`, as a JSON list.
+Used by the HTTPRoute (Host rewrite), ServiceEntry, DestinationRule and ExternalName Service templates, so all
+of them derive the same objects. Each item:
+  route, name, port, host, endpoint, protocol (HTTP|HTTPS), rewriteHost, create, exportTo,
+  resourceName: "ext-<route>", or "ext-<route>-<backend>" when one route has several external backends.
+host defaults to the route's first hostname; endpoint defaults to host; exportTo defaults to the namespaces of the
+route's parent Gateways, so the registration (and the HTTPS port declared as HTTP for TLS origination) does not
+apply to other workloads of the mesh. A backend used by several rules or routes is registered once, by its first
+use; later uses must not change its registration settings. Usage:
+  {{- $externalBackends := include "gateway-api.externalBackends" . | fromJsonArray -}}
+*/}}
+{{- define "gateway-api.externalBackends" -}}
+{{- $outer := . -}}
+{{- $result := list -}}
+{{- $seen := dict -}}
+{{- $routes := .Values.httpRoutes | default (list) -}}
+{{- range $idx, $route := (ternary $routes (list $routes) (kindIs "slice" $routes)) -}}
+  {{- $routeName := default (printf "%s-httproute-%d" (include "gateway-api.fullname" $outer) $idx) $route.name -}}
+  {{- $firstHost := "" -}}
+  {{- with $route.hostnames -}}
+    {{- $firstHost = tpl (toString (first .)) $outer -}}
+  {{- end -}}
+  {{- $gatewayNamespaces := list -}}
+  {{- range (or $route.parentRefs ($outer.Values.defaultParentRefs | default (list))) -}}
+    {{- $gatewayNamespaces = append $gatewayNamespaces (default "istio-system" .namespace) -}}
+  {{- end -}}
+  {{- $gatewayNamespaces = default (list "istio-system") ($gatewayNamespaces | uniq) -}}
+  {{- $found := list -}}
+  {{- range $ruleIdx, $rule := (default (list) $route.rules) -}}
+    {{- $refs := default (list) (ternary (list $rule.backendRefs) $rule.backendRefs (kindIs "map" $rule.backendRefs)) -}}
+    {{- range $ref := $refs -}}
+      {{- if and (kindIs "map" $ref) (hasKey $ref "external") -}}
+        {{- $ext := default (dict) $ref.external -}}
+        {{- if gt (len $refs) 1 -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d]: a backendRef with external must be the only backendRef of its rule" $idx $ruleIdx) -}}
+        {{- end -}}
+        {{- $host := tpl (toString (default $firstHost $ext.host)) $outer -}}
+        {{- if not $host -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d].backendRefs external.host is required when the route has no hostnames" $idx $ruleIdx) -}}
+        {{- end -}}
+        {{- $protocol := upper (default "HTTP" $ext.protocol) -}}
+        {{- if not (has $protocol (list "HTTP" "HTTPS")) -}}
+          {{- fail (printf "httpRoutes[%d].rules[%d].backendRefs external.protocol must be HTTP or HTTPS" $idx $ruleIdx) -}}
+        {{- end -}}
+        {{- $name := toString (default $outer.Release.Name $ref.name) -}}
+        {{- $item := dict
+          "route" $routeName
+          "name" $name
+          "port" (int (default 80 $ref.port))
+          "host" $host
+          "endpoint" (tpl (toString (default $host $ext.endpoint)) $outer)
+          "protocol" $protocol
+          "rewriteHost" (eq (toString (default false $ext.rewriteHost)) "true")
+          "create" (eq (toString (default false $ext.create)) "true")
+          "exportTo" (default $gatewayNamespaces $ext.exportTo)
+        -}}
+        {{- /* registration settings, rewriteHost is per rule (HTTPRoute filter) and may differ */ -}}
+        {{- $settings := omit $item "route" "rewriteHost" | toJson -}}
+        {{- if hasKey $seen $name -}}
+          {{- if ne (index $seen $name) $settings -}}
+            {{- fail (printf "httpRoutes[%d].rules[%d]: external backend %q is already registered with other settings (host/endpoint/port/protocol/create/exportTo)" $idx $ruleIdx $name) -}}
+          {{- end -}}
+        {{- else -}}
+          {{- $_ := set $seen $name $settings -}}
+          {{- $found = append $found $item -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range $found -}}
+    {{- $_ := set . "resourceName" (include "gateway-api.generatedName" (ternary (printf "ext-%s-%s" .route .name) (printf "ext-%s" .route) (gt (len $found) 1))) -}}
+    {{- $result = append $result . -}}
+  {{- end -}}
+{{- end -}}
+{{- toJson $result -}}
+{{- end }}
+
+{{/*
+Name of a generated object (Kubernetes name, max 63 characters). Names that fit are kept as they are; longer ones
+become their first 54 characters plus "-" and 8 characters of the full name's sha256, so two long names sharing a
+prefix can not collide. Usage: {{ include "gateway-api.generatedName" (printf "ext-%s" $routeName) }}
+*/}}
+{{- define "gateway-api.generatedName" -}}
+{{- $name := lower . -}}
+{{- if le (len $name) 63 -}}
+{{- $name -}}
+{{- else -}}
+{{- printf "%s-%s" ($name | trunc 54 | trimSuffix "-") (sha256sum $name | trunc 8) -}}
+{{- end -}}
+{{- end }}

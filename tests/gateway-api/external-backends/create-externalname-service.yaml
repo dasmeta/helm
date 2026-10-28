@@ -1,0 +1,11 @@
+#@ desc: create renders the ExternalName Service named like the backendRef, without ports
+#@ kind: Service
+#@ assert: .metadata.name == "lookup-cdn" and .spec.type == "ExternalName" and .spec.externalName == "cdn.example.net"
+#@ assert: .spec.ports == null
+httpRoutes:
+  - name: lookup
+    parentRefs: [{ name: main }]
+    hostnames: [lookup.example.com]
+    rules:
+      - matches: [{ path: { type: PathPrefix, value: /lookup } }]
+        backendRefs: { name: lookup-cdn, port: 443, external: { host: cdn.example.net, protocol: HTTPS, rewriteHost: true, create: true } }
