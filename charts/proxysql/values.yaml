@@ -324,6 +324,7 @@ proxysql:
       add_lag_ms: 30 # if replication lag is less than min_lag_ms, assume a read of min_lag_ms
       min_lag_ms: 30 # to any value read, add add_lag_ms.
       lag_num_checks: 5 # if lag_num_checks is greater than 1, the current replication lag is computed as the highest of the last lag_num_checks reads.
+      # autopurge_missing_checks: 100 # optional. Consecutive successful Aurora topology checks in which a server is missing before ProxySQL removes it. A check count, not seconds. 0 disables autopurge. Omit or set null to leave the field out of the config. Set it only on a ProxySQL version that supports this field.
 
   # allows to enable service monitor to scrape proxysql metrics, you have to set/enable also proxysql.extraPorts, it is possible to enable this by using podMonitor config or "prometheus.io/*" annotations also. just one scrapping config is enough to be enabled
   # NOTE: if you have no prometheus service monitor crds this enabling may fail to install helm

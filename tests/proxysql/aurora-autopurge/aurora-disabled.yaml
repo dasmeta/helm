@@ -1,0 +1,10 @@
+#@ desc: Aurora disabled renders no Aurora configuration block
+#@ kind: ConfigMap
+#@ name: testrelease
+#@ assert: .data["proxysql.cnf"] | contains("mysql_aws_aurora_hostgroups") | not
+#@ assert: .data["proxysql.cnf"] | contains("autopurge_missing_checks") | not
+proxysql:
+  app:
+    awsAurora:
+      enabled: false
+      autopurge_missing_checks: 100

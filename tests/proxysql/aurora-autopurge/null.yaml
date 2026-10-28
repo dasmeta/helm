@@ -1,0 +1,11 @@
+#@ desc: null autopurge omits the field
+#@ kind: ConfigMap
+#@ name: testrelease
+#@ assert: .data["proxysql.cnf"] | contains("mysql_aws_aurora_hostgroups=")
+#@ assert: .data["proxysql.cnf"] | contains("autopurge_missing_checks") | not
+proxysql:
+  app:
+    awsAurora:
+      enabled: true
+      domain_name: ".example.rds.amazonaws.com"
+      autopurge_missing_checks: null

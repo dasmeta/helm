@@ -1,0 +1,8 @@
+#@ desc: a negative autopurge count is refused
+#@ expect-fail: proxysql.app.awsAurora.autopurge_missing_checks must be a non-negative integer
+proxysql:
+  app:
+    awsAurora:
+      enabled: true
+      domain_name: ".example.rds.amazonaws.com"
+      autopurge_missing_checks: -1

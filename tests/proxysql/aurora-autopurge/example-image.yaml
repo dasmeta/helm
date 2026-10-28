@@ -1,0 +1,4 @@
+#@ desc: the autopurge example selects a supported ProxySQL image
+#@ values-file: examples/proxysql/proxysql-aurora-autopurge.values.yaml
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "proxysql/proxysql:3.0.11"
