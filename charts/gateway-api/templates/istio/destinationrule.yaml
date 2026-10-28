@@ -9,6 +9,7 @@
       "name" .resourceName
       "host" .host
       "trafficPolicy" (dict "portLevelSettings" (list (dict "port" (dict "number" (int .port)) "tls" (dict "mode" "SIMPLE" "sni" .host))))
+      "exportTo" .exportTo
     ) }}
   {{- end }}
 {{- end }}
@@ -32,6 +33,9 @@ metadata:
 spec:
   {{- if $rule.host }}
   host: {{ $rule.host | quote }}
+  {{- end }}
+  {{- with $rule.exportTo }}
+  exportTo: {{- toYaml . | nindent 2 }}
   {{- end }}
   {{- with $rule.trafficPolicy }}
   trafficPolicy:

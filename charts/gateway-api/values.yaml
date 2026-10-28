@@ -252,6 +252,9 @@ defaultParentRefs: []
 #   HTTPS. It must be the only backendRef of its rule. host defaults to the first route hostname and must equal the
 #   Service externalName; endpoint (DNS target of the ServiceEntry) defaults to host. rewriteHost sends host as the
 #   upstream Host header; create also creates the ExternalName Service (keep it off for an existing Service).
+#   exportTo (default: the namespaces of the route's parentRefs) limits who sees the ServiceEntry/DestinationRule:
+#   the HTTPS port is declared HTTP for TLS origination, which would break other workloads calling that host over
+#   TLS themselves. A backend used by several rules/routes is registered once; reusing it with other settings fails.
 # - lua renders the EnvoyFilter `<route>-lua` with the Lua filter right before the router of the route's parent
 #   Gateways. It runs for every request on them, so it must return right away for other hosts.
 # httpRoutes:
