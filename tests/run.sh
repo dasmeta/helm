@@ -18,6 +18,7 @@
 #
 #   #@ desc: human readable description
 #   #@ kind: <Kind>                  run #@ assert against this object (default: PodDisruptionBudget)
+#   #@ name: <metadata.name>        keep only the object with this name
 #   #@ assert-no-pdb                 no PodDisruptionBudget may be rendered
 #   #@ assert: <yq expression>       must evaluate to true against the selected object
 #   #@ expect-fail: <substring>      render must fail and print this substring
@@ -221,6 +222,15 @@ for case_file in "${CASE_FILES[@]}"; do
         fi
       else
         doc=""
+      fi
+      doc_name="$(directive name "${case_file}")"
+      if [ -n "${doc_name}" ] && [ ${ok} -eq 1 ] && ! is_empty "${doc}"; then
+        doc="$(printf '%s' "${doc}" | yq "select(.metadata.name == \"${doc_name}\")" 2>&1)"
+        doc_rc=$?
+        if [ ${doc_rc} -ne 0 ]; then
+          ok=0; reason="yq failed selecting name ${doc_name}: $(printf '%s' "${doc}" | head -1)"
+          doc=""
+        fi
       fi
       if has_directive assert-no-pdb "${case_file}"; then
         if ! is_empty "${pdb}"; then ok=0; reason="expected NO PodDisruptionBudget, but one was rendered"; fi

@@ -1,0 +1,6 @@
+#@ desc: default values render no Aurora block and no autopurge field
+#@ kind: ConfigMap
+#@ name: testrelease
+#@ assert: .data["proxysql.cnf"] | contains("mysql_aws_aurora_hostgroups") | not
+#@ assert: .data["proxysql.cnf"] | contains("autopurge_missing_checks") | not
+replicaCount: 2

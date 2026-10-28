@@ -56,6 +56,7 @@ Public values: [values.yaml](./values.yaml). Example values: [examples/proxysql/
 | Key | Description | Default / Example |
 | --- | ----------- | ----------------- |
 | `proxysql` | ProxySQL config (image, service, config, backends) | uses base subchart; example in values.yaml |
+| `proxysql.app.awsAurora.autopurge_missing_checks` | Optional. How many consecutive successful Aurora topology checks a server must be missing before ProxySQL removes it. A check count, not seconds. `0` disables autopurge. Omit or null to leave the field out. Set it only on a ProxySQL version that supports this field | unset |
 | `proxysql.config` | ProxySQL config file content | connection pooling, mysql_variables, etc. |
 | Backends / MySQL servers | Primary and replica definitions | example in values.yaml and examples/ |
 
@@ -253,6 +254,9 @@ proxysql:
       active: 1
       aurora_port: 3306
       max_lag_ms: 600000
+      # Optional. Check count, not seconds. 0 disables autopurge.
+      # Only set this on a ProxySQL version that supports the field.
+      autopurge_missing_checks: 100
 ```
 
 ## Important Notes

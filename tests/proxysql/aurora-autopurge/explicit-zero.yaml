@@ -1,0 +1,10 @@
+#@ desc: explicit 0 renders autopurge_missing_checks=0
+#@ kind: ConfigMap
+#@ name: testrelease
+#@ assert: .data["proxysql.cnf"] | contains("autopurge_missing_checks=0")
+proxysql:
+  app:
+    awsAurora:
+      enabled: true
+      domain_name: ".example.rds.amazonaws.com"
+      autopurge_missing_checks: 0

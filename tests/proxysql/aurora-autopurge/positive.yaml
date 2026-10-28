@@ -1,0 +1,10 @@
+#@ desc: a positive integer renders that exact check count
+#@ kind: ConfigMap
+#@ name: testrelease
+#@ assert: .data["proxysql.cnf"] | contains("autopurge_missing_checks=100")
+proxysql:
+  app:
+    awsAurora:
+      enabled: true
+      domain_name: ".example.rds.amazonaws.com"
+      autopurge_missing_checks: 100

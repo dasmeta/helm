@@ -175,6 +175,16 @@ data:
         add_lag_ms={{ .Values.proxysql.app.awsAurora.add_lag_ms }}
         min_lag_ms={{ .Values.proxysql.app.awsAurora.min_lag_ms }}
         lag_num_checks={{ .Values.proxysql.app.awsAurora.lag_num_checks }}
+        {{- $autopurge := .Values.proxysql.app.awsAurora.autopurge_missing_checks }}
+        {{- if not (kindIs "invalid" $autopurge) }}
+        {{- if not (or (kindIs "float64" $autopurge) (kindIs "int" $autopurge) (kindIs "int64" $autopurge)) }}
+        {{- fail (printf "proxysql.app.awsAurora.autopurge_missing_checks must be a non-negative integer, got %v (%s)" $autopurge (kindOf $autopurge)) }}
+        {{- end }}
+        {{- if or (ne (float64 $autopurge) (floor (float64 $autopurge))) (lt (int64 $autopurge) 0) }}
+        {{- fail (printf "proxysql.app.awsAurora.autopurge_missing_checks must be a non-negative integer, got %v" $autopurge) }}
+        {{- end }}
+        autopurge_missing_checks={{ int64 $autopurge }}
+        {{- end }}
       }
     )
     {{- end }}

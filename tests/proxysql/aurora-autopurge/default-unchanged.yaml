@@ -1,0 +1,3 @@
+#@ desc: default image and Aurora-off config stay unchanged
+#@ kind: Deployment
+#@ assert: .spec.template.spec.containers[0].image == "proxysql/proxysql:2.7.3"

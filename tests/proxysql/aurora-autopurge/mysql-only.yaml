@@ -1,0 +1,12 @@
+#@ desc: Aurora settings stay MySQL-only
+#@ kind: ConfigMap
+#@ name: testrelease
+#@ assert: .data["proxysql.cnf"] | contains("mysql_aws_aurora_hostgroups") | not
+#@ assert: .data["proxysql.cnf"] | contains("autopurge_missing_checks") | not
+proxysql:
+  app:
+    databaseType: pgsql
+    awsAurora:
+      enabled: true
+      domain_name: ".example.rds.amazonaws.com"
+      autopurge_missing_checks: 100

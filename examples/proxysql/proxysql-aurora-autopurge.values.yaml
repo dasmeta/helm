@@ -1,0 +1,8 @@
+# helm diff upgrade --install -n default proxysql-aurora-autopurge ./charts/proxysql/ -f ./examples/proxysql/proxysql-aurora-autopurge.values.yaml
+
+proxysql:
+  app:
+    awsAurora:
+      enabled: true
+      domain_name: ".example.rds.amazonaws.com"
+      autopurge_missing_checks: 100
