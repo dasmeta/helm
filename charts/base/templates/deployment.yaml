@@ -75,6 +75,10 @@ spec:
           image: "{{ $initContainer.image.repository }}:{{ $initContainer.image.tag }}"
           {{- end }}
           imagePullPolicy: {{ $initContainer.image.pullPolicy }}
+          {{- with $initContainer.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with $initContainer.workingDir }}
           workingDir: {{ . | quote }}
           {{- end }}

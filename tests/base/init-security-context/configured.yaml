@@ -1,0 +1,24 @@
+#@ desc: the documented migrator security context renders unchanged with a tagged image
+#@ kind: Deployment
+#@ assert: .spec.template.spec.initContainers[0].name == "migrator-service"
+#@ assert: .spec.template.spec.initContainers[0].image == "example/migrator:example"
+#@ assert: .spec.template.spec.initContainers[0].imagePullPolicy == "IfNotPresent"
+#@ assert: (.spec.template.spec.initContainers[0].securityContext | sort_keys(..) | to_json) == ({"runAsNonRoot": true, "runAsUser": 1002, "runAsGroup": 1001, "privileged": false, "allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"]}} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.containers[0].securityContext | sort_keys(..) | to_json) == ({} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.securityContext | sort_keys(..) | to_json) == ({} | sort_keys(..) | to_json)
+# Keep values inline so baseline charts do not need the newly added example file.
+initContainers:
+  - name: migrator-service
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1002
+      runAsGroup: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL

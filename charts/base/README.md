@@ -32,6 +32,7 @@ helm upgrade --install my-app . # allows to run current directory helm chart
 | `image.tag` | Image tag. Ignored when `image.digest` is set. Falls back to `Chart.appVersion` when empty | set per app |
 | `image.digest` | Optional image digest. When non-empty, the main container is `repository@digest` and this takes precedence over `image.tag` | `""` |
 | `initContainers[].image.digest` | Optional digest for one init container. When non-empty, that init container is `repository@digest` and this takes precedence over its `image.tag`. An empty or omitted digest keeps `repository:tag` | unset |
+| `initContainers[].securityContext` | Optional Kubernetes container security context, rendered as supplied for each init container. Also supported in single-object format. Omitted, empty or null values omit the field; the main container's context is not copied | unset |
 | `containerPort` | Main container port | set per app |
 | `service.enabled` | Create Service | `true` |
 | `service.type` | Service type | `ClusterIP` |
@@ -76,6 +77,32 @@ initContainers:
 ```
 
 See [examples/base/with-init-container-digest.yaml](../../examples/base/with-init-container-digest.yaml).
+
+## 0.7.0
+
+Init containers now support an optional `securityContext`. Each non-empty context is rendered as supplied, including nested fields and explicit `false` values. This works with both the list format and the legacy single-object `initContainers` format.
+
+```yaml
+initContainers:
+  - name: migrator-service
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1002
+      runAsGroup: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+```
+
+Omit `securityContext`, or set it to `{}` or `null`, to preserve the existing output without a container-level context. The chart does not copy the main container's `securityContext` to init containers. Pod-level settings remain controlled by `podSecurityContext`; Kubernetes applies overlapping settings according to its [security context rules](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container).
+
+See [examples/base/with-init-container-security-context.yaml](../../examples/base/with-init-container-security-context.yaml). Run the regression cases with `./tests/run.sh base init-security-context`.
 
 ## Upgrading to 0.4.0
 
