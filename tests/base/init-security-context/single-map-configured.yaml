@@ -1,0 +1,64 @@
+#@ desc: legacy object format preserves security context, digest precedence and existing init settings
+#@ kind: Deployment
+#@ assert: (.spec.template.spec.initContainers | length) == 1
+#@ assert: (.spec.template.spec.initContainers[0].securityContext | sort_keys(..) | to_json) == ({"runAsNonRoot": true, "runAsUser": 1002, "runAsGroup": 1001, "privileged": false, "allowPrivilegeEscalation": false, "readOnlyRootFilesystem": true, "capabilities": {"drop": ["ALL"], "add": ["NET_BIND_SERVICE"]}, "seccompProfile": {"type": "RuntimeDefault"}} | sort_keys(..) | to_json)
+#@ assert: .spec.template.spec.initContainers[0].image == "example/migrator@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+#@ assert: .spec.template.spec.initContainers[0].imagePullPolicy == "Always"
+#@ assert: .spec.template.spec.initContainers[0].workingDir == "/app"
+#@ assert: (.spec.template.spec.initContainers[0].command | to_json) == (["/bin/sh", "-c"] | to_json)
+#@ assert: (.spec.template.spec.initContainers[0].args | to_json) == (["./migrate"] | to_json)
+#@ assert: (.spec.template.spec.initContainers[0].env[] | select(.name == "MIGRATE_ENV") | .value) == "uat"
+#@ assert: (.spec.template.spec.initContainers[0].env[] | select(.name == "POD_NAME") | .valueFrom.fieldRef.fieldPath) == "metadata.name"
+#@ assert: (.spec.template.spec.initContainers[0].env[] | select(.name == "DB_PASSWORD") | .valueFrom.secretKeyRef | sort_keys(..) | to_json) == ({"name": "database", "key": "password"} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.initContainers[0].envFrom | sort_keys(..) | to_json) == ([{"configMapRef": {"name": "migrator-config"}}] | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.initContainers[0].volumeMounts | sort_keys(..) | to_json) == ([{"name": "migration-data", "mountPath": "/data", "subPath": "migrations", "readOnly": true}] | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.containers[0].securityContext | sort_keys(..) | to_json) == ({"runAsUser": 2000} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.securityContext | sort_keys(..) | to_json) == ({"runAsNonRoot": true, "fsGroup": 1001} | sort_keys(..) | to_json)
+securityContext:
+  runAsUser: 2000
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 1001
+volumes:
+  - name: migration-data
+    emptyDir: {}
+    mountPath: /data
+initContainers:
+  name: migrator-service
+  image:
+    repository: example/migrator
+    tag: ignored
+    digest: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+    pullPolicy: Always
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1002
+    runAsGroup: 1001
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+      add: [NET_BIND_SERVICE]
+    seccompProfile:
+      type: RuntimeDefault
+  workingDir: /app
+  command: ["/bin/sh", "-c"]
+  args: ["./migrate"]
+  extraEnv:
+    MIGRATE_ENV: uat
+    POD_NAME:
+      fieldRef:
+        fieldPath: metadata.name
+    DB_PASSWORD:
+      secretKeyRef:
+        name: database
+        key: password
+  envFrom:
+    - configMapRef:
+        name: migrator-config
+  volumes:
+    - name: migration-data
+      mountPath: /data
+      subPath: migrations
+      readOnly: true

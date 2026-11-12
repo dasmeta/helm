@@ -32,6 +32,17 @@ image:
 #       tag: latest
 #       # Optional. When non-empty, this init container is repository@digest and tag is ignored.
 #       digest: ""
+#     # Optional Kubernetes container security context, rendered as supplied.
+#     # Omitted, empty or null values add no container securityContext.
+#     # The main container's securityContext is not copied to init containers.
+#     securityContext:
+#       runAsNonRoot: true
+#       runAsUser: 1002
+#       runAsGroup: 1001
+#       privileged: false
+#       allowPrivilegeEscalation: false
+#       capabilities:
+#         drop: [ALL]
 #     volumes:
 #       - mountPath: /config.json
 #         name: config-json

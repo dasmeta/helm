@@ -1,0 +1,45 @@
+#@ desc: list entries have independent contexts including false-only, omitted, empty and null values
+#@ kind: Deployment
+#@ assert: (.spec.template.spec.initContainers | length) == 5
+#@ assert: (.spec.template.spec.initContainers[0].securityContext | sort_keys(..) | to_json) == ({"allowPrivilegeEscalation": false} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.initContainers[1].securityContext | sort_keys(..) | to_json) == ({"runAsUser": 1003} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.initContainers[2] | has("securityContext")) == false
+#@ assert: (.spec.template.spec.initContainers[3] | has("securityContext")) == false
+#@ assert: (.spec.template.spec.initContainers[4] | has("securityContext")) == false
+#@ assert: (.spec.template.spec.containers[0].securityContext | sort_keys(..) | to_json) == ({"runAsNonRoot": true, "runAsUser": 2000, "readOnlyRootFilesystem": true} | sort_keys(..) | to_json)
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 2000
+  readOnlyRootFilesystem: true
+initContainers:
+  - name: false-only
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+    securityContext:
+      allowPrivilegeEscalation: false
+  - name: different-user
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+    securityContext:
+      runAsUser: 1003
+  - name: omitted
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+  - name: empty
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+    securityContext: {}
+  - name: null-context
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent
+    securityContext: null

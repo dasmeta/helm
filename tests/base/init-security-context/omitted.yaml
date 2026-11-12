@@ -1,0 +1,18 @@
+#@ desc: omitted init context stays absent even with main and pod security contexts configured
+#@ kind: Deployment
+#@ assert: (.spec.template.spec.initContainers[0] | has("securityContext")) == false
+#@ assert: (.spec.template.spec.containers[0].securityContext | sort_keys(..) | to_json) == ({"runAsUser": 2000, "allowPrivilegeEscalation": false} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.securityContext | sort_keys(..) | to_json) == ({"runAsNonRoot": true, "runAsUser": 1002, "runAsGroup": 1001} | sort_keys(..) | to_json)
+securityContext:
+  runAsUser: 2000
+  allowPrivilegeEscalation: false
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1002
+  runAsGroup: 1001
+initContainers:
+  - name: migrator-service
+    image:
+      repository: example/migrator
+      tag: example
+      pullPolicy: IfNotPresent

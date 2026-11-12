@@ -1,0 +1,10 @@
+#@ desc: the documented migrator security context renders unchanged with a tagged image
+#@ kind: Deployment
+#@ values-file: examples/base/with-init-container-security-context.yaml
+#@ assert: .spec.template.spec.initContainers[0].name == "migrator-service"
+#@ assert: .spec.template.spec.initContainers[0].image == "example/migrator:example"
+#@ assert: .spec.template.spec.initContainers[0].imagePullPolicy == "IfNotPresent"
+#@ assert: (.spec.template.spec.initContainers[0].securityContext | sort_keys(..) | to_json) == ({"runAsNonRoot": true, "runAsUser": 1002, "runAsGroup": 1001, "privileged": false, "allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"]}} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.containers[0].securityContext | sort_keys(..) | to_json) == ({} | sort_keys(..) | to_json)
+#@ assert: (.spec.template.spec.securityContext | sort_keys(..) | to_json) == ({} | sort_keys(..) | to_json)
+{}

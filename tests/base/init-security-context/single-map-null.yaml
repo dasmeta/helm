@@ -1,0 +1,12 @@
+#@ desc: legacy object format omits a null context without inheriting the main context
+#@ kind: Deployment
+#@ assert: (.spec.template.spec.initContainers[0] | has("securityContext")) == false
+securityContext:
+  runAsUser: 2000
+initContainers:
+  name: migrator-service
+  image:
+    repository: example/migrator
+    tag: example
+    pullPolicy: IfNotPresent
+  securityContext: null
