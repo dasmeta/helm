@@ -1,0 +1,5 @@
+# helm diff upgrade --install -n monitoring sentry-relay ./charts/sentry-relay/ -f ./examples/sentry-relay/priority.yaml
+# First create a reviewed PriorityClass named relay-agents in the owning IaC.
+# Its preemptionPolicy controls whether lower-priority application pods can be evicted.
+upstream: https://YOUR-ORGANIZATION-ID.ingest.sentry.io
+priorityClassName: relay-agents
