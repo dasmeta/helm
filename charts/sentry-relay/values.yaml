@@ -13,6 +13,10 @@ upstream:
 # The k8s workload to use for creating sentry relay pods, it supports following workloads Deployment and DaemonSet
 workload: DaemonSet
 
+# Name of an existing PriorityClass. Empty preserves default scheduling behavior.
+# Set preemptionPolicy on that PriorityClass, not on the pod.
+priorityClassName: ""
+
 # The log level
 loggingLevel: info
 
