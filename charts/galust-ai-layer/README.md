@@ -63,7 +63,7 @@ If AWS access is managed through the Terraform SSO/RBAC modules, create or assig
 
 - Read private ECR repositories and get ECR authorization tokens.
 - Access the target EKS cluster and update Kubernetes resources in the `ai-layer` namespace.
-- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-products` and `ai-layer-orchestrator` (shared by API orchestrator and scheduler).
+- Create or update Kubernetes Secrets used by the chart, including `ecr-secret`, `ai-layer-strapi`, `db-ai-layer-strapi`, `ai-layer-mcp`, `ai-layer-mcp-products`, `ai-layer-orchestrator` (shared by API orchestrator and scheduler) and `ai-layer-orchestrator-scheduler` (scheduler only).
 - If `ecrCredentialsRefresh.enabled=true`, provide an AWS identity for the refresh job with `ecr:GetAuthorizationToken`.
 
 Required default Kubernetes objects:
@@ -79,6 +79,7 @@ Required default Kubernetes objects:
 | MCP secret | `ai-layer-mcp` | MCP |
 | MCP products secret | `ai-layer-mcp-products` | MCP products |
 | Orchestrator secret | `ai-layer-orchestrator` | orchestrator and orchestrator scheduler |
+| Scheduler credential secret | `ai-layer-orchestrator-scheduler`, key `SCHEDULER_INTERNAL_TOKEN` | orchestrator scheduler (same value as `SCHEDULER_INTERNAL_TOKEN` in `ai-layer-strapi`) |
 
 External dependencies such as Qdrant, Langfuse, OpenAI credentials, database provisioning, External Secrets, IAM trust, and DNS are handled outside this chart. Redis is included (`redis.enabled=true`). To use an existing Redis instead:
 
@@ -294,6 +295,42 @@ Do not re-enable ClientIP affinity or ingress `upstream-hash-by: $remote_addr` u
 Core MCP (`mcp`) remains stateful and still pins external traffic with ingress `upstream-hash-by: $http_mcp_session_id`.
 
 Orchestrator → MCP traffic should keep using in-cluster URLs from ConfigMap `galust-incluster-urls` (`MCP_CORE_BASE_URL` / `MCP_PRODUCTS_BASE_URL`).
+
+## Scheduler Credential
+
+Since ai-layer DEV-2338, scheduled triggers use their own credential, `SCHEDULER_INTERNAL_TOKEN`:
+
+- The backend accepts scheduled-trigger operations only with this token. It reads the token from secret `ai-layer-strapi`, through the existing `envFrom`. Without the key, it refuses those operations.
+- The orchestrator scheduler reads it from its own secret, `ai-layer-orchestrator-scheduler`, so the API orchestrator never holds it (`orchestratorScheduler.secrets`). It won't start triggers without it while `SCHEDULED_TRIGGERS_ENABLED` is `"true"`, and the pod won't start if the secret is missing.
+
+Use one random value of at least 64 characters for both, and create both secrets before upgrading:
+
+```bash
+TOKEN="$(openssl rand -hex 32)"
+kubectl -n ai-layer create secret generic ai-layer-orchestrator-scheduler \
+  --from-literal=SCHEDULER_INTERNAL_TOKEN="$TOKEN" \
+  --dry-run=client -o yaml | kubectl apply -f -
+# Add the same key to the existing backend secret, keeping its other keys:
+kubectl -n ai-layer patch secret ai-layer-strapi --type merge \
+  -p "{\"stringData\":{\"SCHEDULER_INTERNAL_TOKEN\":\"$TOKEN\"}}"
+unset TOKEN
+```
+
+Clusters that run without scheduled triggers can set `orchestratorScheduler.enabled=false`.
+
+## Upgrading From 0.2.7
+
+Chart 0.2.8 follows ai-layer main as of 2026-11-26. Before `helm upgrade`:
+
+1. Create the scheduler credential as described in [Scheduler Credential](#scheduler-credential). Images built from ai-layer main need it.
+2. Upgrade with images from one ai-layer main build. On the first rollout, make sure the backend is ready before mcp-products serves traffic. A newer mcp-products against an older backend cannot read the Product Tool exposure fields, so external callers fail closed until the backend is updated.
+3. New optional flags default to off, as before:
+   - `MCP_OAUTH_DROP_B_PHASE_W` (backend env and `mcpProducts.config`): keep the two values equal.
+   - `MCP_OAUTH_KNOWLEDGE_OFFERS_READY` (`mcpProducts.config`).
+
+The ai-layer DEV-2349 tool exposure (titles, annotations, the per-tool external switch, the Product "use-case tools for external callers" setting, public descriptions) needs no chart values. The backend adds the new Strapi fields at start.
+
+Not included, because they are Galust-specific: Management MCP OAuth (`MCP_MANAGEMENT_*`), the Galust Product OAuth hostnames, and `products-openapi-server`.
 
 ## MCP products OAuth
 

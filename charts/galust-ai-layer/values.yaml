@@ -165,6 +165,11 @@ backend:
               EVENT_MANAGER_BACKEND_HOST: http://event-manager.em.svc.cluster.local
               AI_LAYER_BOOTSTRAP_CREATE_API_TOKEN: "false"
               MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
+              # DEV-2262 Phase W (list-free Drop B credential writers, admin lists >64).
+              # Keep the same value as mcpProducts.config.MCP_OAUTH_DROP_B_PHASE_W.
+              MCP_OAUTH_DROP_B_PHASE_W: "false"
+              # DEV-2338: SCHEDULER_INTERNAL_TOKEN comes from secret ai-layer-strapi (envFrom above).
+              # The backend refuses scheduled-trigger operations without it.
 
 mcp:
   enabled: true
@@ -313,6 +318,10 @@ mcpProducts:
     MCP_OAUTH_CLIENTS: ""
     MCP_OAUTH_TRUSTED_PROXIES: ""
     MCP_PRODUCTS_SHARED_HOST: *mcpProductsHost
+    # DEV-2262 Phase W: keep the same value as the backend env MCP_OAUTH_DROP_B_PHASE_W.
+    MCP_OAUTH_DROP_B_PHASE_W: "false"
+    # DEV-1720: Product OAuth offers Knowledge Space tools only when this is "true".
+    MCP_OAUTH_KNOWLEDGE_OFFERS_READY: "false"
   ingress:
     enabled: true
     class: nginx
@@ -478,6 +487,16 @@ orchestratorScheduler:
     SCHEDULED_TRIGGERS_ENABLED: "true"
     SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
     MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
+  # DEV-2338: the scheduler's own credential, from its own Secret, so the API
+  # orchestrator (secret ai-layer-orchestrator) never holds it. The backend reads
+  # the same value from ai-layer-strapi. Required while SCHEDULED_TRIGGERS_ENABLED
+  # is "true": the scheduler will not start triggers without it. A map entry
+  # renders env valueFrom.secretKeyRef; engine "none" creates no ExternalSecret.
+  secretsDefaultEngine: none
+  secrets:
+    - SCHEDULER_INTERNAL_TOKEN:
+        from: ai-layer-orchestrator-scheduler
+        key: SCHEDULER_INTERNAL_TOKEN
   ingress:
     enabled: false
 
