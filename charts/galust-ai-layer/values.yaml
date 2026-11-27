@@ -165,6 +165,7 @@ backend:
               EVENT_MANAGER_BACKEND_HOST: http://event-manager.em.svc.cluster.local
               AI_LAYER_BOOTSTRAP_CREATE_API_TOKEN: "false"
               MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
+              MCP_OAUTH_DROP_B_PHASE_W: "false"
 
 mcp:
   enabled: true
@@ -313,6 +314,8 @@ mcpProducts:
     MCP_OAUTH_CLIENTS: ""
     MCP_OAUTH_TRUSTED_PROXIES: ""
     MCP_PRODUCTS_SHARED_HOST: *mcpProductsHost
+    MCP_OAUTH_DROP_B_PHASE_W: "false"
+    MCP_OAUTH_KNOWLEDGE_OFFERS_READY: "false"
   ingress:
     enabled: true
     class: nginx
@@ -478,6 +481,11 @@ orchestratorScheduler:
     SCHEDULED_TRIGGERS_ENABLED: "true"
     SCHEDULED_TRIGGERS_POLL_INTERVAL_MS: "60000"
     MCP_DEVELOPMENT_CREDENTIALS_ENABLED: "false"
+  secretsDefaultEngine: none
+  secrets:
+    - SCHEDULER_INTERNAL_TOKEN:
+        from: ai-layer-orchestrator-scheduler
+        key: SCHEDULER_INTERNAL_TOKEN
   ingress:
     enabled: false
 
